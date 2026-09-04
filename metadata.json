@@ -1,0 +1,6 @@
+{
+  "name": "ID Template Studio",
+  "description": "Specialized ID Card Template Designer and Renderer with millimeter precision, magnetic snap guides, template variables, and multi-format export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

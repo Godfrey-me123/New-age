@@ -1,0 +1,373 @@
+import React, { useRef } from 'react';
+import {
+  Type,
+  Image as ImageIcon,
+  Square,
+  Circle as CircleIcon,
+  Minus,
+  Barcode as BarcodeIcon,
+  QrCode,
+  Tag,
+  Brackets,
+  Shield,
+  FileSignature,
+  Upload,
+} from 'lucide-react';
+import { useTemplateStore } from '../store/useTemplateStore';
+import { Layer, ShapeType, BarcodeType } from '../types';
+
+interface ElementsPanelProps {
+  onElementAdded?: () => void;
+}
+
+export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) => {
+  const { addLayer, currentTemplate } = useTemplateStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAddText = (defaultText: string = '{{first_name}}') => {
+    const isVar = defaultText.startsWith('{{');
+    const newLayer: Layer = {
+      id: 'text_' + Date.now(),
+      name: isVar ? defaultText.replace(/[{}]/g, '') : 'Text Layer',
+      type: 'text',
+      x: 10,
+      y: 10,
+      width: 45,
+      height: 6,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      hidden: false,
+      text: defaultText,
+      fontFamily: 'Helvetica',
+      fontSize: 3.5, // mm
+      fontWeight: 700,
+      fontStyle: 'bold',
+      textDecoration: 'none',
+      color: '#0f172a',
+      align: 'left',
+      letterSpacing: 0,
+      lineHeight: 1.1,
+    };
+    addLayer(newLayer);
+    onElementAdded?.();
+  };
+
+  const handleAddPlaceholder = (key: string, label: string) => {
+    const newLayer: Layer = {
+      id: 'ph_' + Date.now(),
+      name: `${label} Placeholder`,
+      type: 'placeholder',
+      placeholderKey: key,
+      label,
+      placeholderType: key === 'photo' ? 'photo' : 'signature',
+      x: 10,
+      y: 10,
+      width: key === 'photo' ? 25 : 30,
+      height: key === 'photo' ? 32 : 12,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      hidden: false,
+      borderColor: '#1e3a8a',
+      backgroundColor: '#f1f5f9',
+    };
+    addLayer(newLayer);
+    onElementAdded?.();
+  };
+
+  const handleAddShape = (shapeType: ShapeType, isRounded = false) => {
+    const newLayer: Layer = {
+      id: 'shape_' + Date.now(),
+      name: isRounded ? 'Rounded Rectangle' : `${shapeType.toUpperCase()} Shape`,
+      type: 'shape',
+      shapeType,
+      x: 15,
+      y: 15,
+      width: 30,
+      height: shapeType === 'line' ? 1 : 20,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      hidden: false,
+      fill: shapeType === 'line' ? 'transparent' : '#3b82f6',
+      stroke: '#1d4ed8',
+      strokeWidth: 0.5,
+      borderRadius: isRounded ? 2 : 0,
+      polygonSides: shapeType === 'polygon' ? 5 : undefined,
+    };
+    addLayer(newLayer);
+    onElementAdded?.();
+  };
+
+  const handleAddBarcode = (barcodeType: BarcodeType) => {
+    const newLayer: Layer = {
+      id: 'bc_' + Date.now(),
+      name: `Barcode (${barcodeType.toUpperCase()})`,
+      type: 'barcode',
+      barcodeType,
+      data: 'ID-987654321',
+      x: 10,
+      y: currentTemplate.cardHeight - 14,
+      width: 45,
+      height: 10,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      hidden: false,
+      includeText: true,
+      lineColor: '#000000',
+      backgroundColor: '#ffffff',
+    };
+    addLayer(newLayer);
+    onElementAdded?.();
+  };
+
+  const handleAddQRCode = () => {
+    const newLayer: Layer = {
+      id: 'qr_' + Date.now(),
+      name: 'QR Code',
+      type: 'qrcode',
+      data: 'https://example.com/verify/id/987654321',
+      x: currentTemplate.cardWidth - 22,
+      y: currentTemplate.cardHeight - 22,
+      width: 18,
+      height: 18,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      hidden: false,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+    };
+    addLayer(newLayer);
+    onElementAdded?.();
+  };
+
+  const handleUploadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const src = event.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const aspect = img.width / img.height;
+        const wMm = 25;
+        const hMm = wMm / aspect;
+
+        const newLayer: Layer = {
+          id: 'img_' + Date.now(),
+          name: file.name.split('.')[0] || 'Image',
+          type: 'image',
+          src,
+          x: 10,
+          y: 10,
+          width: wMm,
+          height: hMm,
+          rotation: 0,
+          opacity: 1,
+          locked: false,
+          hidden: false,
+        };
+        addLayer(newLayer);
+        onElementAdded?.();
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  return (
+    <div className="space-y-4 pb-4">
+      {/* 1. Dynamic Variables */}
+      <div>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
+          <Tag className="w-3.5 h-3.5 text-blue-400" />
+          <span>ID Template Fields</span>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => handleAddText('{{first_name}}')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+          >
+            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <span className="truncate">First Name</span>
+          </button>
+          <button
+            onClick={() => handleAddText('{{last_name}}')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+          >
+            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <span className="truncate">Last Name</span>
+          </button>
+          <button
+            onClick={() => handleAddText('{{id_number}}')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+          >
+            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <span className="truncate">ID Number</span>
+          </button>
+          <button
+            onClick={() => handleAddText('{{dob}}')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+          >
+            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <span className="truncate">Date of Birth</span>
+          </button>
+          <button
+            onClick={() => handleAddText('{{gender}}')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+          >
+            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <span className="truncate">Gender / Sex</span>
+          </button>
+          <button
+            onClick={() => handleAddText('{{card_expiry}}')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+          >
+            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <span className="truncate">Expiry Date</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Photo & Signature Placeholders */}
+      <div>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
+          <Shield className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Biometrics & Placeholders</span>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => handleAddPlaceholder('photo', 'ID Photo')}
+            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+          >
+            <div className="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+              <ImageIcon className="w-3.5 h-3.5" />
+            </div>
+            <span className="truncate">Photo Slot</span>
+          </button>
+          <button
+            onClick={() => handleAddPlaceholder('signature', 'Signature')}
+            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+          >
+            <div className="w-5 h-5 rounded bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+              <FileSignature className="w-3.5 h-3.5" />
+            </div>
+            <span className="truncate">Signature Slot</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Text & Media Elements */}
+      <div>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
+          <Type className="w-3.5 h-3.5 text-blue-400" />
+          <span>Text & Image</span>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => handleAddText('Static Text')}
+            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+          >
+            <Type className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            <span className="truncate">Custom Text</span>
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+          >
+            <Upload className="w-4 h-4 text-purple-400 flex-shrink-0" />
+            <span className="truncate">Upload Image</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleUploadImage}
+              className="hidden"
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* 4. Shapes */}
+      <div>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
+          <Square className="w-3.5 h-3.5 text-pink-400" />
+          <span>Geometric Shapes</span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          <button
+            onClick={() => handleAddShape('rectangle')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+          >
+            <Square className="w-4 h-4 text-pink-400" />
+            <span className="text-[10px]">Rect</span>
+          </button>
+          <button
+            onClick={() => handleAddShape('rectangle', true)}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+          >
+            <div className="w-4 h-4 rounded border-2 border-pink-400" />
+            <span className="text-[10px]">Rounded</span>
+          </button>
+          <button
+            onClick={() => handleAddShape('circle')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+          >
+            <CircleIcon className="w-4 h-4 text-pink-400" />
+            <span className="text-[10px]">Circle</span>
+          </button>
+          <button
+            onClick={() => handleAddShape('line')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+          >
+            <Minus className="w-4 h-4 text-pink-400" />
+            <span className="text-[10px]">Line</span>
+          </button>
+          <button
+            onClick={() => handleAddShape('polygon')}
+            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+          >
+            <Shield className="w-4 h-4 text-pink-400" />
+            <span className="text-[10px]">Badge</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 5. Barcodes & QR Codes */}
+      <div>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
+          <BarcodeIcon className="w-3.5 h-3.5 text-amber-400" />
+          <span>Barcodes & QR Codes</span>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => handleAddBarcode('Code128')}
+            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+          >
+            <BarcodeIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <span className="truncate">Code 128</span>
+          </button>
+          <button
+            onClick={handleAddQRCode}
+            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+          >
+            <QrCode className="w-4 h-4 text-teal-400 flex-shrink-0" />
+            <span className="truncate">QR Code</span>
+          </button>
+          <button
+            onClick={() => handleAddBarcode('PDF417')}
+            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+          >
+            <BarcodeIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <span className="truncate">PDF417 2D</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
