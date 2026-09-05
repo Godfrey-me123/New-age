@@ -20,11 +20,13 @@ import {
   X,
   Printer,
   ChevronRight,
+  Home,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { CardTemplate, CardType, CardSide } from '../types';
 import { downloadJSON, renderTemplateToCanvas } from '../utils/export';
 import { TemplateBadge } from './TemplateBadge';
+import { AppFooter } from './common/AppFooter';
 
 export const TemplatesScreen: React.FC = () => {
   const {
@@ -193,7 +195,7 @@ export const TemplatesScreen: React.FC = () => {
   });
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 overflow-y-auto font-sans">
       {/* Top Header */}
       <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -214,6 +216,16 @@ export const TemplatesScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveScreen('home')}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Return to Services Home"
+          >
+            <Home className="w-4 h-4 text-[#47A5FF]" />
+            <span className="hidden sm:inline">Services</span>
+          </button>
+
           <button
             onClick={() => fileInputRef.current?.click()}
             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-2 transition-colors"
@@ -457,6 +469,9 @@ export const TemplatesScreen: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Global Application Footer */}
+      <AppFooter />
     </div>
   );
 };

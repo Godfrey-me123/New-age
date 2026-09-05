@@ -14,29 +14,98 @@ import { SaveTemplateModal } from './components/SaveTemplateModal';
 import { MergeCardModal } from './components/MergeCardModal';
 import { MobileNavBar } from './components/MobileNavBar';
 import { MobileBottomSheet } from './components/MobileBottomSheet';
+import { NidaFormScreen } from './components/nida';
+import { NidaSuccessToast } from './components/nida/NidaSuccessToast';
+import { HomeScreen } from './components/HomeScreen';
+import { CardPreviewScreen } from './components/CardPreviewScreen';
 
 export default function App() {
-  const { activeScreen } = useTemplateStore();
+  const { activeScreen, setActiveScreen } = useTemplateStore();
+
+  if (activeScreen === 'home') {
+    return (
+      <>
+        <HomeScreen />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
+  }
 
   if (activeScreen === 'upload') {
-    return <UploadScreen />;
+    return (
+      <>
+        <UploadScreen />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'templates') {
+    return (
+      <>
+        <TemplatesScreen />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'nida') {
+    return (
+      <>
+        <NidaFormScreen
+          onCancel={() => setActiveScreen('home')}
+          onSuccess={() => {
+            // Handled in workflow -> transitions to preview screen
+          }}
+        />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'preview') {
+    return (
+      <>
+        <CardPreviewScreen />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
   }
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
+      {/* NIDA Success Notification Toast */}
+      <NidaSuccessToast />
+
       {/* Top Toolbar */}
       <Toolbar />
 
-      {/* Main Screen Router */}
-      {activeScreen === 'templates' ? (
-        <TemplatesScreen />
-      ) : (
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative pb-14 lg:pb-0">
-          <LeftPanel />
-          <CanvasWorkspace />
-          <RightPanel />
-        </div>
-      )}
+      {/* Main Editor Workspace */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative pb-14 lg:pb-0">
+        <LeftPanel />
+        <CanvasWorkspace />
+        <RightPanel />
+      </div>
 
       {/* Mobile Canva-style Dock (Visible only on mobile editor) */}
       {activeScreen === 'editor' && <MobileNavBar />}

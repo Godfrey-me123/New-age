@@ -10,12 +10,14 @@ import {
   Edit2,
   Trash2,
   Copy,
+  Home,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { CardTemplate } from '../types';
 import { SAMPLE_TEMPLATES } from '../utils/sampleTemplates';
 import { TemplateBadge } from './TemplateBadge';
 import { renderTemplateToCanvas } from '../utils/export';
+import { AppFooter } from './common/AppFooter';
 
 export const UploadScreen: React.FC = () => {
   const {
@@ -178,14 +180,26 @@ export const UploadScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4 sm:p-6 selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-start p-4 sm:p-6 lg:p-8 selection:bg-blue-500 selection:text-white overflow-y-auto">
       {/* Container */}
       <div className="w-full max-w-4xl bg-slate-800/90 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-6 sm:p-10 text-center relative">
         {/* Brand Header & Top Actions */}
         <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-700/60">
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide">
-            <CreditCard className="w-4 h-4" />
-            <span>ID TEMPLATE STUDIO</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveScreen('home')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 border border-slate-700 hover:border-[#47A5FF]/50 text-slate-300 hover:text-white text-xs font-semibold transition-all cursor-pointer"
+              title="Return to Services Home"
+            >
+              <Home className="w-3.5 h-3.5 text-[#47A5FF]" />
+              <span>Services</span>
+            </button>
+
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide">
+              <CreditCard className="w-4 h-4" />
+              <span>ID TEMPLATE STUDIO</span>
+            </div>
           </div>
 
           {/* Saved Templates Section Button on First Screen */}
@@ -420,6 +434,9 @@ export const UploadScreen: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Global Application Footer */}
+      <AppFooter className="max-w-4xl" />
     </div>
   );
 };

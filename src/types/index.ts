@@ -175,3 +175,20 @@ export interface SavedMergeLayout {
 export interface CardData {
   [key: string]: string; // key matches template variable e.g. "first_name": "Alex", "photo": "data:image/png..."
 }
+
+export interface NidaSubmissionRecord {
+  id: string;
+  frontTemplateId: string;
+  backTemplateId: string;
+  frontTemplateName?: string;
+  backTemplateName?: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: 'M' | 'F';
+  nidaNumber: string;
+  photo?: string | null;
+  signature?: string | null;
+  submittedAt: string;
+}

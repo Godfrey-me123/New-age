@@ -9,6 +9,7 @@ import {
   SmartGuide,
   BackgroundConfig,
   UploadedBackground,
+  NidaSubmissionRecord,
 } from '../types';
 import { CR80_WIDTH_MM, CR80_HEIGHT_MM } from '../utils/units';
 import { SAMPLE_TEMPLATES } from '../utils/sampleTemplates';
@@ -23,8 +24,17 @@ import {
 } from '../utils/idb';
 
 interface TemplateState {
-  activeScreen: 'upload' | 'editor' | 'templates';
+  activeScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview';
   currentTemplate: CardTemplate;
+  frontPopulatedTemplate: CardTemplate | null;
+  backPopulatedTemplate: CardTemplate | null;
+  lastNidaFormData: any | null;
+
+  // NIDA Template Selections & Universal Defaults
+  selectedFrontTemplateId: string | null;
+  selectedBackTemplateId: string | null;
+  defaultNidaFrontTemplateId: string | null;
+  defaultNidaBackTemplateId: string | null;
   activeUnit: Unit;
   selectedLayerIds: string[];
   zoom: number; // 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 4.0
@@ -49,12 +59,29 @@ interface TemplateState {
   isSaveModalOpen: boolean;
   activeMobileSheet: 'elements' | 'layers' | 'backgrounds' | 'properties' | 'settings' | null;
 
+  // NIDA Success Notification Toast
+  nidaSuccessNotification: {
+    title: string;
+    message: string;
+    populatedCount: number;
+    isBackSide?: boolean;
+  } | null;
+  setNidaSuccessNotification: (
+    notification: {
+      title: string;
+      message: string;
+      populatedCount: number;
+      isBackSide?: boolean;
+    } | null
+  ) => void;
+
   // History stack for Undo/Redo
   history: CardTemplate[];
   historyIndex: number;
 
   // Actions
-  setActiveScreen: (screen: 'upload' | 'editor' | 'templates') => void;
+  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview') => void;
+  setPopulatedCardPair: (front: CardTemplate | null, back: CardTemplate | null, formData?: any) => void;
   createNewTemplate: (background: BackgroundConfig, name?: string) => void;
   loadTemplate: (template: CardTemplate) => void;
   updateTemplateMeta: (meta: Partial<CardTemplate>) => void;
@@ -120,6 +147,12 @@ interface TemplateState {
   loadSavedTemplates: () => Promise<CardTemplate[]>;
   deleteSavedTemplate: (id: string) => Promise<void>;
 
+  // NIDA Template Selection & Universal Default Actions
+  setSelectedFrontTemplateId: (id: string | null) => void;
+  setSelectedBackTemplateId: (id: string | null) => void;
+  setUniversalDefaultNidaTemplates: (frontId: string, backId: string) => void;
+  saveNidaSubmissionRecord: (record: NidaSubmissionRecord) => Promise<void>;
+
   // Undo / Redo
   undo: () => void;
   redo: () => void;
@@ -144,13 +177,42 @@ const DEFAULT_TEMPLATE: CardTemplate = {
   updatedAt: new Date().toISOString(),
 };
 
-export const useTemplateStore = create<TemplateState>((set, get) => ({
-  activeScreen: 'upload',
-  currentTemplate: DEFAULT_TEMPLATE,
-  activeUnit: 'mm',
-  selectedLayerIds: [],
-  zoom: 1.0,
-  panOffset: { x: 0, y: 0 },
+export const useTemplateStore = create<TemplateState>((set, get) => {
+  const savedDefaultFrontId =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('nida_default_front_template_id') || 'sample_tanzania_nida'
+      : 'sample_tanzania_nida';
+  const savedDefaultBackId =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('nida_default_back_template_id') || 'sample_tanzania_nida_back'
+      : 'sample_tanzania_nida_back';
+
+  const savedSelectedFrontId =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('nida_selected_front_template_id') || savedDefaultFrontId
+      : savedDefaultFrontId;
+  const savedSelectedBackId =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('nida_selected_back_template_id') || savedDefaultBackId
+      : savedDefaultBackId;
+
+  return {
+    activeScreen: 'home',
+    currentTemplate: DEFAULT_TEMPLATE,
+    frontPopulatedTemplate: null,
+    backPopulatedTemplate: null,
+    lastNidaFormData: null,
+
+    // NIDA Template Selections & Universal Defaults
+    selectedFrontTemplateId: savedSelectedFrontId,
+    selectedBackTemplateId: savedSelectedBackId,
+    defaultNidaFrontTemplateId: savedDefaultFrontId,
+    defaultNidaBackTemplateId: savedDefaultBackId,
+
+    activeUnit: 'mm',
+    selectedLayerIds: [],
+    zoom: 1.0,
+    panOffset: { x: 0, y: 0 },
 
   gridSettings: {
     enabled: false,
@@ -184,10 +246,20 @@ export const useTemplateStore = create<TemplateState>((set, get) => ({
   isSaveModalOpen: false,
   activeMobileSheet: null,
 
+  nidaSuccessNotification: null,
+  setNidaSuccessNotification: (notification) => set({ nidaSuccessNotification: notification }),
+
   history: [DEFAULT_TEMPLATE],
   historyIndex: 0,
 
   setActiveScreen: (screen) => set({ activeScreen: screen }),
+
+  setPopulatedCardPair: (front, back, formData) =>
+    set({
+      frontPopulatedTemplate: front,
+      backPopulatedTemplate: back,
+      lastNidaFormData: formData !== undefined ? formData : get().lastNidaFormData,
+    }),
 
   createNewTemplate: (background, name) => {
     let cardWidth = CR80_WIDTH_MM;
@@ -768,6 +840,51 @@ export const useTemplateStore = create<TemplateState>((set, get) => ({
     await deleteTemplateDB(id);
   },
 
+  setSelectedFrontTemplateId: (id) => {
+    if (typeof window !== 'undefined' && id) {
+      localStorage.setItem('nida_selected_front_template_id', id);
+    }
+    set({ selectedFrontTemplateId: id });
+  },
+
+  setSelectedBackTemplateId: (id) => {
+    if (typeof window !== 'undefined' && id) {
+      localStorage.setItem('nida_selected_back_template_id', id);
+    }
+    set({ selectedBackTemplateId: id });
+  },
+
+  setUniversalDefaultNidaTemplates: (frontId, backId) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nida_default_front_template_id', frontId);
+      localStorage.setItem('nida_default_back_template_id', backId);
+      localStorage.setItem('nida_selected_front_template_id', frontId);
+      localStorage.setItem('nida_selected_back_template_id', backId);
+    }
+    set({
+      defaultNidaFrontTemplateId: frontId,
+      defaultNidaBackTemplateId: backId,
+      selectedFrontTemplateId: frontId,
+      selectedBackTemplateId: backId,
+    });
+  },
+
+  saveNidaSubmissionRecord: async (record) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('nida_last_submission', JSON.stringify(record));
+        const historyStr = localStorage.getItem('nida_submission_history') || '[]';
+        const history: NidaSubmissionRecord[] = JSON.parse(historyStr);
+        history.unshift(record);
+        // Keep last 50 submissions
+        if (history.length > 50) history.pop();
+        localStorage.setItem('nida_submission_history', JSON.stringify(history));
+      } catch (err) {
+        console.warn('Failed to persist submission record to localStorage:', err);
+      }
+    }
+  },
+
   pushHistoryState: (template) => {
     const { history, historyIndex } = get();
     const newHistory = history.slice(0, historyIndex + 1);
@@ -802,4 +919,5 @@ export const useTemplateStore = create<TemplateState>((set, get) => ({
       });
     }
   },
-}));
+};
+});

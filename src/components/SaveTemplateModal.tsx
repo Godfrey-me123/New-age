@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Copy, RefreshCw, CheckCircle, Tag, Layers } from 'lucide-react';
+import { X, Save, Copy, RefreshCw, CheckCircle, Tag, Layers, Star, Sparkles } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { CardTemplate, CardType, CardSide } from '../types';
 
@@ -12,6 +12,11 @@ export const SaveTemplateModal: React.FC = () => {
     saveAsNewTemplate,
     loadSavedTemplates,
     updateTemplateMeta,
+    selectedFrontTemplateId,
+    selectedBackTemplateId,
+    defaultNidaFrontTemplateId,
+    defaultNidaBackTemplateId,
+    setUniversalDefaultNidaTemplates,
   } = useTemplateStore();
 
   const [mode, setMode] = useState<'options' | 'saveAs'>('options');
@@ -21,6 +26,7 @@ export const SaveTemplateModal: React.FC = () => {
   const [existingTemplates, setExistingTemplates] = useState<CardTemplate[]>([]);
   const [conflictTemplate, setConflictTemplate] = useState<CardTemplate | null>(null);
   const [isSavedSuccess, setIsSavedSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('Template Saved Successfully!');
 
   useEffect(() => {
     if (isSaveModalOpen) {
@@ -30,6 +36,7 @@ export const SaveTemplateModal: React.FC = () => {
       setMode('options');
       setConflictTemplate(null);
       setIsSavedSuccess(false);
+      setSuccessMessage('Template Saved Successfully!');
 
       loadSavedTemplates().then(setExistingTemplates);
     }
@@ -40,11 +47,34 @@ export const SaveTemplateModal: React.FC = () => {
   const handleQuickSave = async () => {
     updateTemplateMeta({ cardType, side });
     await saveCurrentTemplate();
+    setSuccessMessage('Template Saved Successfully!');
     setIsSavedSuccess(true);
     setTimeout(() => {
       setIsSavedSuccess(false);
       setSaveModalOpen(false);
     }, 1200);
+  };
+
+  const handleUniversalSave = async () => {
+    updateTemplateMeta({ cardType, side });
+    await saveCurrentTemplate();
+    
+    // Determine Front & Back Pair for Universal Save
+    const frontId = (side === 'Front Side' || !currentTemplate.id.includes('back'))
+      ? currentTemplate.id
+      : (selectedFrontTemplateId || defaultNidaFrontTemplateId || 'sample_tanzania_nida');
+    
+    const backId = (side === 'Back Side' || currentTemplate.id.includes('back'))
+      ? currentTemplate.id
+      : (selectedBackTemplateId || defaultNidaBackTemplateId || 'sample_tanzania_nida_back');
+
+    setUniversalDefaultNidaTemplates(frontId, backId);
+    setSuccessMessage('Universal Defaults Saved! This template pair is now set as the permanent default for NIDA filling.');
+    setIsSavedSuccess(true);
+    setTimeout(() => {
+      setIsSavedSuccess(false);
+      setSaveModalOpen(false);
+    }, 1500);
   };
 
   const checkConflictAndSaveAs = async (nameToSave: string) => {
@@ -59,6 +89,7 @@ export const SaveTemplateModal: React.FC = () => {
       setConflictTemplate(existingMatch);
     } else {
       await saveAsNewTemplate(trimmed, cardType, side);
+      setSuccessMessage('New Template Created & Saved!');
       setIsSavedSuccess(true);
       setTimeout(() => {
         setIsSavedSuccess(false);
@@ -79,6 +110,7 @@ export const SaveTemplateModal: React.FC = () => {
     };
     useTemplateStore.getState().loadTemplate(updated);
     await saveCurrentTemplate();
+    setSuccessMessage('Template Replaced Successfully!');
     setIsSavedSuccess(true);
     setTimeout(() => {
       setIsSavedSuccess(false);
@@ -89,6 +121,7 @@ export const SaveTemplateModal: React.FC = () => {
   const handleCreateNewCopy = async () => {
     const copyName = `${templateName.trim()} (Copy)`;
     await saveAsNewTemplate(copyName, cardType, side);
+    setSuccessMessage('New Copy Created & Saved!');
     setIsSavedSuccess(true);
     setTimeout(() => {
       setIsSavedSuccess(false);
@@ -108,12 +141,13 @@ export const SaveTemplateModal: React.FC = () => {
             <div>
               <h2 className="text-lg font-bold text-white">Save Template</h2>
               <p className="text-xs text-slate-400">
-                Update existing design or create a new template copy
+                Choose standard save or Universal Default Save
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={() => setSaveModalOpen(false)}
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
           >
@@ -126,9 +160,9 @@ export const SaveTemplateModal: React.FC = () => {
           {isSavedSuccess ? (
             <div className="py-8 flex flex-col items-center justify-center text-center space-y-2">
               <CheckCircle className="w-12 h-12 text-emerald-400 animate-bounce" />
-              <h3 className="text-base font-bold text-white">Template Saved Successfully!</h3>
+              <h3 className="text-base font-bold text-white">{successMessage}</h3>
               <p className="text-xs text-slate-400">
-                Your changes have been safely stored in your local library.
+                Your template data is safely stored in persistent storage.
               </p>
             </div>
           ) : conflictTemplate ? (
@@ -142,6 +176,7 @@ export const SaveTemplateModal: React.FC = () => {
 
               <div className="grid grid-cols-1 gap-3 pt-2">
                 <button
+                  type="button"
                   onClick={handleReplaceExisting}
                   className="p-3.5 bg-slate-800 hover:bg-amber-600/20 border border-slate-700 hover:border-amber-500/50 rounded-xl text-left flex items-center gap-3 transition-colors group"
                 >
@@ -157,6 +192,7 @@ export const SaveTemplateModal: React.FC = () => {
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleCreateNewCopy}
                   className="p-3.5 bg-slate-800 hover:bg-blue-600/20 border border-slate-700 hover:border-blue-500/50 rounded-xl text-left flex items-center gap-3 transition-colors group"
                 >
@@ -172,6 +208,7 @@ export const SaveTemplateModal: React.FC = () => {
 
               <div className="pt-2 flex justify-end">
                 <button
+                  type="button"
                   onClick={() => setConflictTemplate(null)}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg"
                 >
@@ -180,39 +217,70 @@ export const SaveTemplateModal: React.FC = () => {
               </div>
             </div>
           ) : mode === 'options' ? (
-            /* Save / Save As Choice */
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            /* Save / Universal Save / Save As Choice */
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3">
+                {/* 1. Normal Save */}
                 <button
+                  type="button"
                   onClick={handleQuickSave}
-                  className="p-4 bg-slate-800/90 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-xl text-left flex flex-col justify-between transition-all group"
+                  className="p-4 bg-slate-800/90 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-xl text-left flex items-start justify-between transition-all group"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Save className="w-5 h-5 text-emerald-400" />
-                    <span className="font-bold text-sm text-white group-hover:text-emerald-400">
-                      Save
-                    </span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Save className="w-4 h-4 text-emerald-400" />
+                      <span className="font-bold text-sm text-white group-hover:text-emerald-400">
+                        1. Standard Save
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Updates "{currentTemplate.templateName}" in your library normally.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400 mb-3">
-                    Overwrites and updates current saved template: "{currentTemplate.templateName}"
-                  </p>
-                  <span className="text-xs font-semibold text-emerald-400">Update Existing →</span>
+                  <span className="text-xs font-semibold text-emerald-400 shrink-0 ml-2">Save →</span>
                 </button>
 
+                {/* 2. Universal Save */}
                 <button
-                  onClick={() => setMode('saveAs')}
-                  className="p-4 bg-slate-800/90 hover:bg-slate-800 border border-slate-700 hover:border-blue-500 rounded-xl text-left flex flex-col justify-between transition-all group"
+                  type="button"
+                  onClick={handleUniversalSave}
+                  className="p-4 bg-gradient-to-r from-amber-500/10 to-blue-500/10 hover:from-amber-500/20 hover:to-blue-500/20 border border-amber-500/30 hover:border-amber-400 rounded-xl text-left flex items-start justify-between transition-all group shadow-sm"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Copy className="w-5 h-5 text-blue-400" />
-                    <span className="font-bold text-sm text-white group-hover:text-blue-400">
-                      Save As...
-                    </span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <span className="font-bold text-sm text-white group-hover:text-amber-300 flex items-center gap-1.5">
+                        2. Universal Save
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase">
+                          Permanent Default
+                        </span>
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      Saves template and sets Front + Back pair as the automatic default for all future NIDA filling sessions.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400 mb-3">
-                    Create a new independent template file with a custom name and badges
-                  </p>
-                  <span className="text-xs font-semibold text-blue-400">Save As New →</span>
+                  <span className="text-xs font-semibold text-amber-400 shrink-0 ml-2">Universal Save →</span>
+                </button>
+
+                {/* 3. Save As Copy */}
+                <button
+                  type="button"
+                  onClick={() => setMode('saveAs')}
+                  className="p-3.5 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 hover:border-blue-500 rounded-xl text-left flex items-start justify-between transition-all group"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Copy className="w-4 h-4 text-blue-400" />
+                      <span className="font-bold text-xs text-white group-hover:text-blue-400">
+                        Save As New Copy...
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Create a separate template with a unique name and metadata.
+                    </p>
+                  </div>
+                  <span className="text-xs font-semibold text-blue-400 shrink-0 ml-2">New Copy →</span>
                 </button>
               </div>
             </div>
@@ -273,15 +341,17 @@ export const SaveTemplateModal: React.FC = () => {
 
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
+                  type="button"
                   onClick={() => setMode('options')}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={() => checkConflictAndSaveAs(templateName)}
                   disabled={!templateName.trim()}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg transition-colors flex items-center gap-1.5"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save New Template</span>
