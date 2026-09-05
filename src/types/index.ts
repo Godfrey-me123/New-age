@@ -48,6 +48,10 @@ export interface BaseLayer {
   locked: boolean;
   hidden: boolean;
   groupId?: string;
+  fieldName?: string; // e.g. "firstName", "lastName", "dateOfBirth", "gender", "nidaNumber", "photo", "signature"
+  fieldId?: string;   // e.g. "firstName", "lastName", "dateOfBirth", "gender", "nidaNumber", "photo", "signature"
+  fieldType?: string; // e.g. "firstName", "lastName", "dateOfBirth", "gender", "nidaNumber", "photo", "signature"
+  bindingKey?: string;// e.g. "FIRST_NAME", "LAST_NAME", "DOB", "GENDER", "NIDA_NUMBER", "PHOTO", "SIGNATURE"
 }
 
 export interface TextLayer extends BaseLayer {

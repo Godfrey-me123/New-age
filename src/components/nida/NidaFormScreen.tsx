@@ -395,6 +395,13 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     const frontRes = applyTemplateMapping(frontSource, normalizedFormData);
     const backRes = applyTemplateMapping(backSource, normalizedFormData);
 
+    if (!frontRes.success) {
+      updateStep('step8_populate', 'failed');
+      setWorkflowError(frontRes.error || 'Field mapping validation failed. Stopping card generation.');
+      setIsProcessing(false);
+      return;
+    }
+
     // Persist submission record
     const submissionRecord: NidaSubmissionRecord = {
       id: 'nida_sub_' + Date.now(),
