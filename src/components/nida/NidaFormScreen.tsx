@@ -68,6 +68,7 @@ import {
   applyTemplateMapping,
   isBackSideTemplate,
   PopulatedTemplateResult,
+  sanitizeTemplateForSaving,
 } from '../../utils/templateMappingEngine';
 import { CardTemplate, NidaSubmissionRecord } from '../../types';
 import { renderTemplateToCanvas } from '../../utils/export';
@@ -368,8 +369,20 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     const frontId = selectedFrontTemplateId || defaultNidaFrontTemplateId || 'sample_tanzania_nida';
     const backId = selectedBackTemplateId || defaultNidaBackTemplateId || 'sample_tanzania_nida_back';
 
-    const frontSource = pool.find((t) => t.id === frontId) || pool.find((t) => !t.id.includes('back')) || SAMPLE_TEMPLATES[0];
-    const backSource = pool.find((t) => t.id === backId) || pool.find((t) => t.id.includes('back')) || SAMPLE_TEMPLATES[1] || SAMPLE_TEMPLATES[0];
+    // Prefer in-memory currentTemplate if it matches the selected ID to capture active unsaved edits
+    let frontSourceRaw = pool.find((t) => t.id === frontId) || pool.find((t) => !t.id.includes('back')) || SAMPLE_TEMPLATES[0];
+    if (currentTemplate && currentTemplate.id === frontId) {
+      frontSourceRaw = currentTemplate;
+    }
+
+    let backSourceRaw = pool.find((t) => t.id === backId) || pool.find((t) => t.id.includes('back')) || SAMPLE_TEMPLATES[1] || SAMPLE_TEMPLATES[0];
+    if (currentTemplate && currentTemplate.id === backId) {
+      backSourceRaw = currentTemplate;
+    }
+
+    // Always sanitize templates to clean placeholder tokens first, resolving any leftover hardcoded/populated data
+    const frontSource = sanitizeTemplateForSaving(frontSourceRaw);
+    const backSource = sanitizeTemplateForSaving(backSourceRaw);
 
     if (!frontSource || !backSource) {
       updateStep('step6_template', 'failed', 'Templates could not be resolved.');

@@ -35,9 +35,14 @@ import {
   Sparkles,
   Download,
   Check,
+  AlertTriangle,
+  HelpCircle,
+  ShieldAlert,
+  CheckCircle2,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { convertFromMm, convertToMm } from '../utils/units';
+import { getTemplateValidationIssues, ValidationIssue } from '../utils/templateMappingEngine';
 import {
   FONT_LIBRARY,
   FontScope,
@@ -110,9 +115,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
     setCardGeneratorOpen,
     setExportModalOpen,
     setActiveMobileSheet,
+    selectLayer,
   } = useTemplateStore();
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+  const [isValidationExpanded, setIsValidationExpanded] = useState(true);
 
   const handleSave = async () => {
     await saveCurrentTemplate();
@@ -226,11 +233,157 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
 
   // Helper container wrapper
   const renderPanelWrapper = (content: React.ReactNode) => {
+    const validationIssues = getTemplateValidationIssues(currentTemplate);
+    const errorsCount = validationIssues.filter((i) => i.type === 'error').length;
+
+    const validationPanel = (
+      <div className="border border-[#E7E9EB] rounded-xl bg-[#FFFFFF] overflow-hidden shadow-xs flex flex-col">
+        {/* Header Toggle */}
+        <button
+          type="button"
+          onClick={() => setIsValidationExpanded(!isValidationExpanded)}
+          className={`w-full px-3 py-2 flex items-center justify-between transition-colors select-none cursor-pointer ${
+            validationIssues.length === 0
+              ? 'bg-[#F4FAF0] hover:bg-[#ebf5e6]'
+              : errorsCount > 0
+                ? 'bg-red-50/50 hover:bg-red-50'
+                : 'bg-amber-50/50 hover:bg-amber-50'
+          }`}
+        >
+          <div className="flex items-center gap-1.5 min-w-0">
+            {validationIssues.length === 0 ? (
+              <ShieldAlert className="w-3.5 h-3.5 text-[#43961b] shrink-0" />
+            ) : errorsCount > 0 ? (
+              <ShieldAlert className="w-3.5 h-3.5 text-red-600 animate-pulse shrink-0" />
+            ) : (
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            )}
+            <span className="text-[11px] font-bold text-[#000000] truncate">Integrity Guard</span>
+            <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold shrink-0 ${
+              validationIssues.length === 0
+                ? 'bg-[#CEE9B9] text-[#2d5713] border border-[#b8df9c]'
+                : errorsCount > 0
+                  ? 'bg-red-100 text-red-800 border border-red-200'
+                  : 'bg-amber-100 text-amber-800 border border-amber-200'
+            }`}>
+              {validationIssues.length === 0 ? 'Verified' : `${validationIssues.length} alert${validationIssues.length === 1 ? '' : 's'}`}
+            </span>
+          </div>
+          {isValidationExpanded ? (
+            <ChevronUp className="w-3.5 h-3.5 text-[#000000]/60 shrink-0" />
+          ) : (
+            <ChevronDown className="w-3.5 h-3.5 text-[#000000]/60 shrink-0" />
+          )}
+        </button>
+
+        {/* Collapsible Panel List */}
+        {isValidationExpanded && (
+          <div className="p-3 border-t border-[#E7E9EB] bg-white space-y-2.5">
+            {validationIssues.length === 0 ? (
+              <div className="text-[11px] text-[#2d5713] leading-relaxed flex items-start gap-1.5">
+                <Check className="w-3.5 h-3.5 text-[#43961b] shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold block text-[#1a3809] mb-0.5">Template is render-safe</span>
+                  All dynamic variables match the NIDA profile. Zero injection errors detected.
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {validationIssues.map((issue, idx) => {
+                  const isError = issue.type === 'error';
+                  const layerObj = currentTemplate.layers.find(l => l.id === issue.layerId);
+                  return (
+                    <div
+                      key={`${issue.layerId}_${idx}`}
+                      className={`p-2 rounded-lg border text-xs flex flex-col gap-1 ${
+                        isError
+                          ? 'bg-red-50/20 border-red-100'
+                          : 'bg-amber-50/20 border-amber-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 min-w-0">
+                        <div className="flex items-center gap-1 min-w-0">
+                          {isError ? (
+                            <AlertTriangle className="w-3 h-3 text-red-600 shrink-0" />
+                          ) : (
+                            <HelpCircle className="w-3 h-3 text-amber-500 shrink-0" />
+                          )}
+                          <span className="font-bold text-[#000000] text-[10px] truncate">
+                            {issue.layerName}
+                          </span>
+                        </div>
+                        <span className="text-[8px] font-mono uppercase bg-slate-100 text-slate-700 px-1 rounded shrink-0">
+                          {issue.layerType}
+                        </span>
+                      </div>
+                      
+                      <p className="text-slate-700 leading-snug text-[10px]">
+                        {issue.message}
+                      </p>
+                      
+                      <div className="bg-white/80 border border-slate-100 p-1.5 rounded text-[9px] text-slate-600 space-y-1.5">
+                        <span className="block leading-tight text-[9px] font-medium text-slate-500">💡 {issue.suggestedFix}</span>
+                        
+                        <div className="flex gap-1.5 flex-wrap pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => selectLayer(issue.layerId)}
+                            className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-[#000000] rounded text-[8px] font-bold transition-colors cursor-pointer"
+                          >
+                            Edit Layer
+                          </button>
+                          
+                          {issue.suggestedReplacement && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!layerObj) return;
+                                if (layerObj.type === 'text') {
+                                  const textLayer = layerObj as any;
+                                  const oldText = textLayer.text || '';
+                                  const newText = oldText.replace(issue.variable, issue.suggestedReplacement!);
+                                  updateLayer(layerObj.id, { text: newText });
+                                } else if (layerObj.type === 'barcode' || layerObj.type === 'qrcode') {
+                                  updateLayer(layerObj.id, { data: issue.suggestedReplacement });
+                                }
+                              }}
+                              className="px-1.5 py-0.5 bg-[#CEE9B9] hover:opacity-90 text-[#000000] rounded text-[8px] font-bold transition-colors flex items-center gap-0.5 cursor-pointer border border-[#b8df9c]"
+                            >
+                              <Sparkles className="w-2.5 h-2.5 shrink-0 text-slate-800" />
+                              Apply: {issue.suggestedReplacement}
+                            </button>
+                          )}
+                          
+                          {!issue.suggestedReplacement && (issue.layerType === 'placeholder' || issue.layerType === 'image') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateLayer(issue.layerId, { name: `Cardholder ${issue.variable === 'PHOTO' ? 'Photo' : 'Signature'}` });
+                              }}
+                              className="px-1.5 py-0.5 bg-[#CEE9B9] hover:opacity-90 text-[#000000] rounded text-[8px] font-bold transition-colors flex items-center gap-0.5 cursor-pointer border border-[#b8df9c]"
+                            >
+                              <Sparkles className="w-2.5 h-2.5 shrink-0 text-slate-800" />
+                              Auto-Bind {issue.variable}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+
     if (isMobileDrawer) {
       return (
         <div className="space-y-3 pb-6 bg-[#FFFFFF]">
           {quickActionsHeader}
           {content}
+          <div className="pt-2">{validationPanel}</div>
           <FontChangeModal
             isOpen={isFontModalOpen}
             pendingFont={pendingFont}
@@ -252,9 +405,17 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
     }
 
     return (
-      <aside className="hidden lg:flex lg:w-80 bg-[#FFFFFF] border-l border-[#E7E9EB] p-3.5 flex-col h-[calc(100vh-3.5rem)] select-none text-[#000000] overflow-y-auto shrink-0">
-        {quickActionsHeader}
-        {content}
+      <aside className="hidden lg:flex lg:w-80 bg-[#FFFFFF] border-l border-[#E7E9EB] p-3.5 flex-col h-[calc(100vh-3.5rem)] select-none text-[#000000] shrink-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto space-y-3 pb-3 pr-1">
+          {quickActionsHeader}
+          {content}
+        </div>
+        
+        {/* Validation Panel anchored at bottom */}
+        <div className="shrink-0 border-t border-[#E7E9EB] pt-3 bg-white">
+          {validationPanel}
+        </div>
+
         <FontChangeModal
           isOpen={isFontModalOpen}
           pendingFont={pendingFont}
