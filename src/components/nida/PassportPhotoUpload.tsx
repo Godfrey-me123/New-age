@@ -169,7 +169,7 @@ export const PassportPhotoUpload: React.FC<PassportPhotoUploadProps> = ({
                 className="mt-4 px-4 py-2 bg-[#101010] hover:bg-[#252525] text-white text-xs font-bold rounded-xl transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
               >
                 <ImageIcon className="w-4 h-4 text-white" />
-                <span>Choose Image File</span>
+                <span>Choose</span>
               </button>
             </div>
           </div>

@@ -440,7 +440,7 @@ export const Toolbar: React.FC = () => {
             title="NIDA Form"
           >
             <UserCheck className="w-3.5 h-3.5 text-[#000000] shrink-0" />
-            <span className="text-xs whitespace-nowrap">NIDA Form</span>
+            <span className="text-xs whitespace-nowrap">NIDA</span>
           </button>
 
           {/* Templates Button */}
@@ -531,7 +531,7 @@ export const Toolbar: React.FC = () => {
                     className="w-full p-2 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded-lg flex items-center gap-2 text-[#000000] font-bold cursor-pointer"
                   >
                     <Shield className="w-4 h-4 text-[#000000]" />
-                    <span>NIDA Auto-Fill Portal</span>
+                    <span>NIDA</span>
                   </button>
                 </div>
 
@@ -545,7 +545,7 @@ export const Toolbar: React.FC = () => {
                     className="w-full p-2 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded-lg flex items-center gap-2 text-[#000000] font-bold cursor-pointer"
                   >
                     <FolderOpen className="w-4 h-4 text-[#000000]" />
-                    <span>Open Saved Templates</span>
+                    <span>Templates</span>
                   </button>
                 </div>
 

@@ -75,7 +75,7 @@ export const HomeScreen: React.FC = () => {
         status: 'active',
         badgeText: 'Active • Auto-Fill Ready',
         action: () => setActiveScreen('nida'),
-        primaryActionLabel: 'Open NIDA Form',
+        primaryActionLabel: 'Open',
         features: ['20-Digit ID Verification', 'Biometric Photo Cropping', 'Digital Signature Pad', 'Barcode Sync'],
       },
       {
@@ -414,7 +414,7 @@ export const HomeScreen: React.FC = () => {
               }}
               className="px-5 py-2.5 bg-[#101010] hover:bg-[#222222] text-xs font-bold text-white rounded-2xl cursor-pointer shadow-sm"
             >
-              Reset Filters
+              Reset
             </button>
           </div>
         ) : (
@@ -494,7 +494,7 @@ export const HomeScreen: React.FC = () => {
                   {/* Circular Action Arrow Button */}
                   <div className="mt-4 pt-3 border-t border-black/10 flex items-center justify-between">
                     <span className="text-xs font-extrabold text-[#101010]">
-                      {isActive ? (service.primaryActionLabel || 'Open Service') : 'Learn More'}
+                      {isActive ? (service.primaryActionLabel || 'Open') : 'Info'}
                     </span>
 
                     <button

@@ -510,7 +510,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               }`}
             >
               <Upload className="w-3.5 h-3.5" />
-              <span>Upload File</span>
+              <span>Upload</span>
             </button>
           </div>
         </div>
@@ -605,7 +605,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                   ) : (
                     <>
                       <Save className="w-3.5 h-3.5 text-white" />
-                      <span>Save Signature</span>
+                      <span>Save</span>
                     </>
                   )}
                 </button>
@@ -709,7 +709,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                   className="w-full py-2.5 px-4 bg-[#101010] hover:bg-[#252525] border border-[#101010] rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px] shadow-sm"
                 >
                   <Upload className="w-3.5 h-3.5 text-white" />
-                  <span>Browse Signature File</span>
+                  <span>Browse</span>
                 </button>
               </div>
             )}

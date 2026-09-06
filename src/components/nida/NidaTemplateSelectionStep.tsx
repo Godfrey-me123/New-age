@@ -189,7 +189,7 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
           title="Save this Front + Back pair as your permanent universal default"
         >
           <Star className={`w-3.5 h-3.5 ${isUniversalDefault ? 'fill-emerald-700 text-emerald-700' : 'text-[#FF6839]'}`} />
-          <span>{isUniversalDefault ? 'Universal Default Active' : 'Set as Universal Default'}</span>
+          <span>Default</span>
         </button>
       </div>
 
@@ -262,7 +262,7 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
               className="flex-1 px-3 py-2 rounded-xl bg-[#101010] hover:bg-[#252525] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <FolderOpen className="w-3.5 h-3.5 text-white" />
-              <span>{frontTemplate ? 'Change Front Template' : 'Select Front Template'}</span>
+              <span>Front</span>
             </button>
           </div>
         </div>
@@ -325,7 +325,7 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
               className="flex-1 px-3 py-2 rounded-xl bg-[#101010] hover:bg-[#252525] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <FolderOpen className="w-3.5 h-3.5 text-white" />
-              <span>{backTemplate ? 'Change Back Template' : 'Select Back Template'}</span>
+              <span>Back</span>
             </button>
           </div>
         </div>
@@ -341,7 +341,7 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
             className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-white hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
             <Plus className="w-3.5 h-3.5 text-[#101010]" />
-            <span>+ Create New Template</span>
+            <span>Create</span>
           </button>
           <button
             type="button"
@@ -349,7 +349,7 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
             className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-white hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
             <FolderOpen className="w-3.5 h-3.5 text-[#101010]" />
-            <span>Manage Library</span>
+            <span>Library</span>
           </button>
         </div>
 
@@ -364,7 +364,7 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
               : 'bg-[#C8C2BE] text-[#101010]/50 cursor-not-allowed border border-[#C8C2BE]'
           }`}
         >
-          <span>Continue to NIDA Filling Form</span>
+          <span>Continue</span>
           <ArrowRight className="w-4 h-4 text-white" />
         </button>
       </div>

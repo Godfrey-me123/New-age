@@ -601,7 +601,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                 className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-[#101010] hover:bg-[#252525] text-white border border-[#101010] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
               >
                 <FolderOpen className="w-3.5 h-3.5 text-white" />
-                <span>Change Templates</span>
+                <span>Templates</span>
               </button>
             </div>
 
@@ -828,11 +828,11 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      <span>Processing NIDA Workflow...</span>
+                      <span>Processing...</span>
                     </>
                   ) : (
                     <>
-                      <span>Auto-Fill & Populate Templates</span>
+                      <span>Populate</span>
                       <ArrowRight className={`w-4 h-4 transition-transform ${canContinue ? 'group-hover:translate-x-1' : ''}`} />
                     </>
                   )}
