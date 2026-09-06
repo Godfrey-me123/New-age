@@ -7,6 +7,7 @@ interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement>
   error?: string | null;
   warning?: string | null;
   success?: boolean;
+  successMessage?: string | null;
   helperText?: string;
   badge?: React.ReactNode;
 }
@@ -17,6 +18,7 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
   error,
   warning,
   success,
+  successMessage,
   helperText,
   badge,
   value,
@@ -110,14 +112,28 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
         {badge && <div className="pr-3.5 flex items-center">{badge}</div>}
       </div>
 
-      {/* Error or validation message (PROMPT 27: Error-only validation) */}
-      {error && (
+      {/* Validation or helper message rendered OUTSIDE the input field */}
+      {error ? (
         <div className="flex items-center justify-between px-1 text-xs">
           <p className="text-rose-400 font-medium text-[11px] flex items-center gap-1">
-            <span>•</span> {error}
+            <span className="font-bold">•</span> {error}
           </p>
         </div>
-      )}
+      ) : warning ? (
+        <div className="flex items-center justify-between px-1 text-xs">
+          <p className="text-[#FF8F00] font-medium text-[11px] flex items-center gap-1">
+            <span className="font-bold">•</span> {warning}
+          </p>
+        </div>
+      ) : success && successMessage ? (
+        <div className="flex items-center justify-between px-1 text-xs">
+          <p className="text-emerald-400 font-medium text-[11px] flex items-center gap-1">
+            <span className="font-bold">•</span> {successMessage}
+          </p>
+        </div>
+      ) : helperText ? (
+        <p className="px-1 text-[11px] text-[#7D8287]">{helperText}</p>
+      ) : null}
     </div>
   );
 };

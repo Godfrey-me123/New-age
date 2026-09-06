@@ -140,11 +140,15 @@ export function validateNidaNumber(input: string): NidaValidationResult {
 
   // Check complete length
   if (digitCount < 20) {
+    const warningMsg = dobWarning
+      ? `Incomplete NIDA number (${digitCount}/20 digits). Note: ${dobWarning}`
+      : `Incomplete NIDA number (${digitCount}/20 digits entered). Required pattern: YYYYMMDD-XXXXX-XXXXX-XX`;
+
     return {
       isValid: false,
       isComplete: false,
-      error: `Incomplete NIDA number (${digitCount}/20 digits entered)`,
-      warning: dobWarning,
+      error: null,
+      warning: warningMsg,
       digitCount,
       extractedDob,
       parts,
@@ -156,7 +160,7 @@ export function validateNidaNumber(input: string): NidaValidationResult {
     return {
       isValid: false,
       isComplete: true,
-      error: dobWarning,
+      error: `Invalid NIDA format: ${dobWarning}`,
       warning: null,
       digitCount: 20,
       parts,

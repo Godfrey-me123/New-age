@@ -641,33 +641,39 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                     </div>
                   </div>
 
-                  {/* NIDA Input Field with Real-time Formatting */}
+                  {/* NIDA Input Field with Real-time Auto-Formatting & Validation */}
                   <FloatingInput
                     label="NIDA Number (YYYYMMDD-XXXXX-XXXXX-XX)"
                     icon={Hash}
                     value={formData.nidaNumber}
                     onChange={handleNidaChange}
                     placeholder="19980301-54218-00002-27"
-                    maxLength={23} // 20 digits + 3 dashes
+                    maxLength={23} // 20 digits + 3 hyphens
                     autoComplete="off"
                     spellCheck={false}
-                    error={touched.nidaNumber && formData.nidaNumber.length > 0 && nidaValidation.error ? nidaValidation.error : undefined}
-                    warning={nidaValidation.warning}
+                    error={nidaValidation.error || undefined}
+                    warning={formData.nidaNumber.length > 0 && nidaValidation.warning ? nidaValidation.warning : undefined}
                     success={nidaValidation.isValid}
+                    successMessage={nidaValidation.isValid ? "Valid NIDA format (20/20 digits verified)" : undefined}
                     badge={
                       nidaValidation.isValid ? (
                         <div className="flex items-center gap-1 text-emerald-400 text-xs font-semibold px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Verified Format</span>
+                          <span>Valid Format</span>
                         </div>
-                      ) : formData.nidaNumber.length > 0 ? (
+                      ) : nidaValidation.warning ? (
                         <div className="flex items-center gap-1 text-[#FF8F00] text-xs font-semibold px-2 py-0.5 bg-[#FF8F00]/10 rounded-full border border-[#FF8F00]/20">
                           <AlertCircle className="w-3.5 h-3.5" />
-                          <span>Validating</span>
+                          <span>Incomplete</span>
+                        </div>
+                      ) : nidaValidation.error ? (
+                        <div className="flex items-center gap-1 text-rose-400 text-xs font-semibold px-2 py-0.5 bg-rose-500/10 rounded-full border border-rose-500/20">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          <span>Invalid Format</span>
                         </div>
                       ) : null
                     }
-                    helperText="Format: 8-digit birthdate, 5-digit district, 5-digit sequence, 2-digit check"
+                    helperText="Required pattern: 8-digit birthdate (YYYYMMDD), 5-digit district, 5-digit sequence, 2-digit check"
                   />
 
                   {/* Visual Breakdown of Blocks */}
