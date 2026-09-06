@@ -97,10 +97,10 @@ export const ExportModal: React.FC = () => {
                 setExportModalOpen(false);
                 useTemplateStore.getState().setCardGeneratorOpen(true);
               }}
-              className="px-3 py-1.5 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>2-in-1 Merge</span>
+              <span>Merge</span>
             </button>
 
             <button
@@ -279,99 +279,113 @@ export const ExportModal: React.FC = () => {
           {/* Export Options Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* 1. Mandatory JSON Template */}
-            <button
-              onClick={() => downloadJSON(currentTemplate)}
-              className="p-4 rounded-xl bg-[#FFFFFF] hover:bg-[#E7E9EB]/50 border border-[#E7E9EB] hover:border-[#000000] text-left transition-all group flex flex-col justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <FileJson className="w-5 h-5 text-[#000000]" />
-                <span className="font-bold text-sm text-[#000000]">
-                  JSON Template
-                </span>
+            <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] text-left transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <FileJson className="w-4 h-4 text-[#000000]" />
+                  <span className="font-bold text-xs text-[#000000]">JSON Template</span>
+                </div>
+                <p className="text-[11px] text-[#555555] mb-3 font-medium">
+                  Reusable JSON schema with millimeter measurements and layer hierarchy.
+                </p>
               </div>
-              <p className="text-xs text-[#555555] mb-2 font-medium">
-                Reusable JSON schema with millimeter measurements and layer hierarchy.
-              </p>
-              <span className="text-[11px] font-bold text-[#000000]">Download JSON →</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => downloadJSON(currentTemplate)}
+                className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
+              >
+                JSON
+              </button>
+            </div>
 
             {/* 2. Print-Ready PDF */}
-            <button
-              onClick={() => {
-                const formData = useTemplateStore.getState().lastNidaFormData || {};
-                downloadPDF(currentTemplate, formData, undefined, cropPayload);
-              }}
-              className="p-4 rounded-xl bg-[#FFFFFF] hover:bg-[#E7E9EB]/50 border border-[#E7E9EB] hover:border-[#000000] text-left transition-all group flex flex-col justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Printer className="w-5 h-5 text-[#000000]" />
-                <span className="font-bold text-sm text-[#000000]">
-                  Print PDF
-                </span>
+            <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] text-left transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Printer className="w-4 h-4 text-[#000000]" />
+                  <span className="font-bold text-xs text-[#000000]">Print PDF</span>
+                </div>
+                <p className="text-[11px] text-[#555555] mb-3 font-medium">
+                  High-precision PDF set to physical card dimensions ({crop.width.toFixed(1)} × {crop.height.toFixed(1)} mm).
+                </p>
               </div>
-              <p className="text-xs text-[#555555] mb-2 font-medium">
-                High-precision PDF set to physical card dimensions ({crop.width.toFixed(1)} ×{' '}
-                {crop.height.toFixed(1)} mm).
-              </p>
-              <span className="text-[11px] font-bold text-[#000000]">Download PDF →</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const formData = useTemplateStore.getState().lastNidaFormData || {};
+                  downloadPDF(currentTemplate, formData, undefined, cropPayload);
+                }}
+                className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
+              >
+                PDF
+              </button>
+            </div>
 
             {/* 3. High-Res PNG */}
-            <button
-              onClick={() => {
-                const formData = useTemplateStore.getState().lastNidaFormData || {};
-                downloadPNG(currentTemplate, formData, undefined, cropPayload);
-              }}
-              className="p-4 rounded-xl bg-[#FFFFFF] hover:bg-[#E7E9EB]/50 border border-[#E7E9EB] hover:border-[#000000] text-left transition-all group flex flex-col justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <FileImage className="w-5 h-5 text-[#000000]" />
-                <span className="font-bold text-sm text-[#000000]">
-                  PNG Image
-                </span>
+            <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] text-left transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <FileImage className="w-4 h-4 text-[#000000]" />
+                  <span className="font-bold text-xs text-[#000000]">PNG Image</span>
+                </div>
+                <p className="text-[11px] text-[#555555] mb-3 font-medium">
+                  300 DPI high-resolution PNG with alpha transparency.
+                </p>
               </div>
-              <p className="text-xs text-[#555555] mb-2 font-medium">
-                300 DPI high-resolution PNG with alpha transparency.
-              </p>
-              <span className="text-[11px] font-bold text-[#000000]">Download PNG →</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const formData = useTemplateStore.getState().lastNidaFormData || {};
+                  downloadPNG(currentTemplate, formData, undefined, cropPayload);
+                }}
+                className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
+              >
+                PNG
+              </button>
+            </div>
 
             {/* 4. High-Res JPG */}
-            <button
-              onClick={() => {
-                const formData = useTemplateStore.getState().lastNidaFormData || {};
-                downloadJPG(currentTemplate, formData, undefined, cropPayload);
-              }}
-              className="p-4 rounded-xl bg-[#FFFFFF] hover:bg-[#E7E9EB]/50 border border-[#E7E9EB] hover:border-[#000000] text-left transition-all group flex flex-col justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <FileImage className="w-5 h-5 text-[#000000]" />
-                <span className="font-bold text-sm text-[#000000]">
-                  JPG Image
-                </span>
+            <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] text-left transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <FileImage className="w-4 h-4 text-[#000000]" />
+                  <span className="font-bold text-xs text-[#000000]">JPG Image</span>
+                </div>
+                <p className="text-[11px] text-[#555555] mb-3 font-medium">
+                  Compressed 300 DPI JPG image for general printing.
+                </p>
               </div>
-              <p className="text-xs text-[#555555] mb-2 font-medium">
-                Compressed 300 DPI JPG image for general printing.
-              </p>
-              <span className="text-[11px] font-bold text-[#000000]">Download JPG →</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const formData = useTemplateStore.getState().lastNidaFormData || {};
+                  downloadJPG(currentTemplate, formData, undefined, cropPayload);
+                }}
+                className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
+              >
+                JPG
+              </button>
+            </div>
 
             {/* 5. Vector SVG */}
-            <button
-              onClick={() => downloadSVG(currentTemplate)}
-              className="p-4 rounded-xl bg-[#FFFFFF] hover:bg-[#E7E9EB]/50 border border-[#E7E9EB] hover:border-[#000000] text-left transition-all group flex flex-col justify-between col-span-full cursor-pointer"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <FileCode className="w-5 h-5 text-[#000000]" />
-                <span className="font-bold text-sm text-[#000000]">
-                  Vector SVG
-                </span>
+            <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] text-left transition-all flex flex-col justify-between col-span-full">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <FileCode className="w-4 h-4 text-[#000000]" />
+                  <span className="font-bold text-xs text-[#000000]">Vector SVG</span>
+                </div>
+                <p className="text-[11px] text-[#555555] mb-3 font-medium">
+                  Scalable Vector Graphics for resolution-independent editing.
+                </p>
               </div>
-              <p className="text-xs text-[#555555] mb-2 font-medium">
-                Scalable Vector Graphics for resolution-independent editing.
-              </p>
-              <span className="text-[11px] font-bold text-[#000000]">Download SVG →</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => downloadSVG(currentTemplate)}
+                className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
+              >
+                SVG
+              </button>
+            </div>
           </div>
         </div>
       </div>

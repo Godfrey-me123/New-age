@@ -437,20 +437,20 @@ export const Toolbar: React.FC = () => {
           <button
             onClick={() => setActiveScreen('nida')}
             className="h-8 px-2.5 bg-[#CEE9E9] hover:bg-[#b8dede] border border-[#a1d3d3] text-[#000000] text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer shadow-xs"
-            title="NIDA Auto-Fill Form & Template Mapping"
+            title="NIDA Form"
           >
             <UserCheck className="w-3.5 h-3.5 text-[#000000] shrink-0" />
-            <span className="text-[11px] sm:text-xs">NIDA Auto-Fill</span>
+            <span className="text-xs whitespace-nowrap">NIDA Form</span>
           </button>
 
           {/* Templates Button */}
           <button
             onClick={() => setActiveScreen('templates')}
             className="hidden sm:flex px-2 py-1.5 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-[#000000] text-xs font-bold rounded-lg transition-colors items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
-            title="Open Saved Templates"
+            title="Templates"
           >
             <FolderOpen className="w-3.5 h-3.5 text-[#000000] shrink-0" />
-            <span className="hidden lg:inline">My Templates</span>
+            <span className="text-xs whitespace-nowrap">Templates</span>
           </button>
 
           {/* Save Button */}
@@ -461,30 +461,30 @@ export const Toolbar: React.FC = () => {
                 ? 'bg-[#CEE9B9] border-[#b8df9c] text-[#000000]'
                 : 'bg-[#E7E9EB] hover:bg-[#dadcdc] border-[#dadcdc] text-[#000000]'
             }`}
-            title="Save Template"
+            title="Save"
           >
             <Save className="w-3.5 h-3.5 text-[#000000] shrink-0" />
-            <span className="text-[11px] sm:text-xs">{isSavedNotice ? 'Saved!' : 'Save'}</span>
+            <span className="text-xs whitespace-nowrap">{isSavedNotice ? 'Saved' : 'Save'}</span>
           </button>
 
           {/* Generate Button */}
           <button
             onClick={() => setCardGeneratorOpen(true)}
             className="h-8 px-2.5 sm:px-3 bg-[#ECA6FC] hover:bg-[#e48efa] border border-[#dd76f8] text-[#000000] text-xs font-bold rounded-lg shadow-xs transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
-            title="Generate Cards from CSV / Records"
+            title="Generate"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[11px] sm:text-xs">Generate</span>
+            <span className="text-xs whitespace-nowrap">Generate</span>
           </button>
 
           {/* Export Button */}
           <button
             onClick={() => setExportModalOpen(true)}
             className="h-8 px-2.5 sm:px-3 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg shadow-xs transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
-            title="Export Card as High-Res Image or Print PDF"
+            title="Export"
           >
             <Download className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[11px] sm:text-xs">Export</span>
+            <span className="text-xs whitespace-nowrap">Export</span>
           </button>
 
         {/* More Tools (Mobile & Small Screens) */}

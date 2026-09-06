@@ -457,24 +457,24 @@ export const CardGeneratorModal: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => downloadPNG(currentTemplate, formData)}
-                    className="py-2.5 px-3 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    className="py-2.5 px-3 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
                   >
                     <Download className="w-3.5 h-3.5 text-[#000000]" />
                     <span>PNG</span>
                   </button>
                   <button
                     onClick={() => downloadJPG(currentTemplate, formData)}
-                    className="py-2.5 px-3 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    className="py-2.5 px-3 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
                   >
                     <Download className="w-3.5 h-3.5 text-[#000000]" />
                     <span>JPG</span>
                   </button>
                   <button
                     onClick={() => downloadPDF(currentTemplate, formData)}
-                    className="py-2.5 px-3 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    className="py-2.5 px-3 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
                   >
                     <Printer className="w-3.5 h-3.5" />
-                    <span>Print PDF</span>
+                    <span>PDF</span>
                   </button>
                 </div>
               ) : (
@@ -482,10 +482,10 @@ export const CardGeneratorModal: React.FC = () => {
                   onClick={() =>
                     download2In1PDF(selectedFrontTemplate, selectedBackTemplate, formData)
                   }
-                  className="w-full py-3 px-4 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                  className="w-full py-3 px-4 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer whitespace-nowrap"
                 >
                   <Printer className="w-4 h-4" />
-                  <span>Export 2-in-1 Print PDF</span>
+                  <span>PDF</span>
                 </button>
               )}
             </div>

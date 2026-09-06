@@ -286,23 +286,22 @@ export const HomeScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveScreen('upload')}
-            className="hidden md:flex items-center gap-1.5 px-3.5 py-2 bg-[#E7E2DE] hover:bg-[#dad5d0] border border-[#dad5d0] text-xs font-bold text-[#101010] rounded-2xl transition-all shadow-xs cursor-pointer"
-            title="Upload custom card background or open blank canvas"
+            className="hidden md:flex items-center gap-1.5 px-3.5 py-2 bg-[#E7E2DE] hover:bg-[#dad5d0] border border-[#dad5d0] text-xs font-bold text-[#101010] rounded-2xl transition-all shadow-xs cursor-pointer whitespace-nowrap"
+            title="Card Studio"
           >
             <CreditCard className="w-3.5 h-3.5 text-[#101010]" />
-            <span>Card Studio</span>
+            <span>Studio</span>
           </button>
 
           {/* Saved Templates Button */}
           <button
             type="button"
             onClick={() => setActiveScreen('templates')}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#101010] hover:bg-[#222222] text-white rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-md group cursor-pointer"
-            title="Browse Saved and Built-in Card Templates"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#101010] hover:bg-[#222222] text-white rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-md group cursor-pointer whitespace-nowrap"
+            title="Templates"
           >
             <FolderOpen className="w-4 h-4 text-[#B5A5FF] group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline">Templates Library</span>
-            <span className="sm:hidden">Templates</span>
+            <span>Templates</span>
             {savedCount > 0 && (
               <span className="px-2 py-0.5 rounded-full bg-[#B5A5FF] text-[#101010] text-[10px] font-extrabold">
                 {savedCount}
