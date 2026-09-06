@@ -109,7 +109,11 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
   } = useTemplateStore();
 
   // Step state: 'templates' (Template Selection) | 'form' (Filling Form)
-  const [currentNidaStep, setCurrentNidaStep] = useState<'templates' | 'form'>('templates');
+  const [currentNidaStep, setCurrentNidaStep] = useState<'templates' | 'form'>(() => {
+    const frontId = typeof window !== 'undefined' ? localStorage.getItem('nida_default_front_template_id') : null;
+    const backId = typeof window !== 'undefined' ? localStorage.getItem('nida_default_back_template_id') : null;
+    return (frontId && backId) ? 'form' : 'templates';
+  });
 
   const [formData, setFormData] = useState<NidaFormData>(() => ({
     firstName: lastNidaFormData?.firstName || '',

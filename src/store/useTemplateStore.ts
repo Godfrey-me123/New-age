@@ -13,7 +13,7 @@ import {
 } from '../types';
 import { CR80_WIDTH_MM, CR80_HEIGHT_MM } from '../utils/units';
 import { SAMPLE_TEMPLATES } from '../utils/sampleTemplates';
-import { ensureTemplateFieldIds } from '../utils/templateMappingEngine';
+import { ensureTemplateFieldIds, sanitizeTemplateForSaving } from '../utils/templateMappingEngine';
 import { getClosestValidWeight } from '../utils/fonts';
 import {
   saveTemplateDB,
@@ -182,21 +182,21 @@ const DEFAULT_TEMPLATE: CardTemplate = {
 export const useTemplateStore = create<TemplateState>((set, get) => {
   const savedDefaultFrontId =
     typeof window !== 'undefined'
-      ? localStorage.getItem('nida_default_front_template_id') || 'sample_tanzania_nida'
-      : 'sample_tanzania_nida';
+      ? localStorage.getItem('nida_default_front_template_id')
+      : null;
   const savedDefaultBackId =
     typeof window !== 'undefined'
-      ? localStorage.getItem('nida_default_back_template_id') || 'sample_tanzania_nida_back'
-      : 'sample_tanzania_nida_back';
+      ? localStorage.getItem('nida_default_back_template_id')
+      : null;
 
   const savedSelectedFrontId =
     typeof window !== 'undefined'
-      ? localStorage.getItem('nida_selected_front_template_id') || savedDefaultFrontId
-      : savedDefaultFrontId;
+      ? localStorage.getItem('nida_selected_front_template_id') || savedDefaultFrontId || 'sample_tanzania_nida'
+      : savedDefaultFrontId || 'sample_tanzania_nida';
   const savedSelectedBackId =
     typeof window !== 'undefined'
-      ? localStorage.getItem('nida_selected_back_template_id') || savedDefaultBackId
-      : savedDefaultBackId;
+      ? localStorage.getItem('nida_selected_back_template_id') || savedDefaultBackId || 'sample_tanzania_nida_back'
+      : savedDefaultBackId || 'sample_tanzania_nida_back';
 
   return {
     activeScreen: 'home',
@@ -811,13 +811,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
   saveCurrentTemplate: async () => {
     const template = get().currentTemplate;
-    await saveTemplateDB(template);
+    const sanitized = sanitizeTemplateForSaving(template);
+    await saveTemplateDB(sanitized);
   },
 
   saveAsNewTemplate: async (newName: string, cardType?: any, side?: any) => {
     const current = get().currentTemplate;
+    const sanitizedCurrent = sanitizeTemplateForSaving(current);
     const newTpl: CardTemplate = {
-      ...JSON.parse(JSON.stringify(current)),
+      ...JSON.parse(JSON.stringify(sanitizedCurrent)),
       id: 'template_' + Date.now(),
       templateName: newName,
       cardType: cardType || current.cardType || 'National ID',
@@ -845,7 +847,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       await saveTemplateDB(sanitized);
     }
 
-    return Array.from(map.values());
+    const all = Array.from(map.values());
+    return all.sort((a, b) => {
+      const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime() || 0;
+      const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime() || 0;
+      return timeB - timeA;
+    });
   },
 
   deleteSavedTemplate: async (id) => {

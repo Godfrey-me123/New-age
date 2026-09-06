@@ -626,3 +626,93 @@ export function isGenderLabelLayer(layer: Layer): boolean {
 export function isGenderValueLayer(layer: Layer, allLayers: Layer[] = []): boolean {
   return getLayerBinding(layer, allLayers) === 'GENDER';
 }
+
+/**
+ * Strips any personal/cardholder data from template layers and replaces them with standard temporary placeholder tokens.
+ * Separation of Template Structure and Cardholder data is strictly enforced.
+ */
+export function sanitizeTemplateForSaving(template: CardTemplate): CardTemplate {
+  if (!template || !Array.isArray(template.layers)) return template;
+
+  const sanitizedLayers = template.layers.map((layer) => {
+    const binding = getLayerBinding(layer, template.layers);
+    if (!binding) return { ...layer };
+
+    if (layer.type === 'text') {
+      const textLayer = layer as TextLayer;
+      let placeholderText = textLayer.text || '';
+
+      switch (binding) {
+        case 'FIRST_NAME':
+          placeholderText = '{{first_name}}';
+          break;
+        case 'MIDDLE_NAME':
+          placeholderText = '{{middle_name}}';
+          break;
+        case 'LAST_NAME':
+          placeholderText = '{{last_name}}';
+          break;
+        case 'DOB':
+          placeholderText = '{{dob}}';
+          break;
+        case 'GENDER':
+          placeholderText = '{{gender}}';
+          break;
+        case 'NIDA_NUMBER':
+          placeholderText = '{{nida_number}}';
+          break;
+      }
+
+      return {
+        ...textLayer,
+        text: placeholderText,
+      };
+    }
+
+    if (binding === 'PHOTO') {
+      if (layer.type === 'image' || layer.type === 'placeholder') {
+        const imgLayer = layer as any;
+        return {
+          ...imgLayer,
+          type: 'placeholder',
+          placeholderKey: 'photo',
+          placeholderType: 'photo',
+          label: 'Cardholder Photograph',
+          src: undefined,
+        } as any;
+      }
+    }
+
+    if (binding === 'SIGNATURE') {
+      if (layer.type === 'image' || layer.type === 'placeholder') {
+        const imgLayer = layer as any;
+        return {
+          ...imgLayer,
+          type: 'placeholder',
+          placeholderKey: 'signature',
+          placeholderType: 'signature',
+          label: 'Cardholder Signature',
+          src: undefined,
+        } as any;
+      }
+    }
+
+    if (layer.type === 'barcode' && binding === 'NIDA_NUMBER') {
+      const b = layer as BarcodeLayer;
+      return { ...b, data: '12345678901234567890' };
+    }
+
+    if (layer.type === 'qrcode' && binding === 'NIDA_NUMBER') {
+      const q = layer as QRCodeLayer;
+      return { ...q, data: '12345678901234567890' };
+    }
+
+    return { ...layer };
+  });
+
+  return {
+    ...template,
+    layers: sanitizedLayers,
+    updatedAt: new Date().toISOString(),
+  };
+}

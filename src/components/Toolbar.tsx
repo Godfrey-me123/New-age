@@ -68,6 +68,7 @@ export const Toolbar: React.FC = () => {
   } | null>(null);
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+  const [showSaveDropdown, setShowSaveDropdown] = useState(false);
   const [showSnapDropdown, setShowSnapDropdown] = useState(false);
   const [showGridDropdown, setShowGridDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -454,18 +455,64 @@ export const Toolbar: React.FC = () => {
           </button>
 
           {/* Save Button */}
-          <button
-            onClick={handleSave}
-            className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
-              isSavedNotice
-                ? 'bg-[#CEE9B9] border-[#b8df9c] text-[#000000]'
-                : 'bg-[#E7E9EB] hover:bg-[#dadcdc] border-[#dadcdc] text-[#000000]'
-            }`}
-            title="Save"
-          >
-            <Save className="w-3.5 h-3.5 text-[#000000] shrink-0" />
-            <span className="text-xs whitespace-nowrap">{isSavedNotice ? 'Saved' : 'Save'}</span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowSaveDropdown(!showSaveDropdown)}
+              className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
+                isSavedNotice
+                  ? 'bg-[#CEE9B9] border-[#b8df9c] text-[#000000]'
+                  : 'bg-[#E7E9EB] hover:bg-[#dadcdc] border-[#dadcdc] text-[#000000]'
+              }`}
+              title="Save"
+            >
+              <Save className="w-3.5 h-3.5 text-[#000000] shrink-0" />
+              <span className="text-xs whitespace-nowrap">{isSavedNotice ? 'Saved' : 'Save'}</span>
+              <ChevronDown className="w-3 h-3 text-[#000000]/60 shrink-0" />
+            </button>
+
+            {showSaveDropdown && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowSaveDropdown(false)}
+                />
+                <div className="absolute right-0 mt-1.5 w-56 bg-white border border-[#dadcdc] rounded-xl shadow-lg p-1.5 z-50 text-xs space-y-0.5 animate-in fade-in slide-in-from-top-1">
+                  <button
+                    onClick={async () => {
+                      updateTemplateMeta({ side: 'Front Side' });
+                      // Allow state update to settle before saving
+                      setTimeout(async () => {
+                        await saveCurrentTemplate();
+                        setIsSavedNotice(true);
+                        setShowSaveDropdown(false);
+                        setTimeout(() => setIsSavedNotice(false), 2000);
+                      }, 50);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-[#E7E9EB] rounded-lg text-[#000000] font-bold transition-colors cursor-pointer flex items-center justify-between"
+                  >
+                    <span>Save as Front Template</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#CEE9B9] text-[#000000] border border-[#b8df9d]">FRONT</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      updateTemplateMeta({ side: 'Back Side' });
+                      // Allow state update to settle before saving
+                      setTimeout(async () => {
+                        await saveCurrentTemplate();
+                        setIsSavedNotice(true);
+                        setShowSaveDropdown(false);
+                        setTimeout(() => setIsSavedNotice(false), 2000);
+                      }, 50);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-[#E7E9EB] rounded-lg text-[#000000] font-bold transition-colors cursor-pointer flex items-center justify-between"
+                  >
+                    <span>Save as Back Template</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#ECA6FC] text-[#000000] border border-[#dd76f8]">BACK</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Generate Button */}
           <button
