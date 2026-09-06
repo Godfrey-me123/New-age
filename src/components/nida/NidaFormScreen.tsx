@@ -472,45 +472,39 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
   };
 
   return (
-    <div className="min-h-screen bg-[#050608] text-[#FFFFFF] flex flex-col items-center justify-start p-3 sm:p-6 lg:p-10 font-sans selection:bg-[#47A5FF]/30 selection:text-[#FFFFFF] overflow-y-auto">
-      {/* Background Ambient Glow */}
-      <div className="fixed inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
-        <div className="w-[500px] h-[500px] bg-[#47A5FF]/5 rounded-full blur-[140px] -top-20 -left-20" />
-        <div className="w-[450px] h-[450px] bg-[#FF8F00]/5 rounded-full blur-[130px] -bottom-20 -right-20" />
-      </div>
-
+    <div className="min-h-screen bg-[#D8D2CE] text-[#101010] flex flex-col items-center justify-start p-3 sm:p-6 lg:p-10 font-sans overflow-y-auto">
       {/* Main Container Card */}
-      <div className="relative w-full max-w-2xl bg-gradient-to-b from-[#111317] to-[#090A0D] border border-[#4C5055]/50 rounded-2xl sm:rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] p-5 sm:p-8 lg:p-9 my-2 sm:my-4 backdrop-blur-xl transition-all">
+      <div className="relative w-full max-w-2xl bg-[#E7E2DE] border border-[#C8C2BE] rounded-2xl sm:rounded-3xl shadow-xl p-5 sm:p-8 lg:p-9 my-2 sm:my-4 transition-all">
         
         {/* Header with Authority Aesthetic & Navigation */}
-        <div className="flex items-start justify-between border-b border-[#4C5055]/40 pb-5 mb-5 gap-2">
+        <div className="flex items-start justify-between border-b border-[#C8C2BE] pb-5 mb-5 gap-2">
           <div className="flex items-center gap-3">
             {/* Top-Left Services Menu Button */}
             <button
               type="button"
               onClick={() => setIsMenuDrawerOpen(true)}
-              className="p-2 rounded-xl bg-[#1C1F22] hover:bg-[#282C31] text-slate-300 hover:text-white border border-[#4C5055]/70 transition-colors flex items-center justify-center cursor-pointer shrink-0"
+              className="p-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] transition-colors flex items-center justify-center cursor-pointer shrink-0 shadow-xs"
               title="Open Services Menu"
               aria-label="Open Services Navigation Menu"
             >
-              <Menu className="w-4 h-4 text-[#47A5FF]" />
+              <Menu className="w-4 h-4 text-[#101010]" />
             </button>
 
             {/* Authority Icon */}
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#47A5FF]/20 to-[#47A5FF]/5 border border-[#47A5FF]/30 flex items-center justify-center shadow-[0_0_20px_rgba(71,165,255,0.15)] shrink-0">
-              <ShieldCheck className="w-6 h-6 text-[#47A5FF]" />
+            <div className="w-11 h-11 rounded-2xl bg-[#101010] text-[#FFFFFF] flex items-center justify-center shadow-md shrink-0">
+              <ShieldCheck className="w-6 h-6 text-[#FFFFFF]" />
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#FFFFFF]">
+                <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#101010]">
                   National ID Auto-Fill
                 </h1>
-                <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#FF8F00]/15 text-[#FF8F00] border border-[#FF8F00]/30">
+                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#B5A5FF] text-[#101010] border border-[#101010]/20">
                   NIDA Portal
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-[#A0A4A8] mt-0.5">
+              <p className="text-[11px] sm:text-xs text-[#101010]/70 mt-0.5 font-medium">
                 Standardized Identification & Automated Card Population
               </p>
             </div>
@@ -521,10 +515,10 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
             <button
               type="button"
               onClick={() => setActiveScreen('home')}
-              className="text-xs text-[#A0A4A8] hover:text-[#FFFFFF] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-[#4C5055]/60 flex items-center gap-1.5 cursor-pointer"
+              className="text-xs text-[#101010] hover:bg-[#FFFFFF] transition-colors px-3 py-1.5 rounded-xl border border-[#C8C2BE] bg-[#FFFFFF]/60 flex items-center gap-1.5 cursor-pointer font-semibold shadow-xs"
               title="Return to Services Home"
             >
-              <Home className="w-3.5 h-3.5 text-[#47A5FF]" />
+              <Home className="w-3.5 h-3.5 text-[#101010]" />
               <span className="hidden sm:inline">Home</span>
             </button>
 
@@ -532,7 +526,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               <button
                 type="button"
                 onClick={onCancel}
-                className="text-xs text-[#A0A4A8] hover:text-[#FFFFFF] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1 cursor-pointer"
+                className="text-xs text-[#101010] hover:bg-[#FFFFFF] transition-colors px-3 py-1.5 rounded-xl border border-[#C8C2BE] flex items-center gap-1 cursor-pointer font-semibold"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back</span>
@@ -553,18 +547,18 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
           /* STEP 2: FILLING FORM FIELDS (WITH ACTIVE TEMPLATE BANNER) */
           <div className="space-y-6">
             {/* Active Template Pair Status Banner */}
-            <div className="p-3.5 rounded-2xl bg-[#000000]/70 border border-[#4C5055]/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="p-3.5 rounded-2xl bg-[#FFFFFF] border border-[#C8C2BE] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="flex -space-x-2 shrink-0">
                   {frontThumbMini ? (
                     <img
                       src={frontThumbMini}
                       alt="Front"
-                      className="w-10 h-6 rounded-md object-cover border border-[#47A5FF]/60 bg-black"
+                      className="w-10 h-6 rounded-md object-cover border border-[#101010] bg-[#FFFFFF]"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <div className="w-10 h-6 rounded-md bg-[#47A5FF]/20 border border-[#47A5FF]/60 flex items-center justify-center text-[9px] font-bold text-[#47A5FF]">
+                    <div className="w-10 h-6 rounded-md bg-[#B5A5FF] border border-[#101010] flex items-center justify-center text-[9px] font-bold text-[#101010]">
                       FRONT
                     </div>
                   )}
@@ -572,11 +566,11 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                     <img
                       src={backThumbMini}
                       alt="Back"
-                      className="w-10 h-6 rounded-md object-cover border border-[#FF8F00]/60 bg-black"
+                      className="w-10 h-6 rounded-md object-cover border border-[#101010] bg-[#FFFFFF]"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <div className="w-10 h-6 rounded-md bg-[#FF8F00]/20 border border-[#FF8F00]/60 flex items-center justify-center text-[9px] font-bold text-[#FF8F00]">
+                    <div className="w-10 h-6 rounded-md bg-[#FF9A5A] border border-[#101010] flex items-center justify-center text-[9px] font-bold text-[#101010]">
                       BACK
                     </div>
                   )}
@@ -584,17 +578,17 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#A0A4A8]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#101010]/70">
                       Selected Card Templates:
                     </span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#47A5FF]/20 text-[#47A5FF] border border-[#47A5FF]/30">
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#B5A5FF] text-[#101010] border border-[#101010]/20">
                       Front: {resolvedFrontTpl?.templateName || 'Default NIDA Front'}
                     </span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#FF8F00]/20 text-[#FF8F00] border border-[#FF8F00]/30">
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#FF9A5A] text-[#101010] border border-[#101010]/20">
                       Back: {resolvedBackTpl?.templateName || 'Default NIDA Back'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#7D8287] truncate mt-0.5">
+                  <p className="text-[11px] text-[#101010]/70 truncate mt-0.5 font-medium">
                     Data entered below will auto-populate both templates simultaneously upon submission.
                   </p>
                 </div>
@@ -604,9 +598,9 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               <button
                 type="button"
                 onClick={() => setCurrentNidaStep('templates')}
-                className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-[#1C1F22] hover:bg-[#282C31] text-white border border-[#4C5055]/70 hover:border-[#47A5FF] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-[#101010] hover:bg-[#252525] text-white border border-[#101010] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
               >
-                <FolderOpen className="w-3.5 h-3.5 text-[#47A5FF]" />
+                <FolderOpen className="w-3.5 h-3.5 text-white" />
                 <span>Change Templates</span>
               </button>
             </div>
@@ -616,11 +610,11 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               
               {/* Section 1: NIDA Number (Primary Identifier) */}
               {enabledBindings.has('NIDA_NUMBER') && (
-                <div className="p-4 sm:p-5 bg-[#000000]/60 border border-[#4C5055]/60 rounded-2xl space-y-3.5 shadow-inner">
+                <div className="p-4 sm:p-5 bg-[#FFFFFF] border border-[#C8C2BE] rounded-2xl space-y-3.5 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#47A5FF] shadow-[0_0_8px_#47A5FF]" />
-                      <h2 className="text-xs font-bold uppercase tracking-wider text-[#FFFFFF]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#101010]" />
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-[#101010]">
                         Identity Document Number
                       </h2>
                     </div>
@@ -628,12 +622,12 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                     {/* Progress counter badge */}
                     <div className="flex items-center gap-1.5 text-[11px] font-mono">
                       <span
-                        className={`px-2 py-0.5 rounded-md border font-semibold ${
+                        className={`px-2 py-0.5 rounded-md border font-bold ${
                           nidaValidation.isValid
-                            ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
+                            ? 'bg-emerald-100 border-emerald-400 text-emerald-800'
                             : formData.nidaNumber.length > 0
-                            ? 'bg-[#FF8F00]/15 border-[#FF8F00]/40 text-[#FF8F00]'
-                            : 'bg-[#1C1F22] border-[#4C5055]/60 text-[#7D8287]'
+                            ? 'bg-amber-100 border-amber-400 text-amber-800'
+                            : 'bg-[#E7E2DE] border-[#C8C2BE] text-[#101010]/70'
                         }`}
                       >
                         {nidaValidation.digitCount}/20 Digits
@@ -641,13 +635,13 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                     </div>
                   </div>
 
-                  {/* NIDA Input Field with Real-time Auto-Formatting & Validation */}
+                  {/* NIDA Input Field with Real-time Auto-Formatting & Immediate Hint Hiding */}
                   <FloatingInput
                     label="NIDA Number (YYYYMMDD-XXXXX-XXXXX-XX)"
                     icon={Hash}
                     value={formData.nidaNumber}
                     onChange={handleNidaChange}
-                    placeholder="19980301-54218-00002-27"
+                    placeholder={formData.nidaNumber.length === 0 ? "19980301-54218-00002-27" : ""}
                     maxLength={23} // 20 digits + 3 hyphens
                     autoComplete="off"
                     spellCheck={false}
@@ -657,60 +651,62 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                     successMessage={nidaValidation.isValid ? "Valid NIDA format (20/20 digits verified)" : undefined}
                     badge={
                       nidaValidation.isValid ? (
-                        <div className="flex items-center gap-1 text-emerald-400 text-xs font-semibold px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                        <div className="flex items-center gap-1 text-emerald-700 text-xs font-bold px-2 py-0.5 bg-emerald-100 rounded-full border border-emerald-300">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Valid Format</span>
                         </div>
-                      ) : nidaValidation.warning ? (
-                        <div className="flex items-center gap-1 text-[#FF8F00] text-xs font-semibold px-2 py-0.5 bg-[#FF8F00]/10 rounded-full border border-[#FF8F00]/20">
+                      ) : nidaValidation.warning && formData.nidaNumber.length > 0 ? (
+                        <div className="flex items-center gap-1 text-amber-800 text-xs font-bold px-2 py-0.5 bg-amber-100 rounded-full border border-amber-300">
                           <AlertCircle className="w-3.5 h-3.5" />
                           <span>Incomplete</span>
                         </div>
                       ) : nidaValidation.error ? (
-                        <div className="flex items-center gap-1 text-rose-400 text-xs font-semibold px-2 py-0.5 bg-rose-500/10 rounded-full border border-rose-500/20">
+                        <div className="flex items-center gap-1 text-rose-700 text-xs font-bold px-2 py-0.5 bg-rose-100 rounded-full border border-rose-300">
                           <AlertCircle className="w-3.5 h-3.5" />
                           <span>Invalid Format</span>
                         </div>
                       ) : null
                     }
-                    helperText="Required pattern: 8-digit birthdate (YYYYMMDD), 5-digit district, 5-digit sequence, 2-digit check"
+                    helperText={formData.nidaNumber.length === 0 ? "Required pattern: 8-digit birthdate (YYYYMMDD), 5-digit district, 5-digit sequence, 2-digit check" : undefined}
                   />
 
-                  {/* Visual Breakdown of Blocks */}
-                  <div className="grid grid-cols-4 gap-1.5 pt-1 text-center font-mono text-[10px]">
-                    <div className="p-1.5 rounded-lg bg-[#111317] border border-[#4C5055]/30">
-                      <span className="block text-[#7D8287] text-[9px] uppercase">Birthdate</span>
-                      <span className="font-semibold text-[#47A5FF] truncate block">
-                        {nidaValidation.parts.dobBlock || 'YYYYMMDD'}
-                      </span>
+                  {/* Visual Breakdown of Blocks: HIDE COMPLETELY WHEN TYPING (if formData.nidaNumber.length > 0) */}
+                  {formData.nidaNumber.length === 0 && (
+                    <div className="grid grid-cols-4 gap-1.5 pt-1 text-center font-mono text-[10px]">
+                      <div className="p-1.5 rounded-lg bg-[#E7E2DE] border border-[#C8C2BE]">
+                        <span className="block text-[#101010]/60 text-[9px] uppercase font-bold">Birthdate</span>
+                        <span className="font-bold text-[#101010] truncate block">
+                          YYYYMMDD
+                        </span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-[#E7E2DE] border border-[#C8C2BE]">
+                        <span className="block text-[#101010]/60 text-[9px] uppercase font-bold">District</span>
+                        <span className="font-bold text-[#101010] truncate block">
+                          XXXXX
+                        </span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-[#E7E2DE] border border-[#C8C2BE]">
+                        <span className="block text-[#101010]/60 text-[9px] uppercase font-bold">Sequence</span>
+                        <span className="font-bold text-[#101010] truncate block">
+                          XXXXX
+                        </span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-[#E7E2DE] border border-[#C8C2BE]">
+                        <span className="block text-[#101010]/60 text-[9px] uppercase font-bold">Check Digits</span>
+                        <span className="font-bold text-[#101010] truncate block">
+                          XX
+                        </span>
+                      </div>
                     </div>
-                    <div className="p-1.5 rounded-lg bg-[#111317] border border-[#4C5055]/30">
-                      <span className="block text-[#7D8287] text-[9px] uppercase">District</span>
-                      <span className="font-semibold text-[#FFFFFF] truncate block">
-                        {nidaValidation.parts.centerBlock || 'XXXXX'}
-                      </span>
-                    </div>
-                    <div className="p-1.5 rounded-lg bg-[#111317] border border-[#4C5055]/30">
-                      <span className="block text-[#7D8287] text-[9px] uppercase">Sequence</span>
-                      <span className="font-semibold text-[#FFFFFF] truncate block">
-                        {nidaValidation.parts.sequenceBlock || 'XXXXX'}
-                      </span>
-                    </div>
-                    <div className="p-1.5 rounded-lg bg-[#111317] border border-[#4C5055]/30">
-                      <span className="block text-[#7D8287] text-[9px] uppercase">Check Digits</span>
-                      <span className="font-semibold text-[#FF8F00] truncate block">
-                        {nidaValidation.parts.checksumBlock || 'XX'}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
               {/* Section 2: Personal Identification Details */}
-              <div className="p-4 sm:p-5 bg-[#000000]/60 border border-[#4C5055]/60 rounded-2xl space-y-4 shadow-inner">
+              <div className="p-4 sm:p-5 bg-[#FFFFFF] border border-[#C8C2BE] rounded-2xl space-y-4 shadow-xs">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#FF8F00] shadow-[0_0_8px_#FF8F00]" />
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-[#FFFFFF]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#101010]" />
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-[#101010]">
                     Personal Identification Details
                   </h2>
                 </div>
@@ -809,10 +805,10 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               />
 
               {/* Security / System Notice */}
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#47A5FF]/5 border border-[#47A5FF]/20 text-xs">
-                <Lock className="w-4 h-4 text-[#47A5FF] shrink-0 mt-0.5" />
-                <div className="text-[11px] text-[#A0A4A8] leading-relaxed">
-                  <span className="font-semibold text-[#FFFFFF]">Tanzania NIDA Standard Compliance:</span>{' '}
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-[#E7E2DE] border border-[#C8C2BE] text-xs">
+                <Lock className="w-4 h-4 text-[#101010] shrink-0 mt-0.5" />
+                <div className="text-[11px] text-[#101010]/80 leading-relaxed font-medium">
+                  <span className="font-bold text-[#101010]">Tanzania NIDA Standard Compliance:</span>{' '}
                   All 20 digits, portrait specifications (35×45mm), and signature records are verified according to the national registration format. This information is prepared for direct template auto-population.
                 </div>
               </div>
@@ -823,10 +819,10 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                   id="submit-nida-form-btn"
                   type="submit"
                   disabled={!canContinue || isProcessing}
-                  className={`w-full py-3.5 px-5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg ${
+                  className={`w-full py-3.5 px-5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2.5 shadow-md ${
                     canContinue && !isProcessing
-                      ? 'bg-gradient-to-r from-[#47A5FF] to-[#2563eb] text-[#FFFFFF] shadow-[0_4px_25px_rgba(71,165,255,0.35)] hover:shadow-[0_6px_30px_rgba(71,165,255,0.45)] hover:brightness-110 active:scale-[0.99] cursor-pointer'
-                      : 'bg-[#1C1F22] text-[#7D8287] border border-[#4C5055]/50 cursor-not-allowed shadow-none'
+                      ? 'bg-[#101010] hover:bg-[#252525] text-white cursor-pointer active:scale-[0.99]'
+                      : 'bg-[#C8C2BE] text-[#101010]/50 cursor-not-allowed shadow-none'
                   }`}
                 >
                   {isProcessing ? (
@@ -843,7 +839,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                 </button>
 
                 {!canContinue && (
-                  <p className="text-center text-[11px] text-[#FF8F00] mt-2.5 flex items-center justify-center gap-1.5">
+                  <p className="text-center text-[11px] text-amber-800 font-semibold mt-2.5 flex items-center justify-center gap-1.5">
                     <BadgeInfo className="w-3.5 h-3.5" />
                     <span>
                       {enabledBindings.has('NIDA_NUMBER') && !nidaValidation.isValid
@@ -866,53 +862,53 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
       <div className="w-full max-w-2xl my-6 space-y-4">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#47A5FF]" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#101010]" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#101010]">
               Other Document & Card Services
             </h2>
           </div>
           <button
             type="button"
             onClick={() => setActiveScreen('home')}
-            className="text-xs text-[#47A5FF] hover:underline flex items-center gap-1 font-medium cursor-pointer"
+            className="text-xs text-[#101010] hover:underline flex items-center gap-1 font-bold cursor-pointer"
           >
             <span>View All</span>
             <ArrowRight className="w-3 h-3" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Custom Studio Service */}
           <div
             onClick={() => setActiveScreen('upload')}
-            className="p-3.5 rounded-xl bg-[#111317]/80 hover:bg-[#1C1F22] border border-[#4C5055]/40 hover:border-[#47A5FF]/50 transition-all cursor-pointer flex items-center gap-3 group"
+            className="p-3.5 rounded-2xl bg-[#E7E2DE] hover:bg-[#FFFFFF] border border-[#C8C2BE] hover:border-[#101010] transition-all cursor-pointer flex items-center gap-3 group shadow-xs"
           >
-            <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[#47A5FF] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-[#B5A5FF] border border-[#101010]/20 text-[#101010] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <CreditCard className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <h3 className="text-xs font-semibold text-white truncate">Custom Card Studio</h3>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Active</span>
+                <h3 className="text-xs font-bold text-[#101010] truncate">Custom Card Studio</h3>
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">Active</span>
               </div>
-              <p className="text-[10px] text-slate-400 truncate">Upload & design any ID layout</p>
+              <p className="text-[10px] text-[#101010]/70 truncate font-medium">Upload & design any ID layout</p>
             </div>
           </div>
 
           {/* Templates Library Service */}
           <div
             onClick={() => setActiveScreen('templates')}
-            className="p-3.5 rounded-xl bg-[#111317]/80 hover:bg-[#1C1F22] border border-[#4C5055]/40 hover:border-emerald-500/50 transition-all cursor-pointer flex items-center gap-3 group"
+            className="p-3.5 rounded-2xl bg-[#E7E2DE] hover:bg-[#FFFFFF] border border-[#C8C2BE] hover:border-[#101010] transition-all cursor-pointer flex items-center gap-3 group shadow-xs"
           >
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-[#FF9A5A] border border-[#101010]/20 text-[#101010] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <FolderOpen className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <h3 className="text-xs font-semibold text-white truncate">Saved Templates</h3>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Library</span>
+                <h3 className="text-xs font-bold text-[#101010] truncate">Saved Templates</h3>
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#FFFFFF] text-[#101010] font-bold border border-[#C8C2BE]">Library</span>
               </div>
-              <p className="text-[10px] text-slate-400 truncate">Manage & load preset templates</p>
+              <p className="text-[10px] text-[#101010]/70 truncate font-medium">Manage & load preset templates</p>
             </div>
           </div>
 
@@ -925,17 +921,17 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               description: 'Official birth certificate issuance, verification & digital civil registry documentation.',
               features: ['Civil Registration Archive', 'QR Verification Matrix', 'Official Seal Generator', 'Biographic Data Format'],
             })}
-            className="p-3.5 rounded-xl bg-[#111317]/80 hover:bg-[#1C1F22] border border-[#4C5055]/40 hover:border-[#FF8F00]/50 transition-all cursor-pointer flex items-center gap-3 group"
+            className="p-3.5 rounded-2xl bg-[#E7E2DE] hover:bg-[#FFFFFF] border border-[#C8C2BE] hover:border-[#101010] transition-all cursor-pointer flex items-center gap-3 group shadow-xs"
           >
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-[#FF6839] border border-[#101010]/20 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <ScrollText className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <h3 className="text-xs font-semibold text-white truncate">Birth Certificate</h3>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-medium">RITA</span>
+                <h3 className="text-xs font-bold text-[#101010] truncate">Birth Certificate</h3>
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#FFFFFF] text-[#101010] font-bold border border-[#C8C2BE]">RITA</span>
               </div>
-              <p className="text-[10px] text-slate-400 truncate">Civil registry & issuance</p>
+              <p className="text-[10px] text-[#101010]/70 truncate font-medium">Civil registry & issuance</p>
             </div>
           </div>
 
@@ -948,17 +944,17 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               description: 'Driver permit issuance, class endorsements & digital driver identification cards.',
               features: ['Class Endorsements (A, B, C, D, E)', 'Barcode Encoding', 'Penalty Points Tracker', 'Biometric Photo Matrix'],
             })}
-            className="p-3.5 rounded-xl bg-[#111317]/80 hover:bg-[#1C1F22] border border-[#4C5055]/40 hover:border-blue-500/50 transition-all cursor-pointer flex items-center gap-3 group"
+            className="p-3.5 rounded-2xl bg-[#E7E2DE] hover:bg-[#FFFFFF] border border-[#C8C2BE] hover:border-[#101010] transition-all cursor-pointer flex items-center gap-3 group shadow-xs"
           >
-            <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-[#B5A5FF] border border-[#101010]/20 text-[#101010] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <Car className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <h3 className="text-xs font-semibold text-white truncate">Driving License</h3>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-medium">Traffic</span>
+                <h3 className="text-xs font-bold text-[#101010] truncate">Driving License</h3>
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#FFFFFF] text-[#101010] font-bold border border-[#C8C2BE]">Traffic</span>
               </div>
-              <p className="text-[10px] text-slate-400 truncate">Permit & endorsements</p>
+              <p className="text-[10px] text-[#101010]/70 truncate font-medium">Permit & endorsements</p>
             </div>
           </div>
         </div>
@@ -1015,43 +1011,43 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
 
       {/* Informational modal for non-active services */}
       {infoService && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-[#0F131A] border border-slate-700/80 rounded-2xl shadow-2xl p-5 space-y-4 text-left">
-            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-[#E7E2DE] border border-[#C8C2BE] rounded-2xl shadow-2xl p-5 space-y-4 text-left">
+            <div className="flex items-start justify-between border-b border-[#C8C2BE] pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-500/15 border border-blue-500/30 text-[#47A5FF]">
-                  <Info className="w-5 h-5" />
+                <div className="p-2 rounded-xl bg-[#101010] text-[#FFFFFF]">
+                  <Info className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white tracking-wide">
+                  <h3 className="text-sm font-bold text-[#101010] tracking-wide">
                     {infoService.name}
                   </h3>
-                  <p className="text-[11px] text-slate-400">{infoService.authority}</p>
+                  <p className="text-[11px] text-[#101010]/70 font-medium">{infoService.authority}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setInfoService(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-[#101010]/60 hover:text-[#101010] p-1 rounded-lg hover:bg-[#FFFFFF]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-[#101010]/80 leading-relaxed font-medium">
               {infoService.description}
             </p>
 
             {infoService.features && infoService.features.length > 0 && (
               <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#101010]/70">
                   Planned Standard Features
                 </span>
                 <div className="space-y-1">
                   {infoService.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-slate-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                      <span>{feat}</span>
+                    <div key={idx} className="flex items-center gap-2 text-xs text-[#101010]">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                      <span className="font-medium">{feat}</span>
                     </div>
                   ))}
                 </div>
@@ -1062,7 +1058,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               <button
                 type="button"
                 onClick={() => setInfoService(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2 bg-[#101010] hover:bg-[#252525] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
                 Close
               </button>

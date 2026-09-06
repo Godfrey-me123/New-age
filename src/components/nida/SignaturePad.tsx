@@ -470,27 +470,27 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
       />
 
       {/* Main Signature Card */}
-      <div className="p-4 sm:p-5 bg-[#000000]/60 border border-[#4C5055]/60 rounded-2xl space-y-4 shadow-inner">
+      <div className="p-4 sm:p-5 bg-[#FFFFFF] border border-[#C8C2BE] rounded-2xl space-y-4 shadow-xs">
         {/* Card Header & Method Tabs */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center justify-between gap-2 flex-wrap border-b border-[#C8C2BE] pb-3">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#FF8F00] shadow-[0_0_8px_#FF8F00]" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#FFFFFF]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#101010]" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#101010]">
               Signature System
             </h2>
           </div>
 
-          <div className="flex items-center bg-[#14171C] p-0.5 rounded-xl border border-[#4C5055]/60">
+          <div className="flex items-center bg-[#E7E2DE] p-0.5 rounded-xl border border-[#C8C2BE]">
             <button
               type="button"
               onClick={() => {
                 setActiveMethod('draw');
                 setError(null);
               }}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer min-h-[32px] ${
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer min-h-[32px] ${
                 activeMethod === 'draw'
-                  ? 'bg-[#47A5FF] text-white shadow-md'
-                  : 'text-[#A0A4A8] hover:text-white'
+                  ? 'bg-[#101010] text-white shadow-xs'
+                  : 'text-[#101010]/70 hover:text-[#101010]'
               }`}
             >
               <PenTool className="w-3.5 h-3.5" />
@@ -503,10 +503,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                 setActiveMethod('upload');
                 setError(null);
               }}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer min-h-[32px] ${
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer min-h-[32px] ${
                 activeMethod === 'upload'
-                  ? 'bg-[#47A5FF] text-white shadow-md'
-                  : 'text-[#A0A4A8] hover:text-white'
+                  ? 'bg-[#101010] text-white shadow-xs'
+                  : 'text-[#101010]/70 hover:text-[#101010]'
               }`}
             >
               <Upload className="w-3.5 h-3.5" />
@@ -520,7 +520,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
           <div className="space-y-3">
             <div
               ref={containerRef}
-              className="relative bg-white rounded-2xl overflow-hidden border border-[#4C5055] shadow-inner select-none h-36 sm:h-44"
+              className="relative bg-white rounded-2xl overflow-hidden border border-[#C8C2BE] shadow-xs select-none h-36 sm:h-44"
               style={{ touchAction: 'none' }}
             >
               <canvas
@@ -542,13 +542,13 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               {/* Top status indicator */}
               <div className="absolute top-2.5 left-3 pointer-events-none text-[10px] font-sans flex items-center gap-1.5">
                 {strokeCount > 0 ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 font-semibold">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-700" />
                     <span>Calibrated • Direct Transparent Stroke</span>
                   </span>
                 ) : (
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <PenTool className="w-3 h-3 text-[#47A5FF]" />
+                  <span className="text-slate-500 font-medium flex items-center gap-1">
+                    <PenTool className="w-3 h-3 text-[#101010]" />
                     <span>Touch or click to sign (tracks finger directly)</span>
                   </span>
                 )}
@@ -564,10 +564,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                   type="button"
                   onClick={handleUndo}
                   disabled={disabled || strokeCount === 0}
-                  className="min-h-[38px] py-1.5 px-3.5 bg-[#14171C] hover:bg-[#1E2228] border border-[#4C5055]/80 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40 cursor-pointer active:scale-95"
+                  className="min-h-[38px] py-1.5 px-3.5 bg-[#FFFFFF] hover:bg-[#F5F2EF] border border-[#C8C2BE] text-[#101010] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all disabled:opacity-40 cursor-pointer active:scale-95 shadow-xs"
                   title="Undo last stroke"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  <RotateCcw className="w-3.5 h-3.5 text-[#101010]" />
                   <span>Undo</span>
                 </button>
 
@@ -577,10 +577,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                   type="button"
                   onClick={handleClear}
                   disabled={disabled || (strokeCount === 0 && !value)}
-                  className="min-h-[38px] py-1.5 px-3.5 bg-[#14171C] hover:bg-[#1E2228] border border-[#4C5055]/80 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40 cursor-pointer active:scale-95"
+                  className="min-h-[38px] py-1.5 px-3.5 bg-[#FFFFFF] hover:bg-[#F5F2EF] border border-[#C8C2BE] text-[#101010] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all disabled:opacity-40 cursor-pointer active:scale-95 shadow-xs"
                   title="Clear signature"
                 >
-                  <Eraser className="w-3.5 h-3.5 text-[#FF8F00]" />
+                  <Eraser className="w-3.5 h-3.5 text-[#FF6839]" />
                   <span>Clear</span>
                 </button>
 
@@ -590,10 +590,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                   type="button"
                   onClick={handleExplicitSave}
                   disabled={disabled || strokeCount === 0}
-                  className={`min-h-[38px] py-1.5 px-3.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                  className={`min-h-[38px] py-1.5 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
                     saveSuccess
-                      ? 'bg-emerald-600 text-white border border-emerald-500 shadow-md'
-                      : 'bg-[#47A5FF]/20 hover:bg-[#47A5FF]/30 text-[#47A5FF] border border-[#47A5FF]/50 disabled:opacity-40'
+                      ? 'bg-emerald-700 text-white shadow-md'
+                      : 'bg-[#101010] hover:bg-[#252525] text-white disabled:opacity-40'
                   }`}
                   title="Save signature stroke"
                 >
@@ -604,7 +604,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                     </>
                   ) : (
                     <>
-                      <Save className="w-3.5 h-3.5" />
+                      <Save className="w-3.5 h-3.5 text-white" />
                       <span>Save Signature</span>
                     </>
                   )}
@@ -612,14 +612,14 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               </div>
 
               {/* Direct status badge */}
-              <div className="text-[11px] text-[#A0A4A8] flex items-center gap-1.5 ml-auto">
+              <div className="text-[11px] text-[#101010]/70 font-semibold flex items-center gap-1.5 ml-auto">
                 {value ? (
-                  <span className="flex items-center gap-1 text-emerald-400 font-medium">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="flex items-center gap-1 text-emerald-800 font-bold">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
                     <span>Transparent signature active</span>
                   </span>
                 ) : (
-                  <span className="text-slate-400">Ready to sign</span>
+                  <span className="text-[#101010]/60 font-medium">Ready to sign</span>
                 )}
               </div>
             </div>
@@ -630,7 +630,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
             {value ? (
               /* Uploaded Signature Preview with Transparency Grid */
               <div className="space-y-3">
-                <div className="relative p-4 bg-white/95 rounded-2xl border-2 border-[#47A5FF] shadow-[0_0_20px_rgba(71,165,255,0.2)] flex flex-col items-center justify-center min-h-[140px] overflow-hidden">
+                <div className="relative p-4 bg-white rounded-2xl border-2 border-[#101010] shadow-md flex flex-col items-center justify-center min-h-[140px] overflow-hidden">
                   {/* Subtle checkered transparency background */}
                   <div
                     className="absolute inset-0 opacity-15 pointer-events-none"
@@ -649,8 +649,8 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                   />
 
                   {/* Verified Stamp */}
-                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 text-[10px] font-semibold">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-bold">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-700" />
                     <span>Original Transparency Preserved</span>
                   </div>
 
@@ -658,8 +658,8 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <p className="text-xs text-[#A0A4A8] flex items-center gap-1.5">
-                    <FileSignature className="w-3.5 h-3.5 text-[#47A5FF] shrink-0" />
+                  <p className="text-xs text-[#101010]/70 font-medium flex items-center gap-1.5">
+                    <FileSignature className="w-3.5 h-3.5 text-[#101010] shrink-0" />
                     <span className="truncate">File uploaded without background alteration</span>
                   </p>
 
@@ -667,16 +667,16 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                     <button
                       type="button"
                       onClick={() => uploadInputRef.current?.click()}
-                      className="py-1.5 px-3 bg-[#14171C] hover:bg-[#1E2228] text-white rounded-xl text-xs font-medium border border-[#4C5055] flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px]"
+                      className="py-1.5 px-3 bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] rounded-xl text-xs font-bold border border-[#C8C2BE] flex items-center gap-1.5 transition-all cursor-pointer min-h-[36px] shadow-xs"
                     >
-                      <Upload className="w-3.5 h-3.5 text-[#47A5FF]" />
+                      <Upload className="w-3.5 h-3.5 text-[#101010]" />
                       <span>Replace</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={handleRemoveSignature}
-                      className="py-1.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-medium border border-rose-500/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 min-h-[36px]"
+                      className="py-1.5 px-3 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-xl text-xs font-bold border border-rose-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 min-h-[36px]"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Remove</span>
@@ -689,15 +689,15 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               <div className="space-y-3">
                 <div
                   onClick={() => !disabled && uploadInputRef.current?.click()}
-                  className="border-2 border-dashed border-[#4C5055]/80 hover:border-[#47A5FF] hover:bg-[#47A5FF]/5 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group"
+                  className="border-2 border-dashed border-[#C8C2BE] hover:border-[#101010] hover:bg-[#E7E2DE]/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-[#111317] border border-[#4C5055] group-hover:border-[#47A5FF]/60 flex items-center justify-center mb-2.5 shadow-md">
-                    <Upload className="w-5 h-5 text-[#47A5FF] group-hover:scale-110 transition-transform" />
+                  <div className="w-12 h-12 rounded-2xl bg-[#E7E2DE] border border-[#C8C2BE] group-hover:border-[#101010] flex items-center justify-center mb-2.5 shadow-xs">
+                    <Upload className="w-5 h-5 text-[#101010] group-hover:scale-110 transition-transform" />
                   </div>
-                  <h4 className="text-xs font-semibold text-white group-hover:text-[#47A5FF] transition-colors">
+                  <h4 className="text-xs font-bold text-[#101010]">
                     Upload Signature Image File
                   </h4>
-                  <p className="text-[11px] text-[#A0A4A8] mt-0.5">
+                  <p className="text-[11px] text-[#101010]/70 mt-0.5 font-medium">
                     PNG, JPG, JPEG, or WEBP. If signature has no background, it will not be altered.
                   </p>
                 </div>
@@ -706,9 +706,9 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
                   type="button"
                   onClick={() => uploadInputRef.current?.click()}
                   disabled={disabled}
-                  className="w-full py-2.5 px-4 bg-[#14171C] hover:bg-[#1E2228] border border-[#4C5055] rounded-xl text-xs font-medium text-white flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+                  className="w-full py-2.5 px-4 bg-[#101010] hover:bg-[#252525] border border-[#101010] rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px] shadow-sm"
                 >
-                  <Upload className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  <Upload className="w-3.5 h-3.5 text-white" />
                   <span>Browse Signature File</span>
                 </button>
               </div>
@@ -718,7 +718,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
         {/* Error message */}
         {error && (
-          <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400">
+          <div className="flex items-center gap-2 p-3 bg-rose-100 border border-rose-300 rounded-xl text-xs text-rose-800 font-semibold">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>

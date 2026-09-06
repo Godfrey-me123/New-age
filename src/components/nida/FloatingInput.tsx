@@ -46,39 +46,39 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
   };
 
   // Determine border and highlight state
-  let borderColorClass = 'border-[#4C5055]/70 hover:border-[#4C5055]';
-  let labelColorClass = 'text-[#A0A4A8]';
-  let focusRingClass = 'focus-within:border-[#47A5FF] focus-within:shadow-[0_0_16px_rgba(71,165,255,0.18)]';
+  let borderColorClass = 'border-[#C8C2BE] hover:border-[#101010]';
+  let labelColorClass = 'text-[#101010]/60';
+  let focusRingClass = 'focus-within:border-[#101010] focus-within:ring-2 focus-within:ring-[#101010]/10';
 
   if (error) {
-    borderColorClass = 'border-rose-500/80';
-    labelColorClass = 'text-rose-400';
-    focusRingClass = 'focus-within:border-rose-500 focus-within:shadow-[0_0_16px_rgba(244,63,94,0.18)]';
+    borderColorClass = 'border-rose-500';
+    labelColorClass = 'text-rose-600';
+    focusRingClass = 'focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20';
   } else if (warning) {
-    borderColorClass = 'border-[#FF8F00]/80';
-    labelColorClass = 'text-[#FF8F00]';
-    focusRingClass = 'focus-within:border-[#FF8F00] focus-within:shadow-[0_0_16px_rgba(255,143,0,0.18)]';
+    borderColorClass = 'border-amber-600';
+    labelColorClass = 'text-amber-700';
+    focusRingClass = 'focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-600/20';
   } else if (success) {
-    borderColorClass = 'border-emerald-500/80';
-    labelColorClass = 'text-emerald-400';
-    focusRingClass = 'focus-within:border-emerald-500 focus-within:shadow-[0_0_16px_rgba(16,185,129,0.18)]';
+    borderColorClass = 'border-emerald-600';
+    labelColorClass = 'text-emerald-700';
+    focusRingClass = 'focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20';
   } else if (isFocused) {
-    labelColorClass = 'text-[#47A5FF]';
+    labelColorClass = 'text-[#101010]';
   }
 
   return (
     <div className="w-full space-y-1.5 font-sans">
       <div
-        className={`relative flex items-center bg-[#000000] border rounded-xl transition-all duration-200 ${borderColorClass} ${focusRingClass} ${
-          disabled ? 'opacity-50 cursor-not-allowed bg-slate-900/60' : ''
+        className={`relative flex items-center bg-[#FFFFFF] border rounded-xl transition-all duration-200 ${borderColorClass} ${focusRingClass} ${
+          disabled ? 'opacity-50 cursor-not-allowed bg-[#E7E2DE]' : ''
         }`}
       >
         {/* Leading Icon */}
         {Icon && (
-          <div className="pl-3.5 pr-1 flex items-center pointer-events-none text-[#4C5055]">
+          <div className="pl-3.5 pr-1 flex items-center pointer-events-none text-[#101010]/60">
             <Icon
               className={`w-4 h-4 transition-colors duration-200 ${
-                isFocused ? 'text-[#47A5FF]' : error ? 'text-rose-400' : warning ? 'text-[#FF8F00]' : 'text-[#7D8287]'
+                isFocused ? 'text-[#101010]' : error ? 'text-rose-600' : warning ? 'text-amber-700' : 'text-[#101010]/50'
               }`}
             />
           </div>
@@ -90,8 +90,8 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
             htmlFor={inputId}
             className={`absolute left-3.5 transition-all duration-200 pointer-events-none select-none font-medium tracking-wide ${
               isFloating
-                ? `top-1.5 text-[10px] uppercase font-semibold ${labelColorClass}`
-                : 'top-3.5 text-sm text-[#7D8287]'
+                ? `top-1.5 text-[10px] uppercase font-bold ${labelColorClass}`
+                : 'top-3.5 text-sm text-[#101010]/60'
             }`}
           >
             {label}
@@ -103,7 +103,8 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
             disabled={disabled}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className={`w-full bg-transparent text-[#FFFFFF] text-sm pt-4 pb-1 outline-none font-medium placeholder-transparent tracking-wide ${className}`}
+            placeholder={hasValue ? '' : props.placeholder}
+            className={`w-full bg-transparent text-[#101010] text-sm pt-4 pb-1 outline-none font-semibold placeholder-[#101010]/40 tracking-wide ${className}`}
             {...props}
           />
         </div>
@@ -115,24 +116,24 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
       {/* Validation or helper message rendered OUTSIDE the input field */}
       {error ? (
         <div className="flex items-center justify-between px-1 text-xs">
-          <p className="text-rose-400 font-medium text-[11px] flex items-center gap-1">
+          <p className="text-rose-600 font-semibold text-[11px] flex items-center gap-1">
             <span className="font-bold">•</span> {error}
           </p>
         </div>
       ) : warning ? (
         <div className="flex items-center justify-between px-1 text-xs">
-          <p className="text-[#FF8F00] font-medium text-[11px] flex items-center gap-1">
+          <p className="text-amber-700 font-semibold text-[11px] flex items-center gap-1">
             <span className="font-bold">•</span> {warning}
           </p>
         </div>
       ) : success && successMessage ? (
         <div className="flex items-center justify-between px-1 text-xs">
-          <p className="text-emerald-400 font-medium text-[11px] flex items-center gap-1">
+          <p className="text-emerald-700 font-semibold text-[11px] flex items-center gap-1">
             <span className="font-bold">•</span> {successMessage}
           </p>
         </div>
-      ) : helperText ? (
-        <p className="px-1 text-[11px] text-[#7D8287]">{helperText}</p>
+      ) : helperText && !hasValue ? (
+        <p className="px-1 text-[11px] text-[#101010]/70 font-medium">{helperText}</p>
       ) : null}
     </div>
   );

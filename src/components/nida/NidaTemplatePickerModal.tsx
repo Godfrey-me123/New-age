@@ -140,16 +140,16 @@ export const NidaTemplatePickerModal: React.FC<NidaTemplatePickerModalProps> = (
         </div>
 
         {/* Search & Filter Toolbar */}
-        <div className="p-4 border-b border-[#21262D] bg-[#0D1117] flex flex-col sm:flex-row items-center gap-3 shrink-0">
+        <div className="p-4 border-b border-[#C8C2BE] bg-[#E7E2DE] flex flex-col sm:flex-row items-center gap-3 shrink-0">
           {/* Search Input */}
           <div className="relative w-full sm:flex-1">
-            <Search className="w-4 h-4 text-[#8B949E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#101010]/60 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search templates by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-[#161B22] border border-[#30363D] rounded-xl text-xs text-white placeholder-[#8B949E] focus:outline-none focus:border-[#47A5FF] focus:ring-1 focus:ring-[#47A5FF] transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-[#FFFFFF] border border-[#C8C2BE] rounded-xl text-xs text-[#101010] placeholder-[#101010]/50 focus:outline-none focus:border-[#101010] focus:ring-1 focus:ring-[#101010] transition-all font-semibold"
             />
           </div>
 
@@ -158,10 +158,10 @@ export const NidaTemplatePickerModal: React.FC<NidaTemplatePickerModalProps> = (
             <button
               type="button"
               onClick={() => setActiveFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 activeFilter === 'all'
-                  ? 'bg-[#47A5FF] text-[#000000]'
-                  : 'bg-[#161B22] text-[#8B949E] hover:text-white hover:bg-[#21262D]'
+                  ? 'bg-[#101010] text-[#FFFFFF]'
+                  : 'bg-[#FFFFFF] text-[#101010]/70 hover:text-[#101010] hover:bg-[#F5F2EF]'
               }`}
             >
               All ({allTemplates.length})
@@ -169,10 +169,10 @@ export const NidaTemplatePickerModal: React.FC<NidaTemplatePickerModalProps> = (
             <button
               type="button"
               onClick={() => setActiveFilter('matching')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 activeFilter === 'matching'
-                  ? 'bg-[#47A5FF] text-[#000000]'
-                  : 'bg-[#161B22] text-[#8B949E] hover:text-white hover:bg-[#21262D]'
+                  ? 'bg-[#101010] text-[#FFFFFF]'
+                  : 'bg-[#FFFFFF] text-[#101010]/70 hover:text-[#101010] hover:bg-[#F5F2EF]'
               }`}
             >
               Recommended {targetLabel}
@@ -180,10 +180,10 @@ export const NidaTemplatePickerModal: React.FC<NidaTemplatePickerModalProps> = (
             <button
               type="button"
               onClick={() => setActiveFilter('samples')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 activeFilter === 'samples'
-                  ? 'bg-[#47A5FF] text-[#000000]'
-                  : 'bg-[#161B22] text-[#8B949E] hover:text-white hover:bg-[#21262D]'
+                  ? 'bg-[#101010] text-[#FFFFFF]'
+                  : 'bg-[#FFFFFF] text-[#101010]/70 hover:text-[#101010] hover:bg-[#F5F2EF]'
               }`}
             >
               Samples
@@ -191,10 +191,10 @@ export const NidaTemplatePickerModal: React.FC<NidaTemplatePickerModalProps> = (
             <button
               type="button"
               onClick={() => setActiveFilter('saved')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 activeFilter === 'saved'
-                  ? 'bg-[#47A5FF] text-[#000000]'
-                  : 'bg-[#161B22] text-[#8B949E] hover:text-white hover:bg-[#21262D]'
+                  ? 'bg-[#101010] text-[#FFFFFF]'
+                  : 'bg-[#FFFFFF] text-[#101010]/70 hover:text-[#101010] hover:bg-[#F5F2EF]'
               }`}
             >
               My Saved

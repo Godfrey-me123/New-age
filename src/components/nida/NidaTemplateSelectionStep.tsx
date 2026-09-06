@@ -153,24 +153,24 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
   return (
     <div className="space-y-6">
       {/* Introduction Banner */}
-      <div className="p-4 rounded-2xl bg-[#161B22]/70 border border-[#30363D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-[#FFFFFF] border border-[#C8C2BE] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#47A5FF]/15 border border-[#47A5FF]/30 flex items-center justify-center shrink-0 mt-0.5 text-[#47A5FF]">
+          <div className="w-9 h-9 rounded-xl bg-[#E7E2DE] border border-[#C8C2BE] flex items-center justify-center shrink-0 mt-0.5 text-[#101010]">
             <Layers className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-bold text-white">
+              <h2 className="text-sm sm:text-base font-bold text-[#101010]">
                 Step 1: Choose Front & Back Templates
               </h2>
               {isUniversalDefault && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-emerald-400" />
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-emerald-700 text-emerald-700" />
                   Universal Default
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#8B949E] mt-0.5">
+            <p className="text-xs text-[#101010]/70 mt-0.5 font-medium">
               Select the front and back card designs to auto-populate with NIDA data.
             </p>
           </div>
@@ -181,22 +181,22 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
           type="button"
           onClick={handleUniversalSave}
           disabled={!canContinue}
-          className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+          className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
             isUniversalDefault
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-[#1F242C] hover:bg-[#282F39] border-[#4C5055] text-white hover:border-[#47A5FF]'
+              ? 'bg-emerald-100 border-emerald-300 text-emerald-900'
+              : 'bg-[#E7E2DE] hover:bg-[#dcd6d1] border-[#C8C2BE] text-[#101010]'
           }`}
           title="Save this Front + Back pair as your permanent universal default"
         >
-          <Star className={`w-3.5 h-3.5 ${isUniversalDefault ? 'fill-emerald-400 text-emerald-400' : 'text-amber-400'}`} />
+          <Star className={`w-3.5 h-3.5 ${isUniversalDefault ? 'fill-emerald-700 text-emerald-700' : 'text-[#FF6839]'}`} />
           <span>{isUniversalDefault ? 'Universal Default Active' : 'Set as Universal Default'}</span>
         </button>
       </div>
 
       {/* Universal Save Toast Alert */}
       {universalSaveToast && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2.5 animate-fadeIn">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2.5 animate-fadeIn">
+          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
           <span>{universalSaveToast}</span>
         </div>
       )}
@@ -205,20 +205,20 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* SLOT 1: FRONT TEMPLATE */}
-        <div className="p-4 rounded-2xl bg-[#090A0D]/90 border border-[#30363D] flex flex-col justify-between space-y-3 relative group hover:border-[#47A5FF]/60 transition-all">
+        <div className="p-4 rounded-2xl bg-[#B5A5FF]/20 border border-[#B5A5FF]/50 flex flex-col justify-between space-y-3 relative group hover:border-[#101010] transition-all shadow-xs">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#47A5FF] flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#47A5FF]" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#101010] flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#101010]" />
                 Front Side Template
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#47A5FF]/10 text-[#47A5FF] border border-[#47A5FF]/20">
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#B5A5FF] text-[#101010] border border-[#101010]/20">
                 Primary Identity Side
               </span>
             </div>
 
             {/* Thumbnail Canvas / Placeholder */}
-            <div className="relative aspect-[85.6/53.98] w-full bg-[#050608] rounded-xl border border-[#21262D] overflow-hidden flex items-center justify-center">
+            <div className="relative aspect-[85.6/53.98] w-full bg-[#FFFFFF] rounded-xl border border-[#C8C2BE] overflow-hidden flex items-center justify-center">
               {frontThumb ? (
                 <img
                   src={frontThumb}
@@ -227,15 +227,15 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="flex flex-col items-center gap-2 text-[#8B949E]">
-                  <CreditCard className="w-8 h-8 opacity-40 text-[#47A5FF]" />
-                  <span className="text-xs">No front template selected</span>
+                <div className="flex flex-col items-center gap-2 text-[#101010]/60">
+                  <CreditCard className="w-8 h-8 opacity-40 text-[#101010]" />
+                  <span className="text-xs font-semibold">No front template selected</span>
                 </div>
               )}
 
               {/* Verified Badge */}
               {frontTemplate && (
-                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm border border-[#30363D] text-[10px] font-mono text-[#8B949E]">
+                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm border border-[#C8C2BE] text-[10px] font-mono text-[#101010] font-bold">
                   {frontTemplate.cardWidth} × {frontTemplate.cardHeight} mm
                 </div>
               )}
@@ -243,10 +243,10 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
 
             {/* Template Info */}
             <div className="mt-3">
-              <h3 className="text-sm font-bold text-white truncate" title={frontTemplate?.templateName}>
+              <h3 className="text-sm font-bold text-[#101010] truncate" title={frontTemplate?.templateName}>
                 {frontTemplate ? frontTemplate.templateName : 'Select Front Template'}
               </h3>
-              <p className="text-[11px] text-[#8B949E] mt-0.5">
+              <p className="text-[11px] text-[#101010]/70 mt-0.5 font-medium">
                 {frontTemplate
                   ? `${frontTemplate.layers.length} layers • ${frontTemplate.cardType || 'National ID'}`
                   : 'Requires identity variables: Name, DOB, Sex (M/F), NIDA, Photo'}
@@ -255,33 +255,33 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
           </div>
 
           {/* Action Button */}
-          <div className="pt-2 border-t border-[#21262D] flex items-center gap-2">
+          <div className="pt-2 border-t border-[#C8C2BE] flex items-center gap-2">
             <button
               type="button"
               onClick={() => setPickerSide('front')}
-              className="flex-1 px-3 py-2 rounded-xl bg-[#1C1F22] hover:bg-[#282C31] text-white border border-[#4C5055]/70 hover:border-[#47A5FF] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="flex-1 px-3 py-2 rounded-xl bg-[#101010] hover:bg-[#252525] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              <FolderOpen className="w-3.5 h-3.5 text-[#47A5FF]" />
+              <FolderOpen className="w-3.5 h-3.5 text-white" />
               <span>{frontTemplate ? 'Change Front Template' : 'Select Front Template'}</span>
             </button>
           </div>
         </div>
 
         {/* SLOT 2: BACK TEMPLATE */}
-        <div className="p-4 rounded-2xl bg-[#090A0D]/90 border border-[#30363D] flex flex-col justify-between space-y-3 relative group hover:border-[#FF8F00]/60 transition-all">
+        <div className="p-4 rounded-2xl bg-[#FF9A5A]/20 border border-[#FF9A5A]/50 flex flex-col justify-between space-y-3 relative group hover:border-[#101010] transition-all shadow-xs">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF8F00] flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#FF8F00]" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#101010] flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FF6839]" />
                 Back Side Template
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#FF8F00]/10 text-[#FF8F00] border border-[#FF8F00]/20">
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#FF9A5A] text-[#101010] border border-[#101010]/20">
                 Security & Barcode Side
               </span>
             </div>
 
             {/* Thumbnail Canvas / Placeholder */}
-            <div className="relative aspect-[85.6/53.98] w-full bg-[#050608] rounded-xl border border-[#21262D] overflow-hidden flex items-center justify-center">
+            <div className="relative aspect-[85.6/53.98] w-full bg-[#FFFFFF] rounded-xl border border-[#C8C2BE] overflow-hidden flex items-center justify-center">
               {backThumb ? (
                 <img
                   src={backThumb}
@@ -290,15 +290,15 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="flex flex-col items-center gap-2 text-[#8B949E]">
-                  <CreditCard className="w-8 h-8 opacity-40 text-[#FF8F00]" />
-                  <span className="text-xs">No back template selected</span>
+                <div className="flex flex-col items-center gap-2 text-[#101010]/60">
+                  <CreditCard className="w-8 h-8 opacity-40 text-[#FF6839]" />
+                  <span className="text-xs font-semibold">No back template selected</span>
                 </div>
               )}
 
               {/* Verified Badge */}
               {backTemplate && (
-                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm border border-[#30363D] text-[10px] font-mono text-[#8B949E]">
+                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm border border-[#C8C2BE] text-[10px] font-mono text-[#101010] font-bold">
                   {backTemplate.cardWidth} × {backTemplate.cardHeight} mm
                 </div>
               )}
@@ -306,10 +306,10 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
 
             {/* Template Info */}
             <div className="mt-3">
-              <h3 className="text-sm font-bold text-white truncate" title={backTemplate?.templateName}>
+              <h3 className="text-sm font-bold text-[#101010] truncate" title={backTemplate?.templateName}>
                 {backTemplate ? backTemplate.templateName : 'Select Back Template'}
               </h3>
-              <p className="text-[11px] text-[#8B949E] mt-0.5">
+              <p className="text-[11px] text-[#101010]/70 mt-0.5 font-medium">
                 {backTemplate
                   ? `${backTemplate.layers.length} layers • ${backTemplate.cardType || 'National ID Back'}`
                   : 'Populates NIDA number, barcode & security details'}
@@ -318,13 +318,13 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
           </div>
 
           {/* Action Button */}
-          <div className="pt-2 border-t border-[#21262D] flex items-center gap-2">
+          <div className="pt-2 border-t border-[#C8C2BE] flex items-center gap-2">
             <button
               type="button"
               onClick={() => setPickerSide('back')}
-              className="flex-1 px-3 py-2 rounded-xl bg-[#1C1F22] hover:bg-[#282C31] text-white border border-[#4C5055]/70 hover:border-[#FF8F00] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="flex-1 px-3 py-2 rounded-xl bg-[#101010] hover:bg-[#252525] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              <FolderOpen className="w-3.5 h-3.5 text-[#FF8F00]" />
+              <FolderOpen className="w-3.5 h-3.5 text-white" />
               <span>{backTemplate ? 'Change Back Template' : 'Select Back Template'}</span>
             </button>
           </div>
@@ -333,22 +333,22 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
       </div>
 
       {/* Auxiliary Actions & Continue Button */}
-      <div className="p-4 rounded-2xl bg-[#111317] border border-[#30363D] flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-[#E7E2DE] border border-[#C8C2BE] flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={onOpenCreateTemplate}
-            className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#A0A4A8] hover:text-white border border-[#30363D] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-white hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
-            <Plus className="w-3.5 h-3.5 text-[#47A5FF]" />
+            <Plus className="w-3.5 h-3.5 text-[#101010]" />
             <span>+ Create New Template</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveScreen('templates')}
-            className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#A0A4A8] hover:text-white border border-[#30363D] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-white hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
-            <FolderOpen className="w-3.5 h-3.5 text-[#FF8F00]" />
+            <FolderOpen className="w-3.5 h-3.5 text-[#101010]" />
             <span>Manage Library</span>
           </button>
         </div>
@@ -358,14 +358,14 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
           type="button"
           onClick={handleContinue}
           disabled={!canContinue}
-          className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer ${
+          className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer ${
             canContinue
-              ? 'bg-gradient-to-r from-[#47A5FF] to-[#388CE0] text-black hover:from-[#58B2FF] hover:to-[#47A5FF] shadow-[0_0_20px_rgba(71,165,255,0.3)] hover:scale-[1.02]'
-              : 'bg-[#21262D] text-[#8B949E] cursor-not-allowed border border-[#30363D]'
+              ? 'bg-[#101010] hover:bg-[#252525] text-white hover:scale-[1.02]'
+              : 'bg-[#C8C2BE] text-[#101010]/50 cursor-not-allowed border border-[#C8C2BE]'
           }`}
         >
           <span>Continue to NIDA Filling Form</span>
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4 text-white" />
         </button>
       </div>
 

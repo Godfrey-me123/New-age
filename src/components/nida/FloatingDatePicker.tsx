@@ -61,22 +61,22 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
   };
 
   const borderColorClass = error
-    ? 'border-rose-500/80 focus-within:border-rose-500 focus-within:shadow-[0_0_16px_rgba(244,63,94,0.18)]'
-    : 'border-[#4C5055]/70 hover:border-[#4C5055] focus-within:border-[#47A5FF] focus-within:shadow-[0_0_16px_rgba(71,165,255,0.18)]';
+    ? 'border-rose-500 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20'
+    : 'border-[#C8C2BE] hover:border-[#101010] focus-within:border-[#101010] focus-within:ring-2 focus-within:ring-[#101010]/10';
 
   const labelColorClass = error
-    ? 'text-rose-400'
+    ? 'text-rose-600'
     : isFocused
-    ? 'text-[#47A5FF]'
-    : 'text-[#A0A4A8]';
+    ? 'text-[#101010]'
+    : 'text-[#101010]/60';
 
   const showSuggestion = suggestedDate && suggestedDate !== value;
 
   return (
     <div className="w-full space-y-1.5 font-sans">
       <div
-        className={`relative flex items-center bg-[#000000] border rounded-xl transition-all duration-200 ${borderColorClass} ${
-          disabled ? 'opacity-50 cursor-not-allowed bg-slate-900/60' : ''
+        className={`relative flex items-center bg-[#FFFFFF] border rounded-xl transition-all duration-200 ${borderColorClass} ${
+          disabled ? 'opacity-50 cursor-not-allowed bg-[#E7E2DE]' : ''
         }`}
       >
         {/* Leading Icon & Calendar trigger button */}
@@ -85,12 +85,12 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
           tabIndex={-1}
           disabled={disabled}
           onClick={() => hiddenDateInputRef.current?.showPicker?.()}
-          className="pl-3.5 pr-1 flex items-center text-[#4C5055] hover:text-[#47A5FF] transition-colors cursor-pointer"
+          className="pl-3.5 pr-1 flex items-center text-[#101010]/60 hover:text-[#101010] transition-colors cursor-pointer"
           title="Pick date from calendar"
         >
           <Calendar
             className={`w-4 h-4 transition-colors duration-200 ${
-              isFocused ? 'text-[#47A5FF]' : error ? 'text-rose-400' : 'text-[#7D8287]'
+              isFocused ? 'text-[#101010]' : error ? 'text-rose-600' : 'text-[#101010]/50'
             }`}
           />
         </button>
@@ -110,8 +110,8 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
             htmlFor={inputId}
             className={`absolute left-3.5 transition-all duration-200 pointer-events-none select-none font-medium tracking-wide ${
               isFloating
-                ? `top-1.5 text-[10px] uppercase font-semibold ${labelColorClass}`
-                : 'top-3.5 text-sm text-[#7D8287]'
+                ? `top-1.5 text-[10px] uppercase font-bold ${labelColorClass}`
+                : 'top-3.5 text-sm text-[#101010]/60'
             }`}
           >
             {label}
@@ -129,7 +129,7 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
             maxLength={11}
             autoComplete="off"
             spellCheck={false}
-            className="w-full bg-transparent text-[#FFFFFF] text-sm pt-4 pb-1 outline-none font-medium tracking-wider"
+            className="w-full bg-transparent text-[#101010] text-sm pt-4 pb-1 outline-none font-semibold tracking-wider"
           />
         </div>
 
@@ -139,7 +139,7 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
             <button
               type="button"
               onClick={() => onApplySuggestedDate(suggestedDate)}
-              className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-md bg-[#47A5FF]/15 text-[#47A5FF] border border-[#47A5FF]/30 hover:bg-[#47A5FF]/25 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md bg-[#B5A5FF] text-[#101010] border border-[#101010]/20 hover:bg-[#a08fff] transition-colors cursor-pointer"
               title={`Sync NIDA date: ${suggestedDate}`}
             >
               <span>Use {suggestedDate}</span>
@@ -148,10 +148,10 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
         )}
       </div>
 
-      {/* Error-only validation message (PROMPT 27 & 28) */}
+      {/* Error-only validation message */}
       {error && (
         <div className="px-1 text-xs">
-          <p className="text-rose-400 font-medium text-[11px] flex items-center gap-1">
+          <p className="text-rose-600 font-semibold text-[11px] flex items-center gap-1">
             <span>•</span> {error}
           </p>
         </div>
