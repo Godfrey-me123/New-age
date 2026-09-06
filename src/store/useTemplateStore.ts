@@ -85,6 +85,7 @@ interface TemplateState {
   setPopulatedCardPair: (front: CardTemplate | null, back: CardTemplate | null, formData?: any) => void;
   createNewTemplate: (background: BackgroundConfig, name?: string) => void;
   loadTemplate: (template: CardTemplate) => void;
+  setCurrentTemplate: (template: CardTemplate) => void;
   updateTemplateMeta: (meta: Partial<CardTemplate>) => void;
   setActiveUnit: (unit: Unit) => void;
   setZoom: (zoom: number | ((prev: number) => number)) => void;
@@ -309,6 +310,10 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       historyIndex: 0,
       zoom: 1.0,
     });
+  },
+
+  setCurrentTemplate: (template) => {
+    set({ currentTemplate: template });
   },
 
   updateTemplateMeta: (meta) => {

@@ -10,14 +10,23 @@
   }
 }
 
+:root {
+  --bg-primary: #FFFFFF;
+  --text-primary: #000000;
+  --bg-secondary: #E7E9EB;
+  --accent-primary: #CEE9B9;
+  --accent-secondary: #ECA6FC;
+}
+
 html, body {
   width: 100%;
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #050608;
-  color: #ffffff;
+  background-color: #FFFFFF;
+  color: #000000;
   -webkit-overflow-scrolling: touch;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 #root {
@@ -25,6 +34,8 @@ html, body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  background-color: #FFFFFF;
+  color: #000000;
 }
 
 /* Prevent double-tap browser zoom on canvas buttons */

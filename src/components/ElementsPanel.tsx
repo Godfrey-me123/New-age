@@ -181,54 +181,54 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
   };
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-4 bg-[#FFFFFF]">
       {/* 1. Dynamic Variables */}
       <div>
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
-          <Tag className="w-3.5 h-3.5 text-blue-400" />
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#000000] mb-2">
+          <Tag className="w-3.5 h-3.5 text-[#000000]" />
           <span>ID Template Fields</span>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={() => handleAddText('{{first_name}}')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
           >
-            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
             <span className="truncate">First Name</span>
           </button>
           <button
             onClick={() => handleAddText('{{last_name}}')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
           >
-            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
             <span className="truncate">Last Name</span>
           </button>
           <button
             onClick={() => handleAddText('{{id_number}}')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
           >
-            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
             <span className="truncate">ID Number</span>
           </button>
           <button
             onClick={() => handleAddText('{{dob}}')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
           >
-            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
             <span className="truncate">Date of Birth</span>
           </button>
           <button
             onClick={() => handleAddText('{{gender}}')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
           >
-            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
             <span className="truncate">Gender / Sex</span>
           </button>
           <button
             onClick={() => handleAddText('{{card_expiry}}')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors min-h-[40px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
           >
-            <Brackets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
             <span className="truncate">Expiry Date</span>
           </button>
         </div>
@@ -236,25 +236,25 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
 
       {/* 2. Photo & Signature Placeholders */}
       <div>
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
-          <Shield className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#000000] mb-2">
+          <Shield className="w-3.5 h-3.5 text-[#000000]" />
           <span>Biometrics & Placeholders</span>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={() => handleAddPlaceholder('photo', 'ID Photo')}
-            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+            className="p-2.5 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-2 transition-colors min-h-[42px] cursor-pointer"
           >
-            <div className="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-5 h-5 rounded bg-[#CEE9B9] text-[#000000] flex items-center justify-center flex-shrink-0">
               <ImageIcon className="w-3.5 h-3.5" />
             </div>
             <span className="truncate">Photo Slot</span>
           </button>
           <button
             onClick={() => handleAddPlaceholder('signature', 'Signature')}
-            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+            className="p-2.5 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-2 transition-colors min-h-[42px] cursor-pointer"
           >
-            <div className="w-5 h-5 rounded bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-5 h-5 rounded bg-[#ECA6FC] text-[#000000] flex items-center justify-center flex-shrink-0">
               <FileSignature className="w-3.5 h-3.5" />
             </div>
             <span className="truncate">Signature Slot</span>
@@ -264,23 +264,23 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
 
       {/* 3. Text & Media Elements */}
       <div>
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
-          <Type className="w-3.5 h-3.5 text-blue-400" />
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#000000] mb-2">
+          <Type className="w-3.5 h-3.5 text-[#000000]" />
           <span>Text & Image</span>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={() => handleAddText('Static Text')}
-            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+            className="p-2.5 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-2 transition-colors min-h-[42px] cursor-pointer"
           >
-            <Type className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            <Type className="w-4 h-4 text-[#000000] flex-shrink-0" />
             <span className="truncate">Custom Text</span>
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+            className="p-2.5 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-2 transition-colors min-h-[42px] cursor-pointer"
           >
-            <Upload className="w-4 h-4 text-purple-400 flex-shrink-0" />
+            <Upload className="w-4 h-4 text-[#000000] flex-shrink-0" />
             <span className="truncate">Upload Image</span>
             <input
               ref={fileInputRef}
@@ -295,44 +295,44 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
 
       {/* 4. Shapes */}
       <div>
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
-          <Square className="w-3.5 h-3.5 text-pink-400" />
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#000000] mb-2">
+          <Square className="w-3.5 h-3.5 text-[#000000]" />
           <span>Geometric Shapes</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           <button
             onClick={() => handleAddShape('rectangle')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px] cursor-pointer"
           >
-            <Square className="w-4 h-4 text-pink-400" />
+            <Square className="w-4 h-4 text-[#000000]" />
             <span className="text-[10px]">Rect</span>
           </button>
           <button
             onClick={() => handleAddShape('rectangle', true)}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px] cursor-pointer"
           >
-            <div className="w-4 h-4 rounded border-2 border-pink-400" />
+            <div className="w-4 h-4 rounded border-2 border-[#000000]" />
             <span className="text-[10px]">Rounded</span>
           </button>
           <button
             onClick={() => handleAddShape('circle')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px] cursor-pointer"
           >
-            <CircleIcon className="w-4 h-4 text-pink-400" />
+            <CircleIcon className="w-4 h-4 text-[#000000]" />
             <span className="text-[10px]">Circle</span>
           </button>
           <button
             onClick={() => handleAddShape('line')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px] cursor-pointer"
           >
-            <Minus className="w-4 h-4 text-pink-400" />
+            <Minus className="w-4 h-4 text-[#000000]" />
             <span className="text-[10px]">Line</span>
           </button>
           <button
             onClick={() => handleAddShape('polygon')}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px]"
+            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex flex-col items-center justify-center gap-1 transition-colors min-h-[50px] cursor-pointer"
           >
-            <Shield className="w-4 h-4 text-pink-400" />
+            <Shield className="w-4 h-4 text-[#000000]" />
             <span className="text-[10px]">Badge</span>
           </button>
         </div>
@@ -340,30 +340,30 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
 
       {/* 5. Barcodes & QR Codes */}
       <div>
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-2">
-          <BarcodeIcon className="w-3.5 h-3.5 text-amber-400" />
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#000000] mb-2">
+          <BarcodeIcon className="w-3.5 h-3.5 text-[#000000]" />
           <span>Barcodes & QR Codes</span>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={() => handleAddBarcode('Code128')}
-            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+            className="p-2.5 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-2 transition-colors min-h-[42px] cursor-pointer"
           >
-            <BarcodeIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <BarcodeIcon className="w-4 h-4 text-[#000000] flex-shrink-0" />
             <span className="truncate">Code 128</span>
           </button>
           <button
             onClick={handleAddQRCode}
-            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+            className="p-2.5 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-2 transition-colors min-h-[42px] cursor-pointer"
           >
-            <QrCode className="w-4 h-4 text-teal-400 flex-shrink-0" />
+            <QrCode className="w-4 h-4 text-[#000000] flex-shrink-0" />
             <span className="truncate">QR Code</span>
           </button>
           <button
             onClick={() => handleAddBarcode('PDF417')}
-            className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 flex items-center gap-2 transition-colors min-h-[42px]"
+            className="p-2.5 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-2 transition-colors min-h-[42px] cursor-pointer"
           >
-            <BarcodeIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <BarcodeIcon className="w-4 h-4 text-[#000000] flex-shrink-0" />
             <span className="truncate">PDF417 2D</span>
           </button>
         </div>

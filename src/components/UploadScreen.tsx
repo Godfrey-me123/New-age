@@ -180,23 +180,23 @@ export const UploadScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-start p-4 sm:p-6 lg:p-8 selection:bg-blue-500 selection:text-white overflow-y-auto">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#000000] flex flex-col items-center justify-start p-4 sm:p-6 lg:p-8 font-sans overflow-y-auto">
       {/* Container */}
-      <div className="w-full max-w-4xl bg-slate-800/90 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-6 sm:p-10 text-center relative">
+      <div className="w-full max-w-4xl bg-[#FFFFFF] border border-[#E7E9EB] rounded-2xl shadow-xs p-6 sm:p-10 text-center relative">
         {/* Brand Header & Top Actions */}
-        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-700/60">
+        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-[#E7E9EB]">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setActiveScreen('home')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 border border-slate-700 hover:border-[#47A5FF]/50 text-slate-300 hover:text-white text-xs font-semibold transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold transition-all cursor-pointer"
               title="Return to Services Home"
             >
-              <Home className="w-3.5 h-3.5 text-[#47A5FF]" />
+              <Home className="w-3.5 h-3.5 text-[#000000]" />
               <span>Services</span>
             </button>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs sm:text-sm font-semibold tracking-wide">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#000000] text-white text-xs sm:text-sm font-bold tracking-wide">
               <CreditCard className="w-4 h-4" />
               <span>ID TEMPLATE STUDIO</span>
             </div>
@@ -205,22 +205,22 @@ export const UploadScreen: React.FC = () => {
           {/* Saved Templates Section Button on First Screen */}
           <button
             onClick={() => setActiveScreen('templates')}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-950 border border-slate-700 hover:border-emerald-500/50 text-slate-200 hover:text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md group"
+            className="flex items-center gap-2 px-4 py-2 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
           >
-            <FolderOpen className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <FolderOpen className="w-4 h-4 text-[#000000]" />
             <span>Saved Templates</span>
             {savedTemplates.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded-full bg-[#CEE9B9] text-[#000000] text-[11px] font-extrabold border border-[#b8df9d]">
                 {savedTemplates.length}
               </span>
             )}
           </button>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#000000] tracking-tight mb-2">
           Upload Card Background
         </h1>
-        <p className="text-slate-400 text-sm sm:text-base mb-8 max-w-md mx-auto">
+        <p className="text-[#555555] text-sm sm:text-base mb-8 max-w-md mx-auto font-medium">
           Start designing a reusable ID card template. Automatic orientation and dimension detection.
         </p>
 
@@ -232,10 +232,10 @@ export const UploadScreen: React.FC = () => {
           onClick={() => fileInputRef.current?.click()}
           className={`relative border-2 border-dashed rounded-xl p-8 sm:p-12 transition-all cursor-pointer flex flex-col items-center justify-center ${
             dragActive
-              ? 'border-blue-500 bg-blue-500/10 scale-[1.01]'
+              ? 'border-[#000000] bg-[#E7E9EB]'
               : previewImage
-              ? 'border-emerald-500/50 bg-slate-900/50'
-              : 'border-slate-600 hover:border-slate-500 bg-slate-900/40 hover:bg-slate-900/60'
+              ? 'border-[#000000] bg-[#FFFFFF]'
+              : 'border-[#E7E9EB] hover:border-[#000000] bg-[#FFFFFF] hover:bg-[#F8FAFC]'
           }`}
         >
           <input
@@ -248,32 +248,32 @@ export const UploadScreen: React.FC = () => {
 
           {previewImage ? (
             <div className="flex flex-col items-center gap-4">
-              <div className="relative group max-w-xs max-h-48 overflow-hidden rounded-lg border border-slate-700 shadow-lg">
+              <div className="relative group max-w-xs max-h-48 overflow-hidden rounded-lg border border-[#E7E9EB] shadow-xs">
                 <img src={previewImage} alt="Background preview" className="object-contain max-h-44" />
               </div>
-              <div className="text-xs text-slate-300 font-mono bg-slate-800 px-3 py-1.5 rounded-md border border-slate-700">
+              <div className="text-xs text-[#000000] font-mono bg-[#E7E9EB] px-3 py-1.5 rounded-md border border-[#E7E9EB] font-bold">
                 Auto Detected: {imageMeta?.width} × {imageMeta?.height} px (
                 {imageMeta && imageMeta.height > imageMeta.width ? 'Portrait' : 'Landscape'})
               </div>
-              <p className="text-xs text-blue-400 hover:underline">Click or drop to replace image</p>
+              <p className="text-xs text-[#000000] font-bold hover:underline">Click or drop to replace image</p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <div className="p-4 rounded-full bg-slate-800 text-blue-400 border border-slate-700">
+              <div className="p-4 rounded-full bg-[#E7E9EB] text-[#000000]">
                 <Upload className="w-8 h-8" />
               </div>
-              <div className="text-sm sm:text-base font-medium text-slate-200">
+              <div className="text-sm sm:text-base font-bold text-[#000000]">
                 Drag Image Here
               </div>
-              <div className="text-xs text-slate-500 font-semibold uppercase tracking-wider">OR</div>
+              <div className="text-xs text-[#777777] font-bold uppercase tracking-wider">OR</div>
               <button
                 type="button"
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium rounded-lg border border-slate-600 transition-colors"
+                className="px-4 py-2 bg-[#000000] text-white text-xs sm:text-sm font-bold rounded-lg transition-colors cursor-pointer"
               >
                 Choose Image
               </button>
-              <p className="text-xs text-slate-400 mt-2">
-                Supported formats: <span className="text-slate-300 font-medium">PNG, JPG, WEBP</span>
+              <p className="text-xs text-[#555555] mt-2 font-medium">
+                Supported formats: <span className="text-[#000000] font-bold">PNG, JPG, WEBP</span>
               </p>
             </div>
           )}
@@ -282,14 +282,14 @@ export const UploadScreen: React.FC = () => {
         {/* Custom Template Name Input */}
         {previewImage && (
           <div className="mt-6 text-left max-w-md mx-auto">
-            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">
+            <label className="block text-xs font-bold text-[#000000] uppercase mb-1.5">
               Template Name
             </label>
             <input
               type="text"
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2.5 bg-[#FFFFFF] border border-[#E7E9EB] rounded-lg text-sm text-[#000000] focus:outline-none focus:border-[#000000]"
               placeholder="e.g. National ID Front"
             />
           </div>
@@ -299,7 +299,7 @@ export const UploadScreen: React.FC = () => {
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={handleCreateTemplate}
-            className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 text-sm sm:text-base"
+            className="w-full sm:w-auto px-8 py-3.5 bg-[#000000] hover:bg-[#222222] text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
           >
             <span>Create Template</span>
             <ArrowRight className="w-4 h-4" />
@@ -308,15 +308,15 @@ export const UploadScreen: React.FC = () => {
 
         {/* Saved Templates Section on First Screen */}
         {savedTemplates.length > 0 && (
-          <div className="mt-12 pt-8 border-t border-slate-700/60 text-left">
+          <div className="mt-12 pt-8 border-t border-[#E7E9EB] text-left">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-slate-200 text-sm uppercase font-bold tracking-wider">
-                <FolderOpen className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 text-[#000000] text-sm uppercase font-bold tracking-wider">
+                <FolderOpen className="w-4 h-4 text-[#000000]" />
                 <span>Your Saved Templates ({savedTemplates.length})</span>
               </div>
               <button
                 onClick={() => setActiveScreen('templates')}
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 hover:underline"
+                className="text-xs text-[#000000] hover:underline font-bold flex items-center gap-1 cursor-pointer"
               >
                 <span>View All Saved Templates</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -328,30 +328,30 @@ export const UploadScreen: React.FC = () => {
                 <div
                   key={tpl.id}
                   onClick={() => handleOpenEdit(tpl)}
-                  className="group relative bg-slate-900/80 border border-slate-700/80 hover:border-emerald-500/80 rounded-xl p-4 transition-all hover:shadow-xl hover:shadow-emerald-500/5 cursor-pointer flex flex-col justify-between"
+                  className="group relative bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] rounded-xl p-4 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between"
                 >
                   <div>
                     {/* Thumbnail Preview */}
-                    <div className="w-full h-28 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-center overflow-hidden mb-3 p-2 relative group-hover:border-slate-700 transition-colors">
+                    <div className="w-full h-28 bg-[#E7E9EB]/50 rounded-lg border border-[#E7E9EB] flex items-center justify-center overflow-hidden mb-3 p-2 relative transition-colors">
                       {templatePreviews[tpl.id] ? (
                         <img
                           src={templatePreviews[tpl.id]}
                           alt={tpl.templateName}
-                          className="max-h-full max-w-full object-contain rounded shadow"
+                          className="max-h-full max-w-full object-contain rounded shadow-xs"
                         />
                       ) : (
-                        <div className="text-slate-600 text-xs font-mono">Loading Preview...</div>
+                        <div className="text-[#666666] text-xs font-mono font-bold">Loading Preview...</div>
                       )}
                     </div>
 
                     {/* Template Meta */}
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="text-xs font-bold text-slate-100 group-hover:text-emerald-400 transition-colors line-clamp-1">
+                      <h3 className="text-xs font-bold text-[#000000] group-hover:underline transition-colors line-clamp-1">
                         {tpl.templateName}
                       </h3>
                     </div>
 
-                    <p className="text-[11px] text-slate-400 mb-2">
+                    <p className="text-[11px] text-[#555555] font-mono font-medium mb-2">
                       {tpl.cardWidth} × {tpl.cardHeight} mm | {tpl.layers.length} Layers
                     </p>
 
@@ -359,10 +359,10 @@ export const UploadScreen: React.FC = () => {
                   </div>
 
                   {/* Actions Bar */}
-                  <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <div className="mt-4 pt-3 border-t border-[#E7E9EB] flex items-center justify-between gap-2">
                     <button
                       onClick={(e) => handleOpenEdit(tpl, e)}
-                      className="px-2.5 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 text-[11px] font-semibold rounded-lg flex items-center gap-1 transition-colors"
+                      className="px-2.5 py-1.5 bg-[#000000] hover:bg-[#222222] text-white text-[11px] font-bold rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
                       title="Open and edit template in editor section"
                     >
                       <Edit2 className="w-3 h-3" />
@@ -371,7 +371,7 @@ export const UploadScreen: React.FC = () => {
 
                     <button
                       onClick={(e) => handleUseInGenerator(tpl, e)}
-                      className="px-2.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold rounded-lg flex items-center gap-1 transition-colors"
+                      className="px-2.5 py-1.5 bg-[#CEE9B9] hover:bg-[#b8df9d] text-[#000000] text-[11px] font-bold rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
                       title="Use template in ID Generator"
                     >
                       <Sparkles className="w-3 h-3" />
@@ -381,14 +381,14 @@ export const UploadScreen: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => handleDuplicateTemplate(tpl, e)}
-                        className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+                        className="p-1.5 text-[#555555] hover:text-[#000000] hover:bg-[#E7E9EB] rounded-lg transition-colors cursor-pointer"
                         title="Duplicate Template"
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={(e) => handleDeleteTemplate(tpl.id, e)}
-                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        className="p-1.5 text-[#555555] hover:text-red-600 hover:bg-[#E7E9EB] rounded-lg transition-colors cursor-pointer"
                         title="Delete Template"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -402,9 +402,9 @@ export const UploadScreen: React.FC = () => {
         )}
 
         {/* Pre-made Samples Section */}
-        <div className="mt-12 pt-8 border-t border-slate-700/60">
-          <div className="flex items-center justify-center gap-2 text-slate-400 text-xs uppercase font-semibold tracking-wider mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+        <div className="mt-12 pt-8 border-t border-[#E7E9EB]">
+          <div className="flex items-center justify-center gap-2 text-[#555555] text-xs uppercase font-bold tracking-wider mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-[#000000]" />
             <span>Or Start with Pre-built Professional Templates</span>
           </div>
 
@@ -413,19 +413,19 @@ export const UploadScreen: React.FC = () => {
               <div
                 key={sample.id}
                 onClick={() => loadTemplate(sample)}
-                className="group p-3.5 rounded-xl bg-slate-900/60 border border-slate-700/70 hover:border-blue-500/70 hover:bg-slate-800/80 transition-all cursor-pointer flex flex-col justify-between"
+                className="group p-3.5 rounded-xl bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] hover:bg-[#F8FAFC] transition-all cursor-pointer flex flex-col justify-between shadow-xs"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-200 group-hover:text-blue-400 transition-colors">
+                    <span className="text-xs font-bold text-[#000000] group-hover:underline transition-colors">
                       {sample.templateName}
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-[11px] text-[#555555] font-mono">
                     {sample.cardWidth} × {sample.cardHeight} mm ({sample.orientation})
                   </div>
                 </div>
-                <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-blue-400 group-hover:translate-x-1 transition-transform">
+                <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-[#000000] group-hover:translate-x-1 transition-transform">
                   <span>Open Studio</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>

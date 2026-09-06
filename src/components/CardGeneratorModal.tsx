@@ -199,17 +199,17 @@ export const CardGeneratorModal: React.FC = () => {
     templateList.find((t) => t.id === backTemplateId) || currentTemplate;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-5xl bg-[#FFFFFF] border border-[#E7E9EB] rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <div className="px-6 py-4 border-b border-[#E7E9EB] flex items-center justify-between bg-[#FFFFFF]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="p-2 rounded-lg bg-[#000000] text-white">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Generate ID</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg font-bold text-[#000000]">Generate ID</h2>
+              <p className="text-xs text-[#555555] font-medium">
                 Inject custom data and export single cards or merged 2-in-1 print sheets
               </p>
             </div>
@@ -217,24 +217,24 @@ export const CardGeneratorModal: React.FC = () => {
 
           <button
             onClick={() => setCardGeneratorOpen(false)}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-[#555555] hover:text-[#000000] rounded-lg hover:bg-[#E7E9EB] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Output Type Selector */}
-        <div className="px-6 py-3 bg-slate-950/80 border-b border-slate-800 flex items-center gap-4">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <div className="px-6 py-3 bg-[#FFFFFF] border-b border-[#E7E9EB] flex items-center gap-4">
+          <span className="text-xs font-bold text-[#555555] uppercase tracking-wider">
             Choose Output Type:
           </span>
-          <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+          <div className="flex items-center gap-2 bg-[#E7E9EB] p-1 rounded-xl">
             <button
               onClick={() => setOutputType('single')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 outputType === 'single'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-[#000000] text-white shadow-xs'
+                  : 'text-[#000000] hover:bg-[#dadcdc]'
               }`}
             >
               <CreditCard className="w-3.5 h-3.5" />
@@ -243,10 +243,10 @@ export const CardGeneratorModal: React.FC = () => {
 
             <button
               onClick={() => setOutputType('merge')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 outputType === 'merge'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  ? 'bg-[#000000] text-white shadow-xs'
+                  : 'text-[#000000] hover:bg-[#dadcdc]'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -256,27 +256,27 @@ export const CardGeneratorModal: React.FC = () => {
         </div>
 
         {/* Content Split: Options/Form vs WYSIWYG Preview */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-8 bg-[#FFFFFF]">
           {/* Left Column: Template Options & Form Data */}
           <div className="space-y-6">
             {/* Merge Template Dropdowns when in Merge Mode */}
             {outputType === 'merge' && (
-              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-4">
-                <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-emerald-400" />
+              <div className="p-4 bg-[#E7E9EB]/50 rounded-xl border border-[#E7E9EB] space-y-4">
+                <div className="text-xs font-bold text-[#000000] uppercase tracking-wider flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#000000]" />
                   <span>Select Merge Templates</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Front Template Dropdown */}
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-slate-400">
+                    <label className="block text-xs font-bold text-[#555555]">
                       Front Template
                     </label>
                     <select
                       value={frontTemplateId}
                       onChange={(e) => setFrontTemplateId(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E7E9EB] rounded-lg text-xs font-semibold text-[#000000] focus:outline-none focus:border-[#000000]"
                     >
                       {templateList.map((tpl) => (
                         <option key={`front_${tpl.id}`} value={tpl.id}>
@@ -288,13 +288,13 @@ export const CardGeneratorModal: React.FC = () => {
 
                   {/* Back Template Dropdown */}
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-slate-400">
+                    <label className="block text-xs font-bold text-[#555555]">
                       Back Template
                     </label>
                     <select
                       value={backTemplateId}
                       onChange={(e) => setBackTemplateId(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E7E9EB] rounded-lg text-xs font-semibold text-[#000000] focus:outline-none focus:border-[#000000]"
                     >
                       {templateList.map((tpl) => (
                         <option key={`back_${tpl.id}`} value={tpl.id}>
@@ -307,21 +307,21 @@ export const CardGeneratorModal: React.FC = () => {
               </div>
             )}
 
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-800">
+            <div className="text-xs font-bold text-[#000000] uppercase tracking-wider pb-2 border-b border-[#E7E9EB]">
               Cardholder Information
             </div>
 
             {/* Photo & Media Upload Placeholders */}
             {detectedPlaceholders.length > 0 && (
               <div className="space-y-3">
-                <div className="text-xs font-semibold text-slate-300">Image Placeholders</div>
+                <div className="text-xs font-bold text-[#000000]">Image Placeholders</div>
                 <div className="grid grid-cols-2 gap-3">
                   {detectedPlaceholders.map((key) => (
                     <div key={key} className="space-y-1">
-                      <label className="block text-xs text-slate-400 capitalize">
+                      <label className="block text-xs font-medium text-[#555555] capitalize">
                         {formatLabel(key)} Image
                       </label>
-                      <label className="flex flex-col items-center justify-center p-3 border border-dashed border-slate-700 hover:border-emerald-500 rounded-xl bg-slate-800/60 cursor-pointer transition-colors text-center">
+                      <label className="flex flex-col items-center justify-center p-3 border border-dashed border-[#E7E9EB] hover:border-[#000000] rounded-xl bg-[#FFFFFF] cursor-pointer transition-colors text-center">
                         {formData[key] ? (
                           <img
                             src={formData[key]}
@@ -329,9 +329,9 @@ export const CardGeneratorModal: React.FC = () => {
                             className="h-14 object-contain rounded mb-1"
                           />
                         ) : (
-                          <div className="flex flex-col items-center gap-1 text-slate-400">
-                            <ImageIcon className="w-5 h-5 text-emerald-400" />
-                            <span className="text-[11px]">Upload {formatLabel(key)}</span>
+                          <div className="flex flex-col items-center gap-1 text-[#555555]">
+                            <ImageIcon className="w-5 h-5 text-[#000000]" />
+                            <span className="text-[11px] font-bold">Upload {formatLabel(key)}</span>
                           </div>
                         )}
                         <input
@@ -352,34 +352,34 @@ export const CardGeneratorModal: React.FC = () => {
             {/* Text Variable Fields */}
             {detectedFields.length > 0 ? (
               <div className="space-y-3">
-                <div className="text-xs font-semibold text-slate-300">Text & Code Fields</div>
+                <div className="text-xs font-bold text-[#000000]">Text & Code Fields</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {detectedFields.map((field) => (
                     <div key={field} className="space-y-1">
-                      <label className="block text-xs text-slate-400">
+                      <label className="block text-xs font-medium text-[#555555]">
                         {formatLabel(field)}
                       </label>
                       <input
                         type="text"
                         value={formData[field] || ''}
                         onChange={(e) => handleFieldChange(field, e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                        className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E7E9EB] rounded-lg text-xs text-[#000000] focus:outline-none focus:border-[#000000]"
                       />
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-500">
-                No variable placeholders (like <code className="text-blue-400">&#123;&#123;first_name&#125;&#125;</code>) detected in these templates.
+              <p className="text-xs text-[#555555] font-medium">
+                No variable placeholders (like <code className="text-[#000000] font-bold">&#123;&#123;first_name&#125;&#125;</code>) detected in these templates.
               </p>
             )}
           </div>
 
           {/* Right Column: Live WYSIWYG Preview & Export Actions */}
-          <div className="flex flex-col items-center justify-between bg-slate-950 p-6 rounded-xl border border-slate-800">
+          <div className="flex flex-col items-center justify-between bg-[#FFFFFF] p-6 rounded-xl border border-[#E7E9EB]">
             <div className="w-full flex flex-col items-center">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 text-center">
+              <div className="text-xs font-bold text-[#000000] uppercase tracking-wider mb-4 text-center">
                 {outputType === 'single'
                   ? 'Live Card Preview (1:1 Physical Scale)'
                   : 'Print Sheet Layout Preview (A4 Page)'}
@@ -392,57 +392,53 @@ export const CardGeneratorModal: React.FC = () => {
                     <img
                       src={singlePreviewUrl}
                       alt="Single Card Preview"
-                      className="max-w-full max-h-64 rounded-lg shadow-2xl border border-slate-700 object-contain"
+                      className="max-w-full max-h-64 rounded-lg shadow-md border border-[#E7E9EB] object-contain"
                     />
                   </div>
                 ) : (
-                  <div className="h-48 flex items-center justify-center text-slate-500 text-xs">
+                  <div className="h-48 flex items-center justify-center text-[#555555] text-xs font-medium">
                     Rendering card preview...
                   </div>
                 )
               ) : (
                 /* Front + Back Merge 2-in-1 Preview (Vertical Stack matching A4 PDF) */
-                <div className="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-2xl flex flex-col items-center space-y-4">
+                <div className="w-full max-w-xs bg-[#FFFFFF] border border-[#E7E9EB] rounded-xl p-4 shadow-md flex flex-col items-center space-y-4">
                   {/* Front Card Box */}
-                  <div className="w-full bg-slate-950/80 rounded-lg p-2.5 border border-slate-800 flex flex-col items-center">
-                    <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                      <span>+---------------+</span>
-                      <span className="text-slate-300">FRONT CARD</span>
-                      <span>+---------------+</span>
+                  <div className="w-full bg-[#E7E9EB]/50 rounded-lg p-2.5 border border-[#E7E9EB] flex flex-col items-center">
+                    <div className="text-[10px] font-bold text-[#000000] uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                      <span>FRONT CARD</span>
                     </div>
                     {frontPreviewUrl ? (
                       <img
                         src={frontPreviewUrl}
                         alt="Front Card Preview"
-                        className="w-full max-h-32 object-contain rounded border border-slate-700/60 shadow-md"
+                        className="w-full max-h-32 object-contain rounded border border-[#E7E9EB] shadow-xs"
                       />
                     ) : (
-                      <div className="h-20 flex items-center justify-center text-[10px] text-slate-500">
+                      <div className="h-20 flex items-center justify-center text-[10px] text-[#555555]">
                         Rendering Front...
                       </div>
                     )}
                   </div>
 
                   {/* Connector arrow / gap indicator */}
-                  <div className="text-slate-600 text-[10px] uppercase font-mono tracking-wider">
+                  <div className="text-[#555555] text-[10px] uppercase font-mono font-bold tracking-wider">
                     ↓ 12mm Print Gap ↓
                   </div>
 
                   {/* Back Card Box */}
-                  <div className="w-full bg-slate-950/80 rounded-lg p-2.5 border border-slate-800 flex flex-col items-center">
-                    <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                      <span>+---------------+</span>
-                      <span className="text-slate-300">BACK CARD</span>
-                      <span>+---------------+</span>
+                  <div className="w-full bg-[#E7E9EB]/50 rounded-lg p-2.5 border border-[#E7E9EB] flex flex-col items-center">
+                    <div className="text-[10px] font-bold text-[#000000] uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                      <span>BACK CARD</span>
                     </div>
                     {backPreviewUrl ? (
                       <img
                         src={backPreviewUrl}
                         alt="Back Card Preview"
-                        className="w-full max-h-32 object-contain rounded border border-slate-700/60 shadow-md"
+                        className="w-full max-h-32 object-contain rounded border border-[#E7E9EB] shadow-xs"
                       />
                     ) : (
-                      <div className="h-20 flex items-center justify-center text-[10px] text-slate-500">
+                      <div className="h-20 flex items-center justify-center text-[10px] text-[#555555]">
                         Rendering Back...
                       </div>
                     )}
@@ -452,8 +448,8 @@ export const CardGeneratorModal: React.FC = () => {
             </div>
 
             {/* Export Actions */}
-            <div className="w-full pt-6 border-t border-slate-800 space-y-2 mt-4">
-              <div className="text-xs font-semibold text-slate-300 text-center mb-3">
+            <div className="w-full pt-6 border-t border-[#E7E9EB] space-y-2 mt-4">
+              <div className="text-xs font-bold text-[#000000] text-center mb-3">
                 Export Generated Output
               </div>
 
@@ -461,21 +457,21 @@ export const CardGeneratorModal: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => downloadPNG(currentTemplate, formData)}
-                    className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    className="py-2.5 px-3 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5 text-blue-400" />
+                    <Download className="w-3.5 h-3.5 text-[#000000]" />
                     <span>PNG</span>
                   </button>
                   <button
                     onClick={() => downloadJPG(currentTemplate, formData)}
-                    className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    className="py-2.5 px-3 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5 text-emerald-400" />
+                    <Download className="w-3.5 h-3.5 text-[#000000]" />
                     <span>JPG</span>
                   </button>
                   <button
                     onClick={() => downloadPDF(currentTemplate, formData)}
-                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-md shadow-emerald-600/20"
+                    className="py-2.5 px-3 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                   >
                     <Printer className="w-3.5 h-3.5" />
                     <span>Print PDF</span>
@@ -486,7 +482,7 @@ export const CardGeneratorModal: React.FC = () => {
                   onClick={() =>
                     download2In1PDF(selectedFrontTemplate, selectedBackTemplate, formData)
                   }
-                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
+                  className="w-full py-3 px-4 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Export 2-in-1 Print PDF</span>

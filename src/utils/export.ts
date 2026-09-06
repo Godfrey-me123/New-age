@@ -2,7 +2,9 @@ import jsPDF from 'jspdf';
 import { CardTemplate, CardData, Layer } from '../types';
 import { generateBarcodeDataUrl, generateQRCodeDataUrl } from './barcodes';
 import { mmToPx } from './units';
-import { applyTemplateMapping, NidaFormData } from './templateMappingEngine';
+import { applyTemplateMapping, NidaFormData, isBackSideTemplate } from './templateMappingEngine';
+import { useTemplateStore } from '../store/useTemplateStore';
+import { SAMPLE_TEMPLATES } from './sampleTemplates';
 
 export interface CropRegion {
   x: number; // in mm
@@ -20,9 +22,25 @@ export async function renderTemplateToCanvas(
   renderDpi: number = 300,
   cropRegion?: CropRegion
 ): Promise<HTMLCanvasElement> {
-  // If cardData contains NIDA form fields, apply strict 1:1 mapping engine to ensure back/front fields populate cleanly
-  if (cardData && (cardData.nidaNumber || cardData.firstName || cardData.lastName)) {
-    const mappedRes = applyTemplateMapping(template, cardData as unknown as NidaFormData);
+  const store = useTemplateStore.getState();
+
+  // 1. Determine effective card data (fallback to store's lastNidaFormData)
+  const storeFormData = store.lastNidaFormData || {};
+  const effectiveCardData: CardData = {
+    ...storeFormData,
+    ...cardData,
+  };
+
+  // 2. Determine effective template: prefer store's populated front/back template if available
+  if (store.frontPopulatedTemplate && (!template.side || template.side === 'Front Side' || template.id === store.frontPopulatedTemplate.id)) {
+    template = store.frontPopulatedTemplate;
+  } else if (store.backPopulatedTemplate && (template.side === 'Back Side' || template.id === store.backPopulatedTemplate.id || isBackSideTemplate(template))) {
+    template = store.backPopulatedTemplate;
+  }
+
+  // 3. Apply mapping engine pass if form data exists
+  if (effectiveCardData && (effectiveCardData.nidaNumber || effectiveCardData.firstName || effectiveCardData.lastName || effectiveCardData.dob)) {
+    const mappedRes = applyTemplateMapping(template, effectiveCardData as unknown as NidaFormData);
     if (mappedRes.populatedTemplate) {
       template = mappedRes.populatedTemplate;
     }
@@ -58,11 +76,22 @@ export async function renderTemplateToCanvas(
     ctx.fillRect(0, 0, widthPx, heightPx);
   }
 
-  // Replace variable helper function
+  // Replace variable helper function with alias resolution
   const replaceVars = (str: string): string => {
+    if (!str) return '';
     return str.replace(/\{\{(.*?)\}\}/g, (_, key) => {
       const trimmed = key.trim();
-      return cardData[trimmed] !== undefined ? cardData[trimmed] : `{{${trimmed}}}`;
+      const val = cardData[trimmed] !== undefined ? cardData[trimmed] : effectiveCardData[trimmed];
+      if (val !== undefined && val !== null && String(val).trim() !== '') return String(val);
+
+      // Fallback aliases for NIDA fields
+      if (trimmed === 'first_name' || trimmed === 'given_names' || trimmed === 'fname') return (effectiveCardData.firstName as string) || '';
+      if (trimmed === 'last_name' || trimmed === 'surname' || trimmed === 'family_name' || trimmed === 'lname') return (effectiveCardData.lastName as string) || '';
+      if (trimmed === 'dob' || trimmed === 'date_of_birth' || trimmed === 'birth_date') return (effectiveCardData.dob as string) || '';
+      if (trimmed === 'gender' || trimmed === 'sex') return (effectiveCardData.gender as string) || '';
+      if (trimmed === 'nida_number' || trimmed === 'id_number' || trimmed === 'nin') return (effectiveCardData.nidaNumber as string) || '';
+
+      return `{{${trimmed}}}`;
     });
   };
 
@@ -133,7 +162,16 @@ export async function renderTemplateToCanvas(
         });
       }
     } else if (layer.type === 'placeholder') {
-      const photoSrc = cardData[layer.placeholderKey];
+      const key = (layer.placeholderKey || '').toLowerCase();
+      let photoSrc = cardData[layer.placeholderKey] || effectiveCardData[layer.placeholderKey];
+      if (!photoSrc) {
+        if (key.includes('photo') || key === 'picture' || key === 'avatar') {
+          photoSrc = (effectiveCardData.photoUrl as string) || (effectiveCardData.photo as string);
+        } else if (key.includes('sig') || key === 'signature') {
+          photoSrc = (effectiveCardData.signatureUrl as string) || (effectiveCardData.signature as string);
+        }
+      }
+
       if (photoSrc) {
         await new Promise<void>((resolve) => {
           const img = new Image();
@@ -307,17 +345,43 @@ export async function downloadPDF(
 }
 
 export async function download2In1PDF(
-  frontTemplate: CardTemplate,
-  backTemplate: CardTemplate,
+  frontTemplate?: CardTemplate,
+  backTemplate?: CardTemplate,
   cardData: CardData = {},
   filename?: string
 ) {
-  if (cardData && (cardData.nidaNumber || cardData.firstName || cardData.lastName)) {
-    const fRes = applyTemplateMapping(frontTemplate, cardData as unknown as NidaFormData);
-    if (fRes.populatedTemplate) frontTemplate = fRes.populatedTemplate;
+  const store = useTemplateStore.getState();
 
-    const bRes = applyTemplateMapping(backTemplate, cardData as unknown as NidaFormData);
-    if (bRes.populatedTemplate) backTemplate = bRes.populatedTemplate;
+  const storeFormData = store.lastNidaFormData || {};
+  const effectiveCardData: CardData = {
+    ...storeFormData,
+    ...cardData,
+  };
+
+  // Source of truth for templates: prefer populated templates in store if present
+  let fTpl = store.frontPopulatedTemplate || frontTemplate || store.currentTemplate;
+  let bTpl = store.backPopulatedTemplate || backTemplate;
+
+  if (!bTpl) {
+    // If no back template provided, find or generate sample back
+    const sampleBack = SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1];
+    if (sampleBack) {
+      const bRes = applyTemplateMapping(sampleBack, effectiveCardData as unknown as NidaFormData);
+      bTpl = bRes.populatedTemplate || sampleBack;
+    } else {
+      bTpl = fTpl;
+    }
+  }
+
+  // Ensure both front and back templates have 1:1 mapping applied
+  if (fTpl && effectiveCardData && (effectiveCardData.firstName || effectiveCardData.nidaNumber || effectiveCardData.lastName)) {
+    const fRes = applyTemplateMapping(fTpl, effectiveCardData as unknown as NidaFormData);
+    if (fRes.populatedTemplate) fTpl = fRes.populatedTemplate;
+  }
+
+  if (bTpl && effectiveCardData && (effectiveCardData.firstName || effectiveCardData.nidaNumber || effectiveCardData.lastName)) {
+    const bRes = applyTemplateMapping(bTpl, effectiveCardData as unknown as NidaFormData);
+    if (bRes.populatedTemplate) bTpl = bRes.populatedTemplate;
   }
 
   // Standard A4 sheet dimensions in mm (210 x 297 mm)
@@ -325,10 +389,10 @@ export async function download2In1PDF(
   const pageHeight = 297;
   const gapMm = 12; // 12mm spacing between front and back cards
 
-  const frontW = frontTemplate.cardWidth;
-  const frontH = frontTemplate.cardHeight;
-  const backW = backTemplate.cardWidth;
-  const backH = backTemplate.cardHeight;
+  const frontW = fTpl.cardWidth;
+  const frontH = fTpl.cardHeight;
+  const backW = bTpl.cardWidth;
+  const backH = bTpl.cardHeight;
 
   const totalHeight = frontH + gapMm + backH;
 
@@ -342,21 +406,21 @@ export async function download2In1PDF(
   const startY = (pageHeight - totalHeight) / 2;
 
   // Render front card
-  const frontCanvas = await renderTemplateToCanvas(frontTemplate, cardData, 300);
+  const frontCanvas = await renderTemplateToCanvas(fTpl, effectiveCardData, 300);
   const frontImg = frontCanvas.toDataURL('image/png');
   const frontX = (pageWidth - frontW) / 2;
   const frontY = startY;
   pdf.addImage(frontImg, 'PNG', frontX, frontY, frontW, frontH);
 
   // Render back card directly below with 12mm gap
-  const backCanvas = await renderTemplateToCanvas(backTemplate, cardData, 300);
+  const backCanvas = await renderTemplateToCanvas(bTpl, effectiveCardData, 300);
   const backImg = backCanvas.toDataURL('image/png');
   const backX = (pageWidth - backW) / 2;
   const backY = frontY + frontH + gapMm;
   pdf.addImage(backImg, 'PNG', backX, backY, backW, backH);
 
   pdf.save(
-    filename || `merged_2in1_${frontTemplate.templateName.toLowerCase().replace(/\s+/g, '_')}.pdf`
+    filename || `merged_2in1_${fTpl.templateName.toLowerCase().replace(/\s+/g, '_')}.pdf`
   );
 }
 

@@ -93,7 +93,7 @@ export default function App() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
+    <div className="fixed inset-0 flex flex-col bg-[#FFFFFF] text-[#000000] overflow-hidden font-sans">
       {/* NIDA Success Notification Toast */}
       <NidaSuccessToast />
 

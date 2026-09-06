@@ -244,37 +244,37 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] text-slate-100 flex flex-col selection:bg-[#47A5FF] selection:text-white">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#000000] flex flex-col selection:bg-[#CEE9B9] selection:text-[#000000]">
       {/* 1. PROFESSIONAL APP HEADER */}
-      <header className="sticky top-0 z-40 bg-[#0F141E]/95 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-lg">
+      <header className="sticky top-0 z-40 bg-[#FFFFFF]/95 backdrop-blur-md border-b border-[#E7E9EB] px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
         {/* Brand & App Name */}
         <div className="flex items-center gap-3">
           {/* Menu Drawer Toggle Button */}
           <button
             type="button"
             onClick={() => setIsMenuDrawerOpen(true)}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white border border-slate-700/80 transition-colors flex items-center justify-center cursor-pointer"
+            className="p-2 rounded-xl bg-[#E7E9EB] hover:bg-[#dadcdc] text-[#000000] border border-[#E7E9EB] transition-colors flex items-center justify-center cursor-pointer"
             title="Open Services Menu"
             aria-label="Open Services Navigation Menu"
           >
-            <Menu className="w-5 h-5 text-[#47A5FF]" />
+            <Menu className="w-5 h-5 text-[#000000]" />
           </button>
 
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-[#47A5FF] flex items-center justify-center font-black text-white text-sm shadow-[0_0_20px_rgba(71,165,255,0.35)] shrink-0 border border-blue-400/40">
+          <div className="w-10 h-10 rounded-xl bg-[#000000] flex items-center justify-center font-black text-white text-sm shadow-xs shrink-0">
             ID
           </div>
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-white text-sm sm:text-base tracking-tight font-sans">
+              <span className="font-extrabold text-[#000000] text-sm sm:text-base tracking-tight font-sans">
                 ID Template Studio
               </span>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-[#47A5FF] border border-blue-500/25">
-                <ShieldCheck className="w-3 h-3 text-[#47A5FF]" />
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#CEE9B9] text-[#000000] border border-[#b8df9d]">
+                <ShieldCheck className="w-3 h-3 text-[#000000]" />
                 <span>Service Portal</span>
               </span>
             </div>
-            <span className="text-[11px] text-slate-400 font-medium truncate max-w-[220px] sm:max-w-none">
+            <span className="text-[11px] text-[#555555] font-medium truncate max-w-[220px] sm:max-w-none">
               National Documents & Card Specification Platform
             </span>
           </div>
@@ -286,10 +286,10 @@ export const HomeScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveScreen('upload')}
-            className="hidden md:flex items-center gap-1.5 px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-semibold text-slate-200 hover:text-white rounded-xl transition-all shadow-sm cursor-pointer"
+            className="hidden md:flex items-center gap-1.5 px-3.5 py-2 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-xs font-semibold text-[#000000] rounded-xl transition-all shadow-xs cursor-pointer"
             title="Upload custom card background or open blank canvas"
           >
-            <CreditCard className="w-3.5 h-3.5 text-[#47A5FF]" />
+            <CreditCard className="w-3.5 h-3.5 text-[#000000]" />
             <span>Card Studio</span>
           </button>
 
@@ -297,14 +297,14 @@ export const HomeScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveScreen('templates')}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#161B26] hover:bg-[#1E2536] border border-slate-700/80 hover:border-emerald-500/50 text-slate-200 hover:text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md group cursor-pointer"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#000000] hover:bg-[#222222] text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md group cursor-pointer"
             title="Browse Saved and Built-in Card Templates"
           >
-            <FolderOpen className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <FolderOpen className="w-4 h-4 text-[#CEE9B9] group-hover:scale-110 transition-transform" />
             <span className="hidden sm:inline">Templates Library</span>
             <span className="sm:hidden">Templates</span>
             {savedCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded-full bg-[#CEE9B9] text-[#000000] text-[10px] font-bold">
                 {savedCount}
               </span>
             )}
@@ -328,8 +328,8 @@ export const HomeScreen: React.FC = () => {
               description: srv.description,
               category: 'all',
               icon: CreditCard,
-              iconBg: 'bg-blue-500/15 border-blue-500/30',
-              iconColor: 'text-[#47A5FF]',
+              iconBg: 'bg-[#CEE9B9]',
+              iconColor: 'text-[#000000]',
               status: 'coming_soon',
               badgeText: 'Coming Soon',
               action: () => {},
@@ -342,37 +342,37 @@ export const HomeScreen: React.FC = () => {
       {/* MAIN CONTAINER */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-10 flex flex-col">
         {/* 2. WELCOME SECTION */}
-        <div className="mb-8 sm:mb-10 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-800/60">
+        <div className="mb-8 sm:mb-10 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#E7E9EB]">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[#47A5FF] text-xs font-semibold tracking-wide mb-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#47A5FF]" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#CEE9B9] border border-[#b8df9d] text-[#000000] text-xs font-bold tracking-wide mb-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#000000]" />
               <span>Official Document Services</span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-[#000000] tracking-tight">
               Choose a Service
             </h1>
 
-            <p className="text-slate-400 text-sm sm:text-base max-w-2xl leading-relaxed">
+            <p className="text-[#555555] text-sm sm:text-base max-w-2xl leading-relaxed font-medium">
               Select the service you want to continue with. Auto-fill verified credentials, generate compliant ID templates, or customize credentials with precision.
             </p>
           </div>
 
           {/* Search bar */}
           <div className="w-full sm:w-72 md:w-80 relative shrink-0">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#777777] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search services (e.g. NIDA, Passport, TIN)..."
-              className="w-full pl-9 pr-8 py-2.5 bg-[#121722] border border-slate-700/80 focus:border-[#47A5FF] rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none transition-colors shadow-inner"
+              className="w-full pl-9 pr-8 py-2.5 bg-[#FFFFFF] border border-[#E7E9EB] focus:border-[#000000] rounded-xl text-xs sm:text-sm text-[#000000] placeholder:text-[#888888] focus:outline-none transition-colors shadow-xs"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5 rounded"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#666666] hover:text-[#000000] p-0.5 rounded"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -390,10 +390,10 @@ export const HomeScreen: React.FC = () => {
                   key={cat.key}
                   type="button"
                   onClick={() => setSelectedCategory(cat.key)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#47A5FF] text-white border-[#47A5FF] shadow-[0_2px_12px_rgba(71,165,255,0.35)]'
-                      : 'bg-[#121722] text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white'
+                      ? 'bg-[#000000] text-[#FFFFFF] shadow-sm'
+                      : 'bg-[#E7E9EB] text-[#000000] hover:bg-[#dadcdc]'
                   }`}
                 >
                   {cat.label}
@@ -405,10 +405,10 @@ export const HomeScreen: React.FC = () => {
 
         {/* 3. SERVICE SELECTION GRID */}
         {filteredServices.length === 0 ? (
-          <div className="py-16 text-center bg-[#121722]/60 rounded-2xl border border-slate-800/80 p-8">
-            <Search className="w-8 h-8 text-slate-500 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-white mb-1">No services found</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">
+          <div className="py-16 text-center bg-[#FFFFFF] rounded-2xl border border-[#E7E9EB] p-8 shadow-xs">
+            <Search className="w-8 h-8 text-[#888888] mx-auto mb-3" />
+            <h3 className="text-base font-bold text-[#000000] mb-1">No services found</h3>
+            <p className="text-xs text-[#555555] max-w-sm mx-auto mb-4">
               No service matching "{searchQuery}" in this category. Try adjusting your search query.
             </p>
             <button
@@ -417,16 +417,17 @@ export const HomeScreen: React.FC = () => {
                 setSearchQuery('');
                 setSelectedCategory('all');
               }}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white rounded-xl border border-slate-700 cursor-pointer"
+              className="px-4 py-2 bg-[#000000] hover:bg-[#222222] text-xs font-semibold text-white rounded-xl cursor-pointer"
             >
               Reset Filters
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 pb-12">
-            {filteredServices.map((service) => {
+            {filteredServices.map((service, index) => {
               const IconComponent = service.icon;
               const isActive = service.status === 'active';
+              const isGreenCard = index % 2 === 0;
 
               return (
                 <div
@@ -440,10 +441,12 @@ export const HomeScreen: React.FC = () => {
                       handleCardClick(service);
                     }
                   }}
-                  className={`group relative rounded-2xl p-5 transition-all duration-200 flex flex-col justify-between text-left border cursor-pointer select-none ${
+                  className={`group relative rounded-2xl p-5 transition-all duration-200 flex flex-col justify-between text-left border cursor-pointer select-none shadow-xs hover:shadow-md ${
                     isActive
-                      ? 'bg-gradient-to-b from-[#131926] to-[#0E1420] border-slate-700/80 hover:border-[#47A5FF]/70 shadow-md hover:shadow-[0_8px_30px_rgba(71,165,255,0.18)] hover:-translate-y-0.5 active:scale-[0.99]'
-                      : 'bg-[#0E121B]/80 border-slate-800/80 hover:border-slate-700 hover:bg-[#121622] hover:-translate-y-0.5 active:scale-[0.99]'
+                      ? isGreenCard
+                        ? 'bg-[#CEE9B9] border-[#b8df9d] text-[#000000] hover:-translate-y-0.5 active:scale-[0.99]'
+                        : 'bg-[#ECA6FC] border-[#e08ef2] text-[#000000] hover:-translate-y-0.5 active:scale-[0.99]'
+                      : 'bg-[#FFFFFF] border-[#E7E9EB] text-[#000000] hover:bg-[#F8FAFC] hover:-translate-y-0.5 active:scale-[0.99]'
                   }`}
                 >
                   {/* Top Card Row: Icon & Status Badge */}
@@ -451,21 +454,25 @@ export const HomeScreen: React.FC = () => {
                     <div className="flex items-start justify-between gap-3 mb-4">
                       {/* Consistent Professional Icon */}
                       <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-inner transition-transform group-hover:scale-105 shrink-0 ${service.iconBg}`}
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 ${
+                          isActive
+                            ? 'bg-[#000000] text-[#FFFFFF] border-[#000000]'
+                            : 'bg-[#E7E9EB] text-[#000000] border-[#E7E9EB]'
+                        }`}
                       >
-                        <IconComponent className={`w-6 h-6 stroke-[2.2] ${service.iconColor}`} />
+                        <IconComponent className="w-6 h-6 stroke-[2.2]" />
                       </div>
 
                       {/* Status Badge */}
                       <div className="shrink-0">
                         {isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#000000] text-white">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#CEE9B9] animate-pulse" />
                             <span>{service.badgeText}</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800/90 text-slate-400 border border-slate-700/70">
-                            <Clock className="w-3 h-3 text-slate-400" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#E7E9EB] text-[#000000] border border-[#dadcdc]">
+                            <Clock className="w-3 h-3 text-[#000000]" />
                             <span>Coming Soon</span>
                           </span>
                         )}
@@ -474,38 +481,38 @@ export const HomeScreen: React.FC = () => {
 
                     {/* Service Name & Authority */}
                     <div className="mb-2">
-                      <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-[#47A5FF] transition-colors leading-snug">
+                      <h3 className="font-extrabold text-base sm:text-lg text-[#000000] leading-snug">
                         {service.name}
                       </h3>
-                      <p className="text-[11px] sm:text-xs font-medium text-[#7D8287] mt-0.5">
+                      <p className="text-[11px] sm:text-xs font-bold text-[#333333] mt-0.5">
                         {service.authority}
                       </p>
                     </div>
 
                     {/* Short Description */}
-                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-2 mb-4">
+                    <p className="text-xs text-[#222222] font-medium leading-relaxed line-clamp-2 mb-4">
                       {service.description}
                     </p>
                   </div>
 
                   {/* Bottom Action Footer */}
-                  <div className="pt-3 border-t border-slate-800/70 flex items-center justify-between text-xs mt-auto">
+                  <div className="pt-3 border-t border-black/10 flex items-center justify-between text-xs mt-auto">
                     {isActive ? (
                       <>
-                        <span className="font-semibold text-[#47A5FF] group-hover:underline flex items-center gap-1">
+                        <span className="font-bold text-[#000000] flex items-center gap-1">
                           <span>{service.primaryActionLabel || 'Get Started'}</span>
                         </span>
-                        <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[#47A5FF] group-hover:bg-[#47A5FF] group-hover:text-white transition-all">
-                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        <div className="w-8 h-8 rounded-xl bg-[#000000] text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <ArrowRight className="w-4 h-4" />
                         </div>
                       </>
                     ) : (
                       <>
-                        <span className="text-slate-500 font-medium flex items-center gap-1">
-                          <Info className="w-3 h-3" />
+                        <span className="text-[#555555] font-medium flex items-center gap-1">
+                          <Info className="w-3.5 h-3.5" />
                           <span>In Development</span>
                         </span>
-                        <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-[#555555]" />
                       </>
                     )}
                   </div>
@@ -516,17 +523,17 @@ export const HomeScreen: React.FC = () => {
         )}
 
         {/* FOOTER QUICK ACTIONS / SYSTEM CAPABILITIES */}
-        <div className="mt-auto pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="mt-auto pt-6 border-t border-[#E7E9EB] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#666666]">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>CR80 Millimeter Precision Engine • Tanzania Standards Compliant</span>
+            <span className="w-2 h-2 rounded-full bg-[#000000]" />
+            <span className="font-medium">CR80 Millimeter Precision Engine • Tanzania Standards Compliant</span>
           </div>
 
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => setActiveScreen('upload')}
-              className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="text-[#000000] hover:underline font-medium cursor-pointer"
             >
               Upload Card Background
             </button>
@@ -534,7 +541,7 @@ export const HomeScreen: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveScreen('templates')}
-              className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="text-[#000000] hover:underline font-medium cursor-pointer"
             >
               Preset Templates
             </button>
@@ -547,47 +554,47 @@ export const HomeScreen: React.FC = () => {
 
       {/* COMING SOON MODAL */}
       {comingSoonService && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#121620] border border-slate-700/90 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-left">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-[#FFFFFF] border border-[#E7E9EB] rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-left text-[#000000]">
             <button
               type="button"
               onClick={() => setComingSoonService(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-[#555555] hover:text-[#000000] hover:bg-[#E7E9EB] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-3 mb-4">
               <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-inner ${comingSoonService.iconBg}`}
+                className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#CEE9B9] border border-[#b8df9d] shadow-xs"
               >
                 {React.createElement(comingSoonService.icon, {
-                  className: `w-6 h-6 stroke-[2.2] ${comingSoonService.iconColor}`,
+                  className: 'w-6 h-6 stroke-[2.2] text-[#000000]',
                 })}
               </div>
 
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E7E9EB] text-[#000000]">
                   Feature In Development
                 </span>
-                <h3 className="text-lg font-bold text-white mt-1">
+                <h3 className="text-lg font-bold text-[#000000] mt-1">
                   {comingSoonService.name}
                 </h3>
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+            <p className="text-xs sm:text-sm text-[#333333] leading-relaxed mb-4">
               {comingSoonService.description}
             </p>
 
-            <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl mb-5 space-y-2">
-              <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">
+            <div className="p-3 bg-[#E7E9EB] rounded-xl mb-5 space-y-2">
+              <span className="text-[11px] font-bold text-[#000000] block uppercase tracking-wider">
                 Planned Features:
               </span>
-              <ul className="space-y-1.5 text-xs text-slate-300">
+              <ul className="space-y-1.5 text-xs text-[#222222]">
                 {comingSoonService.features?.map((feat, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#47A5FF] shrink-0" />
+                  <li key={idx} className="flex items-center gap-2 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#000000] shrink-0" />
                     <span>{feat}</span>
                   </li>
                 ))}
@@ -601,7 +608,7 @@ export const HomeScreen: React.FC = () => {
                   setComingSoonService(null);
                   setActiveScreen('upload');
                 }}
-                className="w-full sm:flex-1 py-2.5 px-4 bg-[#47A5FF] hover:bg-blue-600 text-white rounded-xl text-xs font-semibold transition-all shadow-[0_2px_15px_rgba(71,165,255,0.35)] cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 py-2.5 px-4 bg-[#000000] hover:bg-[#222222] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
               >
                 <CreditCard className="w-4 h-4" />
                 <span>Open Custom Studio</span>
@@ -610,7 +617,7 @@ export const HomeScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setComingSoonService(null)}
-                className="w-full sm:w-auto py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                className="w-full sm:w-auto py-2.5 px-4 bg-[#E7E9EB] hover:bg-[#dadcdc] text-[#000000] rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 Close
               </button>

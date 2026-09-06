@@ -41,7 +41,11 @@ export const MergeCardModal: React.FC = () => {
     const list = await loadSavedTemplates();
     setTemplates(list);
 
-    if (list.length > 0) {
+    const store = useTemplateStore.getState();
+    if (store.frontPopulatedTemplate && store.backPopulatedTemplate) {
+      setFrontTemplateId(store.frontPopulatedTemplate.id);
+      setBackTemplateId(store.backPopulatedTemplate.id);
+    } else if (list.length > 0) {
       // Find default front and back
       const front = list.find((t) => t.side === 'Front Side') || list[0];
       const back = list.find((t) => t.side === 'Back Side') || list[1] || list[0];
@@ -66,15 +70,24 @@ export const MergeCardModal: React.FC = () => {
   useEffect(() => {
     let active = true;
     const generatePreviews = async () => {
-      if (frontTemplate) {
+      const store = useTemplateStore.getState();
+      const formData = store.lastNidaFormData || {};
+      const fTpl = (store.frontPopulatedTemplate && store.frontPopulatedTemplate.id === frontTemplateId)
+        ? store.frontPopulatedTemplate
+        : frontTemplate;
+      const bTpl = (store.backPopulatedTemplate && store.backPopulatedTemplate.id === backTemplateId)
+        ? store.backPopulatedTemplate
+        : backTemplate;
+
+      if (fTpl || frontTemplate) {
         try {
-          const c = await renderTemplateToCanvas(frontTemplate, {}, 100);
+          const c = await renderTemplateToCanvas((fTpl || frontTemplate)!, formData, 100);
           if (active) setFrontPreview(c.toDataURL('image/png'));
         } catch {}
       }
-      if (backTemplate) {
+      if (bTpl || backTemplate) {
         try {
-          const c = await renderTemplateToCanvas(backTemplate, {}, 100);
+          const c = await renderTemplateToCanvas((bTpl || backTemplate)!, formData, 100);
           if (active) setBackPreview(c.toDataURL('image/png'));
         } catch {}
       }
@@ -88,13 +101,22 @@ export const MergeCardModal: React.FC = () => {
   if (!isMergeModalOpen) return null;
 
   const handleExportPDF = async () => {
-    if (!frontTemplate || !backTemplate) {
-      alert('Please select both a Front and Back template.');
+    const store = useTemplateStore.getState();
+    const fTpl = (store.frontPopulatedTemplate && store.frontPopulatedTemplate.id === frontTemplateId)
+      ? store.frontPopulatedTemplate
+      : frontTemplate;
+    const bTpl = (store.backPopulatedTemplate && store.backPopulatedTemplate.id === backTemplateId)
+      ? store.backPopulatedTemplate
+      : backTemplate;
+    const formData = store.lastNidaFormData || {};
+
+    if (!fTpl && !frontTemplate) {
+      alert('Please select a Front template.');
       return;
     }
     setIsExporting(true);
     try {
-      await download2In1PDF(frontTemplate, backTemplate);
+      await download2In1PDF((fTpl || frontTemplate)!, (bTpl || backTemplate)!, formData);
     } catch (e) {
       console.error(e);
       alert('Error generating 2-in-1 PDF.');

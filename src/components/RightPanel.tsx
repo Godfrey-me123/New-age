@@ -65,28 +65,28 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   onToggle,
   children,
 }) => (
-  <div className="border border-slate-800/90 rounded-xl bg-slate-950/40 overflow-hidden transition-all shadow-sm">
+  <div className="border border-[#E7E9EB] rounded-xl bg-[#FFFFFF] overflow-hidden transition-all shadow-xs">
     <button
       type="button"
       onClick={onToggle}
-      className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-slate-800/50 transition-colors text-left select-none"
+      className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-[#E7E9EB] transition-colors text-left select-none cursor-pointer"
     >
       <div className="flex items-center gap-2">
-        <span className="text-slate-400">{icon}</span>
-        <span className="text-xs font-semibold text-slate-200">{title}</span>
+        <span className="text-[#000000]">{icon}</span>
+        <span className="text-xs font-bold text-[#000000]">{title}</span>
         {badge && (
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#E7E9EB] text-[#000000] font-mono">
             {badge}
           </span>
         )}
       </div>
       {isOpen ? (
-        <ChevronUp className="w-4 h-4 text-slate-400" />
+        <ChevronUp className="w-4 h-4 text-[#000000]" />
       ) : (
-        <ChevronDown className="w-4 h-4 text-slate-400" />
+        <ChevronDown className="w-4 h-4 text-[#000000]" />
       )}
     </button>
-    {isOpen && <div className="p-3 border-t border-slate-800/80 space-y-3">{children}</div>}
+    {isOpen && <div className="p-3 border-t border-[#E7E9EB] space-y-3">{children}</div>}
   </div>
 );
 
@@ -178,45 +178,45 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
 
   // Quick actions header for Save, Generate, and Export
   const quickActionsHeader = (
-    <div className="flex items-center gap-1.5 p-1.5 bg-slate-800/90 rounded-xl border border-slate-700/60 shrink-0 mb-3 shadow-sm">
+    <div className="flex items-center gap-1.5 p-1.5 bg-[#E7E9EB] rounded-xl border border-[#dadcdc] shrink-0 mb-3 shadow-xs">
       <button
         onClick={handleSave}
-        className={`flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 border shadow-xs ${
+        className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 border shadow-xs cursor-pointer ${
           isSavedNotice
-            ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300 font-bold'
-            : 'bg-slate-700/80 hover:bg-slate-600 border-slate-600 text-slate-200'
+            ? 'bg-[#CEE9B9] border-[#CEE9B9] text-[#000000] font-bold'
+            : 'bg-[#FFFFFF] hover:bg-[#dadcdc] border-[#dadcdc] text-[#000000]'
         }`}
         title="Save Template"
       >
-        <Save className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+        <Save className="w-3.5 h-3.5 text-[#000000] shrink-0" />
         <span>{isSavedNotice ? 'Saved!' : 'Save'}</span>
       </button>
 
       <button
         onClick={() => setCardGeneratorOpen(true)}
-        className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+        className="flex-1 py-1.5 px-2 bg-[#CEE9B9] hover:opacity-90 text-[#000000] text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
         title="Generate Cards from CSV / Records"
       >
-        <Sparkles className="w-3.5 h-3.5 shrink-0" />
+        <Sparkles className="w-3.5 h-3.5 shrink-0 text-[#000000]" />
         <span>Generate</span>
       </button>
 
       <button
         onClick={() => setExportModalOpen(true)}
-        className="flex-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+        className="flex-1 py-1.5 px-2 bg-[#ECA6FC] hover:opacity-90 text-[#000000] text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
         title="Export Card as High-Res Image or Print PDF"
       >
-        <Download className="w-3.5 h-3.5 shrink-0" />
+        <Download className="w-3.5 h-3.5 shrink-0 text-[#000000]" />
         <span>Export</span>
       </button>
 
       {isMobileDrawer && (
         <button
           onClick={() => setActiveMobileSheet(null)}
-          className="py-1.5 px-2.5 bg-slate-700/60 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1 shrink-0"
+          className="py-1.5 px-2.5 bg-[#FFFFFF] hover:bg-[#dadcdc] border border-[#dadcdc] text-[#000000] text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 shrink-0 cursor-pointer"
           title="Done - Close Editor to View Canvas"
         >
-          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <Check className="w-3.5 h-3.5 text-[#000000] shrink-0" />
           <span>Done</span>
         </button>
       )}
@@ -227,7 +227,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
   const renderPanelWrapper = (content: React.ReactNode) => {
     if (isMobileDrawer) {
       return (
-        <div className="space-y-3 pb-6">
+        <div className="space-y-3 pb-6 bg-[#FFFFFF]">
           {quickActionsHeader}
           {content}
           <FontChangeModal
@@ -251,7 +251,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
     }
 
     return (
-      <aside className="hidden lg:flex lg:w-80 bg-slate-900 border-l border-slate-800 p-3.5 flex-col h-[calc(100vh-3.5rem)] select-none text-slate-200 overflow-y-auto shrink-0">
+      <aside className="hidden lg:flex lg:w-80 bg-[#FFFFFF] border-l border-[#E7E9EB] p-3.5 flex-col h-[calc(100vh-3.5rem)] select-none text-[#000000] overflow-y-auto shrink-0">
         {quickActionsHeader}
         {content}
         <FontChangeModal
@@ -278,8 +278,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
   if (selectedLayers.length === 0) {
     const cardContent = (
       <>
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-800 font-bold text-xs uppercase text-slate-300 tracking-wider">
-          <Sliders className="w-4 h-4 text-blue-400" />
+        <div className="flex items-center gap-2 pb-3 border-b border-[#E7E9EB] font-bold text-xs uppercase text-[#000000] tracking-wider">
+          <Sliders className="w-4 h-4 text-[#000000]" />
           <span>Card Settings & Global Font</span>
         </div>
 
@@ -288,14 +288,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
           <CollapsibleSection
             id="cardSettings"
             title="Card Canvas & Dimensions"
-            icon={<Square className="w-3.5 h-3.5 text-blue-400" />}
+            icon={<Square className="w-3.5 h-3.5 text-[#000000]" />}
             badge={`${currentTemplate.cardWidth} × ${currentTemplate.cardHeight} mm`}
             isOpen={openSections.cardSettings}
             onToggle={() => toggleSection('cardSettings')}
           >
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
                   Card Width (mm)
                 </label>
                 <input
@@ -305,12 +305,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   onChange={(e) =>
                     updateTemplateMeta({ cardWidth: parseFloat(e.target.value) || 85.6 })
                   }
-                  className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-[#000000] font-mono text-xs focus:outline-none focus:border-[#000000]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
                   Card Height (mm)
                 </label>
                 <input
@@ -320,14 +320,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   onChange={(e) =>
                     updateTemplateMeta({ cardHeight: parseFloat(e.target.value) || 53.98 })
                   }
-                  className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-[#000000] font-mono text-xs focus:outline-none focus:border-[#000000]"
                 />
               </div>
             </div>
 
             {/* Background Color */}
             <div>
-              <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+              <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
                 Canvas Background Color
               </label>
               <div className="flex items-center gap-2">
@@ -343,9 +343,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                       },
                     })
                   }
-                  className="w-8 h-8 rounded-lg border border-slate-700 cursor-pointer bg-transparent"
+                  className="w-8 h-8 rounded-lg border border-[#dadcdc] cursor-pointer bg-transparent"
                 />
-                <span className="font-mono text-slate-300 text-xs uppercase">
+                <span className="font-mono text-[#000000] text-xs uppercase font-bold">
                   {currentTemplate.background?.color || '#ffffff'}
                 </span>
               </div>
@@ -356,18 +356,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
           <CollapsibleSection
             id="templateFont"
             title="Batch Font & Boldness"
-            icon={<Type className="w-3.5 h-3.5 text-purple-400" />}
+            icon={<Type className="w-3.5 h-3.5 text-[#000000]" />}
             badge={`${currentTemplate.layers.filter((l) => l.type === 'text').length} text layers`}
             isOpen={true}
             onToggle={() => {}}
           >
-            <p className="text-[11px] text-slate-400 leading-snug">
+            <p className="text-[11px] text-[#444444] leading-snug">
               Batch update all text objects (First Name, Last Name, ID Number, DOB, Labels) to any
               font family or weight in one action.
             </p>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+              <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
                 Change Template Font Family
               </label>
               <select
@@ -378,7 +378,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                     e.target.value = '';
                   }
                 }}
-                className="w-full px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-semibold text-slate-100 cursor-pointer focus:outline-none focus:border-blue-500"
+                className="w-full px-2.5 py-2 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs font-semibold text-[#000000] cursor-pointer focus:outline-none focus:border-[#000000]"
               >
                 <option value="" disabled>
                   Select Template Font...
@@ -392,7 +392,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
             </div>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+              <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
                 Change Template Font Weight
               </label>
               <select
@@ -406,7 +406,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                     e.target.value = '';
                   }
                 }}
-                className="w-full px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-semibold text-slate-100 cursor-pointer focus:outline-none focus:border-blue-500"
+                className="w-full px-2.5 py-2 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs font-semibold text-[#000000] cursor-pointer focus:outline-none focus:border-[#000000]"
               >
                 <option value="" disabled>
                   Select Template Weight...
@@ -431,14 +431,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
   if (selectedLayers.length > 1) {
     const multiContent = (
       <>
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2 font-bold text-xs uppercase text-slate-300 tracking-wider">
-            <Layers className="w-4 h-4 text-blue-400" />
+        <div className="flex items-center justify-between pb-3 border-b border-[#E7E9EB]">
+          <div className="flex items-center gap-2 font-bold text-xs uppercase text-[#000000] tracking-wider">
+            <Layers className="w-4 h-4 text-[#000000]" />
             <span>Multiple Layers ({selectedLayers.length})</span>
           </div>
           <button
             onClick={deleteSelectedLayers}
-            className="p-1 hover:bg-red-500/20 text-red-400 rounded transition-colors"
+            className="p-1 hover:bg-red-50 text-red-600 rounded transition-colors cursor-pointer"
             title="Delete Selected Layers"
           >
             <Trash2 className="w-4 h-4" />
@@ -450,14 +450,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
           <CollapsibleSection
             id="multiAlign"
             title="Align Selection"
-            icon={<AlignStartVertical className="w-3.5 h-3.5 text-blue-400" />}
+            icon={<AlignStartVertical className="w-3.5 h-3.5 text-[#000000]" />}
             isOpen={openSections.alignTools}
             onToggle={() => toggleSection('alignTools')}
           >
-            <div className="grid grid-cols-3 gap-1 bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
+            <div className="grid grid-cols-3 gap-1 bg-[#E7E9EB] p-1.5 rounded-lg border border-[#dadcdc]">
               <button
                 onClick={() => alignSelectedLayers('left')}
-                className="p-2 hover:bg-slate-700 rounded flex flex-col items-center gap-1 text-slate-300 hover:text-white"
+                className="p-2 hover:bg-[#dadcdc] rounded flex flex-col items-center gap-1 text-[#000000] cursor-pointer"
                 title="Align Left"
               >
                 <AlignStartVertical className="w-4 h-4" />
@@ -465,7 +465,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
               </button>
               <button
                 onClick={() => alignSelectedLayers('center')}
-                className="p-2 hover:bg-slate-700 rounded flex flex-col items-center gap-1 text-slate-300 hover:text-white"
+                className="p-2 hover:bg-[#dadcdc] rounded flex flex-col items-center gap-1 text-[#000000] cursor-pointer"
                 title="Align Center"
               >
                 <AlignCenterVertical className="w-4 h-4" />
@@ -473,7 +473,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
               </button>
               <button
                 onClick={() => alignSelectedLayers('right')}
-                className="p-2 hover:bg-slate-700 rounded flex flex-col items-center gap-1 text-slate-300 hover:text-white"
+                className="p-2 hover:bg-[#dadcdc] rounded flex flex-col items-center gap-1 text-[#000000] cursor-pointer"
                 title="Align Right"
               >
                 <AlignEndVertical className="w-4 h-4" />
@@ -482,7 +482,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
 
               <button
                 onClick={() => alignSelectedLayers('top')}
-                className="p-2 hover:bg-slate-700 rounded flex flex-col items-center gap-1 text-slate-300 hover:text-white"
+                className="p-2 hover:bg-[#dadcdc] rounded flex flex-col items-center gap-1 text-[#000000] cursor-pointer"
                 title="Align Top"
               >
                 <AlignStartHorizontal className="w-4 h-4" />
@@ -490,7 +490,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
               </button>
               <button
                 onClick={() => alignSelectedLayers('middle')}
-                className="p-2 hover:bg-slate-700 rounded flex flex-col items-center gap-1 text-slate-300 hover:text-white"
+                className="p-2 hover:bg-[#dadcdc] rounded flex flex-col items-center gap-1 text-[#000000] cursor-pointer"
                 title="Align Middle"
               >
                 <AlignCenterHorizontal className="w-4 h-4" />
@@ -498,7 +498,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
               </button>
               <button
                 onClick={() => alignSelectedLayers('bottom')}
-                className="p-2 hover:bg-slate-700 rounded flex flex-col items-center gap-1 text-slate-300 hover:text-white"
+                className="p-2 hover:bg-[#dadcdc] rounded flex flex-col items-center gap-1 text-[#000000] cursor-pointer"
                 title="Align Bottom"
               >
                 <AlignEndHorizontal className="w-4 h-4" />
@@ -511,25 +511,25 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
           <CollapsibleSection
             id="multiSpacing"
             title="Distribute & Spacing"
-            icon={<ArrowLeftRight className="w-3.5 h-3.5 text-blue-400" />}
+            icon={<ArrowLeftRight className="w-3.5 h-3.5 text-[#000000]" />}
             isOpen={true}
             onToggle={() => {}}
           >
-            <div className="grid grid-cols-2 gap-1.5 bg-slate-800/80 p-1.5 rounded-lg border border-slate-700">
+            <div className="grid grid-cols-2 gap-1.5 bg-[#E7E9EB] p-1.5 rounded-lg border border-[#dadcdc]">
               <button
                 onClick={() => distributeSelectedLayers('horizontal')}
-                className="p-2 hover:bg-slate-700 rounded flex items-center justify-center gap-2 text-slate-300 hover:text-white"
+                className="p-2 hover:bg-[#dadcdc] rounded flex items-center justify-center gap-2 text-[#000000] cursor-pointer"
                 title="Equal Horizontal Spacing"
               >
-                <ArrowLeftRight className="w-4 h-4 text-blue-400" />
+                <ArrowLeftRight className="w-4 h-4 text-[#000000]" />
                 <span className="text-[10px] font-medium">Horizontal</span>
               </button>
               <button
                 onClick={() => distributeSelectedLayers('vertical')}
-                className="p-2 hover:bg-slate-700 rounded flex items-center justify-center gap-2 text-slate-300 hover:text-white"
+                className="p-2 hover:bg-[#dadcdc] rounded flex items-center justify-center gap-2 text-[#000000] cursor-pointer"
                 title="Equal Vertical Spacing"
               >
-                <ArrowUpDown className="w-4 h-4 text-blue-400" />
+                <ArrowUpDown className="w-4 h-4 text-[#000000]" />
                 <span className="text-[10px] font-medium">Vertical</span>
               </button>
             </div>
@@ -560,14 +560,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
   const singleContent = (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between pb-2.5 border-b border-slate-800 shrink-0">
-        <div className="flex items-center gap-2 font-bold text-xs uppercase text-slate-300 tracking-wider truncate">
-          <Sliders className="w-4 h-4 text-blue-400 shrink-0" />
+      <div className="flex items-center justify-between pb-2.5 border-b border-[#E7E9EB] shrink-0">
+        <div className="flex items-center gap-2 font-bold text-xs uppercase text-[#000000] tracking-wider truncate">
+          <Sliders className="w-4 h-4 text-[#000000] shrink-0" />
           <span className="truncate">{selectedLayer.name}</span>
         </div>
         <button
           onClick={deleteSelectedLayers}
-          className="p-1 hover:bg-red-500/20 text-red-400 rounded transition-colors"
+          className="p-1 hover:bg-red-50 text-red-600 rounded transition-colors cursor-pointer"
           title="Delete Layer"
         >
           <Trash2 className="w-4 h-4" />
@@ -577,12 +577,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
       <div className="mt-3 space-y-3 text-xs">
         {/* Layer Title Input */}
         <div>
-          <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Layer Title</label>
+          <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Layer Title</label>
           <input
             type="text"
             value={selectedLayer.name}
             onChange={(e) => updateLayer(selectedLayer.id, { name: e.target.value })}
-            className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-blue-500"
+            className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-[#000000] text-xs focus:outline-none focus:border-[#000000]"
           />
         </div>
 
@@ -591,7 +591,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
           <CollapsibleSection
             id="textProps"
             title="Text Properties"
-            icon={<Type className="w-3.5 h-3.5 text-blue-400" />}
+            icon={<Type className="w-3.5 h-3.5 text-[#000000]" />}
             badge={selectedLayer.fontFamily || 'Helvetica'}
             isOpen={openSections.textProps}
             onToggle={() => toggleSection('textProps')}
@@ -599,7 +599,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
             {/* Quick Variable Picker & Text Content */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-slate-300">Content / Variable</span>
+                <span className="text-[11px] font-semibold text-[#000000]">Content / Variable</span>
                 <select
                   onChange={(e) => {
                     if (e.target.value) {
@@ -609,7 +609,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                       e.target.value = '';
                     }
                   }}
-                  className="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[11px] text-blue-400 cursor-pointer"
+                  className="px-2 py-0.5 bg-[#E7E9EB] border border-[#dadcdc] rounded text-[11px] text-[#000000] font-semibold cursor-pointer"
                 >
                   <option value="">+ Insert Variable...</option>
                   {variableOptions.map((v) => (
@@ -623,20 +623,20 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                 rows={2}
                 value={selectedLayer.text}
                 onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })}
-                className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-[#000000] font-mono text-xs focus:outline-none focus:border-[#000000]"
               />
             </div>
 
             {/* Font Family & Font Size */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
                   Font Family
                 </label>
                 <select
                   value={selectedLayer.fontFamily || 'Helvetica'}
                   onChange={(e) => handleFontSelectRequest(e.target.value, selectedLayer.id)}
-                  className="w-full px-2 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs cursor-pointer text-slate-100 font-medium"
+                  className="w-full px-2 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
                 >
                   {FONT_LIBRARY.map((f) => (
                     <option key={f} value={f} style={{ fontFamily: f }}>
@@ -647,7 +647,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
                   Size ({activeUnit})
                 </label>
                 <div className="flex items-center gap-1">
@@ -657,7 +657,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                         fontSize: Math.max(1, selectedLayer.fontSize - 0.2),
                       })
                     }
-                    className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                    className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                   >
                     <Minus className="w-3 h-3" />
                   </button>
@@ -670,7 +670,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                         fontSize: parseFloat(e.target.value) || 2,
                       })
                     }
-                    className="w-full px-1 py-1 bg-slate-800 border border-slate-700 rounded font-mono text-xs text-center focus:outline-none focus:border-blue-500"
+                    className="w-full px-1 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-center text-[#000000] focus:outline-none focus:border-[#000000]"
                   />
                   <button
                     onClick={() =>
@@ -678,7 +678,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                         fontSize: selectedLayer.fontSize + 0.2,
                       })
                     }
-                    className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                    className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
@@ -689,10 +689,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
             {/* Font Weight Control directly below Font Family (Exact Available Weights only) */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-slate-400 font-semibold text-[11px]">
+                <label className="text-[#000000] font-semibold text-[11px]">
                   Font Weight / Boldness
                 </label>
-                <span className="text-[10px] text-blue-400 font-mono">
+                <span className="text-[10px] text-[#000000] font-mono font-bold">
                   {selectedLayer.fontWeight ?? (selectedLayer.fontStyle?.includes('bold') ? 700 : 400)}
                 </span>
               </div>
@@ -707,7 +707,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                     handleWeightSelectRequest(val, selectedLayer.id);
                   }
                 }}
-                className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs cursor-pointer text-slate-100 font-medium focus:outline-none focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
               >
                 {getAvailableWeightsForFont(selectedLayer.fontFamily || 'Helvetica').map((w) => (
                   <option key={w.value} value={w.value}>
@@ -725,15 +725,15 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   type="color"
                   value={selectedLayer.color || '#000000'}
                   onChange={(e) => updateLayer(selectedLayer.id, { color: e.target.value })}
-                  className="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent"
+                  className="w-7 h-7 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
                 />
-                <span className="font-mono text-[10px] text-slate-300 uppercase">
+                <span className="font-mono text-[10px] text-[#000000] font-bold uppercase">
                   {selectedLayer.color || '#000000'}
                 </span>
               </div>
 
               {/* Quick Bold (B), Italic (I), Underline (U) */}
-              <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700">
+              <div className="flex items-center bg-[#E7E9EB] rounded-lg p-0.5 border border-[#dadcdc]">
                 <button
                   onClick={() => {
                     const availableWeights = getAvailableWeightsForFont(
@@ -770,11 +770,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                     });
                   }}
                   title="Quick Bold Toggle"
-                  className={`p-1.5 rounded transition-colors ${
+                  className={`p-1.5 rounded transition-colors cursor-pointer ${
                     (selectedLayer.fontWeight ??
                       (selectedLayer.fontStyle?.includes('bold') ? 700 : 400)) >= 600
-                      ? 'bg-blue-600 text-white font-bold'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#000000] text-[#FFFFFF] font-bold'
+                      : 'text-[#000000] hover:bg-[#dadcdc]'
                   }`}
                 >
                   <Bold className="w-3.5 h-3.5" />
@@ -793,10 +793,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                     updateLayer(selectedLayer.id, { fontStyle: newStyle });
                   }}
                   title="Italic"
-                  className={`p-1.5 rounded transition-colors ${
+                  className={`p-1.5 rounded transition-colors cursor-pointer ${
                     selectedLayer.fontStyle?.includes('italic')
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#000000] text-[#FFFFFF]'
+                      : 'text-[#000000] hover:bg-[#dadcdc]'
                   }`}
                 >
                   <Italic className="w-3.5 h-3.5" />
@@ -810,10 +810,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                     })
                   }
                   title="Underline"
-                  className={`p-1.5 rounded transition-colors ${
+                  className={`p-1.5 rounded transition-colors cursor-pointer ${
                     selectedLayer.textDecoration === 'underline'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#000000] text-[#FFFFFF]'
+                      : 'text-[#000000] hover:bg-[#dadcdc]'
                   }`}
                 >
                   <Underline className="w-3.5 h-3.5" />
@@ -821,13 +821,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
               </div>
 
               {/* Text Alignment */}
-              <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700">
+              <div className="flex items-center bg-[#E7E9EB] rounded-lg p-0.5 border border-[#dadcdc]">
                 <button
                   onClick={() => updateLayer(selectedLayer.id, { align: 'left' })}
-                  className={`p-1.5 rounded ${
+                  className={`p-1.5 rounded cursor-pointer ${
                     selectedLayer.align === 'left'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#000000] text-[#FFFFFF]'
+                      : 'text-[#000000] hover:bg-[#dadcdc]'
                   }`}
                   title="Left"
                 >
@@ -835,10 +835,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                 </button>
                 <button
                   onClick={() => updateLayer(selectedLayer.id, { align: 'center' })}
-                  className={`p-1.5 rounded ${
+                  className={`p-1.5 rounded cursor-pointer ${
                     selectedLayer.align === 'center'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#000000] text-[#FFFFFF]'
+                      : 'text-[#000000] hover:bg-[#dadcdc]'
                   }`}
                   title="Center"
                 >
@@ -846,10 +846,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                 </button>
                 <button
                   onClick={() => updateLayer(selectedLayer.id, { align: 'right' })}
-                  className={`p-1.5 rounded ${
+                  className={`p-1.5 rounded cursor-pointer ${
                     selectedLayer.align === 'right'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#000000] text-[#FFFFFF]'
+                      : 'text-[#000000] hover:bg-[#dadcdc]'
                   }`}
                   title="Right"
                 >
@@ -864,53 +864,53 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
         <CollapsibleSection
           id="positionSize"
           title="Position & Size"
-          icon={<Ruler className="w-3.5 h-3.5 text-blue-400" />}
+          icon={<Ruler className="w-3.5 h-3.5 text-[#000000]" />}
           badge={`${wDisplay} × ${hDisplay} ${activeUnit}`}
           isOpen={openSections.positionSize}
           onToggle={() => toggleSection('positionSize')}
         >
           {/* Alignment Tools (Single layer relative to card canvas) */}
           <div className="space-y-1">
-            <div className="text-slate-400 font-semibold text-[10px]">Align to Card Canvas</div>
-            <div className="grid grid-cols-6 gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700 text-slate-300">
+            <div className="text-[#000000] font-semibold text-[10px]">Align to Card Canvas</div>
+            <div className="grid grid-cols-6 gap-1 bg-[#E7E9EB] p-1 rounded-lg border border-[#dadcdc] text-[#000000]">
               <button
                 onClick={() => alignSelectedLayers('left')}
-                className="p-1.5 hover:bg-slate-700 rounded flex items-center justify-center hover:text-white"
+                className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center cursor-pointer"
                 title="Align Left"
               >
                 <AlignStartVertical className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => alignSelectedLayers('center')}
-                className="p-1.5 hover:bg-slate-700 rounded flex items-center justify-center hover:text-white"
+                className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center cursor-pointer"
                 title="Align Center"
               >
                 <AlignCenterVertical className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => alignSelectedLayers('right')}
-                className="p-1.5 hover:bg-slate-700 rounded flex items-center justify-center hover:text-white"
+                className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center cursor-pointer"
                 title="Align Right"
               >
                 <AlignEndVertical className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => alignSelectedLayers('top')}
-                className="p-1.5 hover:bg-slate-700 rounded flex items-center justify-center hover:text-white"
+                className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center cursor-pointer"
                 title="Align Top"
               >
                 <AlignStartHorizontal className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => alignSelectedLayers('middle')}
-                className="p-1.5 hover:bg-slate-700 rounded flex items-center justify-center hover:text-white"
+                className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center cursor-pointer"
                 title="Align Middle"
               >
                 <AlignCenterHorizontal className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => alignSelectedLayers('bottom')}
-                className="p-1.5 hover:bg-slate-700 rounded flex items-center justify-center hover:text-white"
+                className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center cursor-pointer"
                 title="Align Bottom"
               >
                 <AlignEndHorizontal className="w-3.5 h-3.5" />
@@ -921,11 +921,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
           {/* X & Y */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <span className="text-[10px] text-slate-400 block mb-0.5">X Position</span>
+              <span className="text-[10px] text-[#000000] font-semibold block mb-0.5">X Position</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => handlePositionChange('x', xDisplay - stepSize)}
-                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                  className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
@@ -934,11 +934,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   step="0.1"
                   value={xDisplay}
                   onChange={(e) => handlePositionChange('x', parseFloat(e.target.value) || 0)}
-                  className="w-full px-1 py-1 bg-slate-800 border border-slate-700 rounded font-mono text-xs text-center focus:outline-none focus:border-blue-500"
+                  className="w-full px-1 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-center text-[#000000] focus:outline-none focus:border-[#000000]"
                 />
                 <button
                   onClick={() => handlePositionChange('x', xDisplay + stepSize)}
-                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                  className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
                 </button>
@@ -946,11 +946,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
             </div>
 
             <div>
-              <span className="text-[10px] text-slate-400 block mb-0.5">Y Position</span>
+              <span className="text-[10px] text-[#000000] font-semibold block mb-0.5">Y Position</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => handlePositionChange('y', yDisplay - stepSize)}
-                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                  className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
@@ -959,11 +959,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   step="0.1"
                   value={yDisplay}
                   onChange={(e) => handlePositionChange('y', parseFloat(e.target.value) || 0)}
-                  className="w-full px-1 py-1 bg-slate-800 border border-slate-700 rounded font-mono text-xs text-center focus:outline-none focus:border-blue-500"
+                  className="w-full px-1 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-center text-[#000000] focus:outline-none focus:border-[#000000]"
                 />
                 <button
                   onClick={() => handlePositionChange('y', yDisplay + stepSize)}
-                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                  className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
                 </button>
@@ -974,11 +974,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
           {/* Width & Height */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <span className="text-[10px] text-slate-400 block mb-0.5">Width</span>
+              <span className="text-[10px] text-[#000000] font-semibold block mb-0.5">Width</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => handlePositionChange('width', Math.max(0.1, wDisplay - stepSize))}
-                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                  className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
@@ -987,11 +987,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   step="0.1"
                   value={wDisplay}
                   onChange={(e) => handlePositionChange('width', parseFloat(e.target.value) || 1)}
-                  className="w-full px-1 py-1 bg-slate-800 border border-slate-700 rounded font-mono text-xs text-center focus:outline-none focus:border-blue-500"
+                  className="w-full px-1 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-center text-[#000000] focus:outline-none focus:border-[#000000]"
                 />
                 <button
                   onClick={() => handlePositionChange('width', wDisplay + stepSize)}
-                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                  className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
                 </button>
@@ -999,11 +999,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
             </div>
 
             <div>
-              <span className="text-[10px] text-slate-400 block mb-0.5">Height</span>
+              <span className="text-[10px] text-[#000000] font-semibold block mb-0.5">Height</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => handlePositionChange('height', Math.max(0.1, hDisplay - stepSize))}
-                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                  className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
@@ -1012,11 +1012,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   step="0.1"
                   value={hDisplay}
                   onChange={(e) => handlePositionChange('height', parseFloat(e.target.value) || 1)}
-                  className="w-full px-1 py-1 bg-slate-800 border border-slate-700 rounded font-mono text-xs text-center focus:outline-none focus:border-blue-500"
+                  className="w-full px-1 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-center text-[#000000] focus:outline-none focus:border-[#000000]"
                 />
                 <button
                   onClick={() => handlePositionChange('height', hDisplay + stepSize)}
-                  className="px-1.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300"
+                  className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
                 >
                   <Plus className="w-3 h-3" />
                 </button>
@@ -1029,24 +1029,24 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
         <CollapsibleSection
           id="appearance"
           title="Appearance & Rotation"
-          icon={<Palette className="w-3.5 h-3.5 text-blue-400" />}
+          icon={<Palette className="w-3.5 h-3.5 text-[#000000]" />}
           isOpen={openSections.appearance}
           onToggle={() => toggleSection('appearance')}
         >
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Rotation (°)</label>
+              <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Rotation (°)</label>
               <input
                 type="number"
                 value={selectedLayer.rotation || 0}
                 onChange={(e) =>
                   updateLayer(selectedLayer.id, { rotation: parseFloat(e.target.value) || 0 })
                 }
-                className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg font-mono text-xs focus:outline-none focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg font-mono text-xs text-[#000000] focus:outline-none focus:border-[#000000]"
               />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Opacity</label>
+              <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Opacity</label>
               <input
                 type="range"
                 min="0"
@@ -1056,36 +1056,36 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                 onChange={(e) =>
                   updateLayer(selectedLayer.id, { opacity: parseFloat(e.target.value) })
                 }
-                className="w-full accent-blue-600 cursor-pointer mt-1"
+                className="w-full accent-[#000000] cursor-pointer mt-1"
               />
             </div>
           </div>
 
           {/* Shape Specific Styling */}
           {selectedLayer.type === 'shape' && (
-            <div className="space-y-2 pt-2 border-t border-slate-800">
+            <div className="space-y-2 pt-2 border-t border-[#E7E9EB]">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Fill Color</label>
+                  <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Fill Color</label>
                   <input
                     type="color"
                     value={selectedLayer.fill || '#3b82f6'}
                     onChange={(e) => updateLayer(selectedLayer.id, { fill: e.target.value })}
-                    className="w-8 h-8 rounded border border-slate-700 cursor-pointer bg-transparent"
+                    className="w-8 h-8 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Stroke Color</label>
+                  <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Stroke Color</label>
                   <input
                     type="color"
                     value={selectedLayer.stroke || '#1e3a8a'}
                     onChange={(e) => updateLayer(selectedLayer.id, { stroke: e.target.value })}
-                    className="w-8 h-8 rounded border border-slate-700 cursor-pointer bg-transparent"
+                    className="w-8 h-8 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Stroke Width (mm)</label>
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Stroke Width (mm)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -1093,7 +1093,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   onChange={(e) =>
                     updateLayer(selectedLayer.id, { strokeWidth: parseFloat(e.target.value) || 0 })
                   }
-                  className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded font-mono text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-[#000000] focus:outline-none focus:border-[#000000]"
                 />
               </div>
             </div>
@@ -1101,23 +1101,23 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
 
           {/* Placeholder Specific Styling */}
           {selectedLayer.type === 'placeholder' && (
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E7E9EB]">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Border Color</label>
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Border Color</label>
                 <input
                   type="color"
                   value={selectedLayer.borderColor || '#1e3a8a'}
                   onChange={(e) => updateLayer(selectedLayer.id, { borderColor: e.target.value })}
-                  className="w-8 h-8 rounded border border-slate-700 cursor-pointer bg-transparent"
+                  className="w-8 h-8 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Background</label>
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Background</label>
                 <input
                   type="color"
                   value={selectedLayer.backgroundColor || '#f1f5f9'}
                   onChange={(e) => updateLayer(selectedLayer.id, { backgroundColor: e.target.value })}
-                  className="w-8 h-8 rounded border border-slate-700 cursor-pointer bg-transparent"
+                  className="w-8 h-8 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
                 />
               </div>
             </div>
@@ -1125,13 +1125,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
 
           {/* Barcode Specific Configuration */}
           {selectedLayer.type === 'barcode' && (
-            <div className="space-y-2 pt-2 border-t border-slate-800">
+            <div className="space-y-2 pt-2 border-t border-[#E7E9EB]">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Barcode Type</label>
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Barcode Type</label>
                 <select
                   value={selectedLayer.barcodeType}
                   onChange={(e) => updateLayer(selectedLayer.id, { barcodeType: e.target.value as any })}
-                  className="w-full px-2 py-1.5 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer"
+                  className="w-full px-2 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded text-xs text-[#000000] font-semibold cursor-pointer"
                 >
                   <option value="Code128">Code128 (Alphanumeric)</option>
                   <option value="PDF417">PDF417 (High Density 2D)</option>
@@ -1139,12 +1139,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                 </select>
               </div>
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Data Expression</label>
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Data Expression</label>
                 <input
                   type="text"
                   value={selectedLayer.data}
                   onChange={(e) => updateLayer(selectedLayer.id, { data: e.target.value })}
-                  className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded font-mono text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+                  className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-[#000000] focus:outline-none focus:border-[#000000]"
                 />
               </div>
             </div>
@@ -1152,14 +1152,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
 
           {/* QR Code Specific Configuration */}
           {selectedLayer.type === 'qrcode' && (
-            <div className="space-y-2 pt-2 border-t border-slate-800">
+            <div className="space-y-2 pt-2 border-t border-[#E7E9EB]">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1 text-[11px]">Payload / Text</label>
+                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Payload / Text</label>
                 <textarea
                   rows={2}
                   value={selectedLayer.data}
                   onChange={(e) => updateLayer(selectedLayer.id, { data: e.target.value })}
-                  className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded font-mono text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+                  className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-[#000000] focus:outline-none focus:border-[#000000]"
                 />
               </div>
             </div>

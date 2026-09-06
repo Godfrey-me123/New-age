@@ -32,7 +32,7 @@ import { FieldMappingInspectorModal } from './nida/FieldMappingInspectorModal';
 export const CardPreviewScreen: React.FC = () => {
   const {
     currentTemplate,
-    loadTemplate,
+    setCurrentTemplate,
     setActiveScreen,
     setExportModalOpen,
     frontPopulatedTemplate,
@@ -91,16 +91,16 @@ export const CardPreviewScreen: React.FC = () => {
   const handleSideSwitch = (side: 'front' | 'back') => {
     setActiveSide(side);
     if (side === 'front' && frontPopulatedTemplate) {
-      loadTemplate(frontPopulatedTemplate);
+      setCurrentTemplate(frontPopulatedTemplate);
     } else if (side === 'back' && backPopulatedTemplate) {
-      loadTemplate(backPopulatedTemplate);
+      setCurrentTemplate(backPopulatedTemplate);
     } else if (side === 'back' && !backPopulatedTemplate && lastNidaFormData) {
       // Find sample back template and populate it
       const sampleBack = SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1];
       if (sampleBack) {
         const result = applyTemplateMapping(sampleBack, lastNidaFormData);
         setPopulatedCardPair(frontPopulatedTemplate || currentTemplate, result.populatedTemplate, lastNidaFormData);
-        loadTemplate(result.populatedTemplate);
+        setCurrentTemplate(result.populatedTemplate);
       }
     }
   };
