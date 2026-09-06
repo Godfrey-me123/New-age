@@ -76,6 +76,45 @@ export function isBackSideTemplate(template: CardTemplate | null | undefined): b
 }
 
 /**
+ * Ensures a template has explicit fieldId, fieldName, bindingKey, and fieldType attributes on all variable layers.
+ * Guarantees persistent 1-to-1 mapping across environments and cached stores.
+ */
+export function ensureTemplateFieldIds(template: CardTemplate): CardTemplate {
+  if (!template || !Array.isArray(template.layers)) return template;
+
+  const keyMap: Record<SupportedBinding, string> = {
+    FIRST_NAME: 'firstName',
+    MIDDLE_NAME: 'middleName',
+    LAST_NAME: 'lastName',
+    DOB: 'dateOfBirth',
+    GENDER: 'gender',
+    NIDA_NUMBER: 'nidaNumber',
+    PHOTO: 'photo',
+    SIGNATURE: 'signature',
+  };
+
+  const sanitizedLayers = template.layers.map((layer) => {
+    const resolvedBinding = getLayerBinding(layer, template.layers);
+    if (!resolvedBinding) return layer;
+
+    const canonicalKey = keyMap[resolvedBinding] || 'field';
+
+    return {
+      ...layer,
+      bindingKey: layer.bindingKey || resolvedBinding,
+      fieldId: layer.fieldId || layer.fieldName || canonicalKey,
+      fieldName: layer.fieldName || layer.fieldId || canonicalKey,
+      fieldType: layer.fieldType || canonicalKey,
+    };
+  });
+
+  return {
+    ...template,
+    layers: sanitizedLayers,
+  };
+}
+
+/**
  * Strict 1-to-1 Field Binding Resolution.
  * Identifies the exact canonical field binding for a layer based on explicit properties, tokens, layer IDs, or composite label patterns.
  * Never uses "first available field", "fallback text field", or position guessing.
@@ -92,12 +131,12 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     }
   }
 
-  // 2. Explicit Layer Attribute Checks (fieldName, fieldId, fieldType, bindingKey)
+  // 2. Explicit Layer Attribute Checks (bindingKey, fieldName, fieldId, fieldType)
   const explicitField = (
+    layer.bindingKey ||
     layer.fieldName ||
     layer.fieldId ||
     layer.fieldType ||
-    layer.bindingKey ||
     ''
   ).toLowerCase();
 
@@ -115,8 +154,8 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   // 3. Static Labels Protection
   // Static labels (lbl_*, Header, Title, "SURNAME / JINA LA UKOO", "FIRST NAME", "SEX / JINSIA", etc.) MUST NEVER be mapped as variable fields!
   const isLabelIdOrName =
-    /lbl_|label|header|title|authority|country|jamhuri/i.test(layer.id) ||
-    /label|header|title|authority|country|jamhuri/i.test(layer.name);
+    /lbl_|label|header|title|authority|country|jamhuri|legal_|address/i.test(layer.id) ||
+    /label|header|title|authority|country|jamhuri|legal|address/i.test(layer.name);
 
   if (isLabelIdOrName) {
     return null; // Explicitly static label, do NOT inject!
@@ -148,7 +187,12 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     const textLayer = layer as TextLayer;
     const text = (textLayer.text || '').trim();
 
-    // Check if static label text without colon or token
+    // Check MRZ machine-readable lines on back templates
+    if (/mrz_line1|mrz.*1/i.test(layer.id) || /mrz.*1/i.test(layer.name)) {
+      return 'NIDA_NUMBER';
+    }
+
+    // Check static label text without colon or token
     if (/^(?:SURNAME|JINA LA UKOO|FIRST NAME|JINA LA KWANZA|MIDDLE NAME|LA KATI|DATE OF BIRTH|TAREHE YA KUZALIWA|SEX|JINSIA|NATIONAL ID NO|NAMBARI YA NIDA|SIGNATURE|SAHIHI|JAMHURI|NATIONAL IDENTIFICATION)/i.test(text)) {
       if (!text.includes(':') && !text.includes('{{') && !/var_/i.test(layer.id)) {
         return null;
@@ -163,7 +207,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/\{\{(?:gender|sex|jinsia|jinsi|gender_val|sex_val|jinsi_val)\}\}/i.test(text)) return 'GENDER';
     if (/\{\{(?:nida_number|nida|id_number|national_id|nin|id_no|namba_nida)\}\}/i.test(text)) return 'NIDA_NUMBER';
 
-    // Check Specific Layer ID / Name Suffix (e.g. var_first_name, var_last_name, var_dob, var_gender, var_nida_number)
+    // Check Specific Layer ID / Name Suffix
     const layerIdentifier = `${layer.id} ${layer.name}`.toLowerCase();
     if (/(?:^|[_\s-])var_first_name|txt_first_name|first_name_var|given_name_var/i.test(layerIdentifier)) return 'FIRST_NAME';
     if (/(?:^|[_\s-])var_middle_name|txt_middle_name|middle_name_var/i.test(layerIdentifier)) return 'MIDDLE_NAME';
@@ -422,15 +466,16 @@ export function validatePopulatedTemplate(
  * Plans mapping between template and form data without mutating the template.
  */
 export function planTemplateMapping(template: CardTemplate, formData: Partial<NidaFormData>): MappingPlan {
-  const isBackSide = isBackSideTemplate(template);
+  const sanitizedTemplate = ensureTemplateFieldIds(template);
+  const isBackSide = isBackSideTemplate(sanitizedTemplate);
   const matchedBindingsSet = new Set<SupportedBinding>();
   const fieldMappings: FieldMappingDetail[] = [];
   const warnings: string[] = [];
 
   const bindingsToCheck: SupportedBinding[] = isBackSide ? ['NIDA_NUMBER'] : ALL_SUPPORTED_BINDINGS;
 
-  for (const layer of template.layers) {
-    const binding = getLayerBinding(layer, template.layers);
+  for (const layer of sanitizedTemplate.layers) {
+    const binding = getLayerBinding(layer, sanitizedTemplate.layers);
     if (binding && bindingsToCheck.includes(binding)) {
       matchedBindingsSet.add(binding);
       const formVal = getFormValueForBinding(binding, formData);
@@ -460,14 +505,14 @@ export function planTemplateMapping(template: CardTemplate, formData: Partial<Ni
       missingBindings.push({
         binding,
         label,
-        warning: `Placeholder for "${label}" was not found in template "${template.templateName}". Skipping this field.`,
+        warning: `Placeholder for "${label}" was not found in template "${sanitizedTemplate.templateName}". Skipping this field.`,
       });
     }
   }
 
   return {
-    templateId: template.id,
-    templateName: template.templateName,
+    templateId: sanitizedTemplate.id,
+    templateName: sanitizedTemplate.templateName,
     matchedBindings: Array.from(matchedBindingsSet),
     missingBindings,
     fieldMappings,
@@ -479,15 +524,16 @@ export function planTemplateMapping(template: CardTemplate, formData: Partial<Ni
  * Applies the Template Field Mapping Engine to populate NIDA card templates.
  */
 export function applyTemplateMapping(template: CardTemplate, formData: NidaFormData): PopulatedTemplateResult {
-  const isBackSide = isBackSideTemplate(template);
-  const plan = planTemplateMapping(template, formData);
+  const sanitizedTemplate = ensureTemplateFieldIds(template);
+  const isBackSide = isBackSideTemplate(sanitizedTemplate);
+  const plan = planTemplateMapping(sanitizedTemplate, formData);
 
   const clonedLayers: Layer[] = [];
   let populatedCount = 0;
   let skippedCount = 0;
 
-  for (const layer of template.layers) {
-    const binding = getLayerBinding(layer, template.layers);
+  for (const layer of sanitizedTemplate.layers) {
+    const binding = getLayerBinding(layer, sanitizedTemplate.layers);
 
     if (isBackSide) {
       if (binding === 'NIDA_NUMBER') {
@@ -515,7 +561,7 @@ export function applyTemplateMapping(template: CardTemplate, formData: NidaFormD
   const validation = validatePopulatedTemplate(clonedLayers, formData, isBackSide);
 
   const populatedTemplate: CardTemplate = {
-    ...template,
+    ...sanitizedTemplate,
     layers: clonedLayers,
     updatedAt: new Date().toISOString(),
   };

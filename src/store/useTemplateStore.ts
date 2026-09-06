@@ -13,6 +13,7 @@ import {
 } from '../types';
 import { CR80_WIDTH_MM, CR80_HEIGHT_MM } from '../utils/units';
 import { SAMPLE_TEMPLATES } from '../utils/sampleTemplates';
+import { ensureTemplateFieldIds } from '../utils/templateMappingEngine';
 import { getClosestValidWeight } from '../utils/fonts';
 import {
   saveTemplateDB,
@@ -826,14 +827,20 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
   loadSavedTemplates: async () => {
     const dbTemplates = await getAllTemplatesDB();
-    if (dbTemplates.length === 0) {
-      // Pre-seed sample templates in DB
-      for (const tpl of SAMPLE_TEMPLATES) {
-        await saveTemplateDB(tpl);
-      }
-      return SAMPLE_TEMPLATES;
+    const map = new Map<string, CardTemplate>();
+
+    dbTemplates.forEach((t) => {
+      map.set(t.id, ensureTemplateFieldIds(t));
+    });
+
+    // Always ensure built-in SAMPLE_TEMPLATES use current code version with explicit field IDs
+    for (const sample of SAMPLE_TEMPLATES) {
+      const sanitized = ensureTemplateFieldIds(sample);
+      map.set(sanitized.id, sanitized);
+      await saveTemplateDB(sanitized);
     }
-    return dbTemplates;
+
+    return Array.from(map.values());
   },
 
   deleteSavedTemplate: async (id) => {

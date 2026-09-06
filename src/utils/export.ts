@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { CardTemplate, CardData, Layer } from '../types';
 import { generateBarcodeDataUrl, generateQRCodeDataUrl } from './barcodes';
 import { mmToPx } from './units';
+import { applyTemplateMapping, NidaFormData } from './templateMappingEngine';
 
 export interface CropRegion {
   x: number; // in mm
@@ -19,6 +20,14 @@ export async function renderTemplateToCanvas(
   renderDpi: number = 300,
   cropRegion?: CropRegion
 ): Promise<HTMLCanvasElement> {
+  // If cardData contains NIDA form fields, apply strict 1:1 mapping engine to ensure back/front fields populate cleanly
+  if (cardData && (cardData.nidaNumber || cardData.firstName || cardData.lastName)) {
+    const mappedRes = applyTemplateMapping(template, cardData as unknown as NidaFormData);
+    if (mappedRes.populatedTemplate) {
+      template = mappedRes.populatedTemplate;
+    }
+  }
+
   const canvas = document.createElement('canvas');
   const widthPx = Math.round(mmToPx(template.cardWidth, renderDpi));
   const heightPx = Math.round(mmToPx(template.cardHeight, renderDpi));
@@ -303,6 +312,14 @@ export async function download2In1PDF(
   cardData: CardData = {},
   filename?: string
 ) {
+  if (cardData && (cardData.nidaNumber || cardData.firstName || cardData.lastName)) {
+    const fRes = applyTemplateMapping(frontTemplate, cardData as unknown as NidaFormData);
+    if (fRes.populatedTemplate) frontTemplate = fRes.populatedTemplate;
+
+    const bRes = applyTemplateMapping(backTemplate, cardData as unknown as NidaFormData);
+    if (bRes.populatedTemplate) backTemplate = bRes.populatedTemplate;
+  }
+
   // Standard A4 sheet dimensions in mm (210 x 297 mm)
   const pageWidth = 210;
   const pageHeight = 297;

@@ -397,7 +397,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
 
     if (!frontRes.success) {
       updateStep('step8_populate', 'failed');
-      setWorkflowError(frontRes.error || 'Field mapping validation failed. Stopping card generation.');
+      setSubmissionError(frontRes.error || 'Field mapping validation failed. Stopping card generation.');
       setIsProcessing(false);
       return;
     }
