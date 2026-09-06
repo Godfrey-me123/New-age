@@ -4,9 +4,9 @@ export const AppFooter: React.FC<{ className?: string }> = ({ className = '' }) 
   return (
     <footer
       id="app-global-footer"
-      className={`w-full py-4 text-center border-t border-[#E7E9EB] mt-auto select-none pointer-events-auto bg-[#FFFFFF] ${className}`}
+      className={`w-full py-4 text-center border-t border-[#E7E2DE] mt-auto select-none pointer-events-auto bg-[#D8D2CE] ${className}`}
     >
-      <p className="text-[11px] text-slate-500 tracking-wider font-medium">
+      <p className="text-[11px] text-[#101010]/70 tracking-wider font-semibold">
         All Rights Reserved © 2026
       </p>
     </footer>
