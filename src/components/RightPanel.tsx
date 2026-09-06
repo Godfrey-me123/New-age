@@ -167,6 +167,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
 
   const variableOptions = [
     { label: 'First Name', val: '{{first_name}}' },
+    { label: 'Middle Name', val: '{{middle_name}}' },
     { label: 'Last Name', val: '{{last_name}}' },
     { label: 'ID Number', val: '{{id_number}}' },
     { label: 'Date of Birth', val: '{{dob}}' },
