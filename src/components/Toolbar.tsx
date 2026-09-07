@@ -69,6 +69,20 @@ export const Toolbar: React.FC = () => {
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [showSaveDropdown, setShowSaveDropdown] = useState(false);
+  const saveButtonRef = React.useRef<HTMLButtonElement>(null);
+  const [dropdownCoords, setDropdownCoords] = useState<{ top: number; left: number } | null>(null);
+
+  const toggleSaveDropdown = () => {
+    if (!showSaveDropdown && saveButtonRef.current) {
+      const rect = saveButtonRef.current.getBoundingClientRect();
+      setDropdownCoords({
+        top: rect.bottom,
+        left: rect.right - 224,
+      });
+    }
+    setShowSaveDropdown(!showSaveDropdown);
+  };
+
   const [showSnapDropdown, setShowSnapDropdown] = useState(false);
   const [showGridDropdown, setShowGridDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -457,7 +471,8 @@ export const Toolbar: React.FC = () => {
           {/* Save Button */}
           <div className="relative">
             <button
-              onClick={() => setShowSaveDropdown(!showSaveDropdown)}
+              ref={saveButtonRef}
+              onClick={toggleSaveDropdown}
               className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
                 isSavedNotice
                   ? 'bg-[#CEE9B9] border-[#b8df9c] text-[#000000]'
@@ -476,7 +491,15 @@ export const Toolbar: React.FC = () => {
                   className="fixed inset-0 z-40"
                   onClick={() => setShowSaveDropdown(false)}
                 />
-                <div className="absolute right-0 mt-1.5 w-56 bg-white border border-[#dadcdc] rounded-xl shadow-lg p-1.5 z-50 text-xs space-y-0.5 animate-in fade-in slide-in-from-top-1">
+                <div
+                  className="fixed bg-white border border-[#dadcdc] rounded-xl shadow-lg p-1.5 z-50 text-xs space-y-0.5 animate-in fade-in slide-in-from-top-1"
+                  style={{
+                    top: dropdownCoords ? `${dropdownCoords.top + 6}px` : '52px',
+                    left: dropdownCoords ? `${Math.max(8, dropdownCoords.left)}px` : 'auto',
+                    right: dropdownCoords ? 'auto' : '16px',
+                    width: '224px',
+                  }}
+                >
                   <button
                     onClick={async () => {
                       updateTemplateMeta({ side: 'Front Side' });
