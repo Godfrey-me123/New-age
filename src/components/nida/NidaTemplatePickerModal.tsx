@@ -41,17 +41,10 @@ export const NidaTemplatePickerModal: React.FC<NidaTemplatePickerModalProps> = (
   useEffect(() => {
     if (isOpen) {
       loadSavedTemplates().then((saved) => {
-        // Merge samples and saved templates without duplicate IDs
-        const combined = [...SAMPLE_TEMPLATES];
-        saved.forEach((st) => {
-          if (!combined.some((t) => t.id === st.id)) {
-            combined.push(st);
-          }
-        });
-        setAllTemplates(combined);
+        setAllTemplates(saved);
 
         // Pre-render thumbnails for templates
-        combined.forEach((tpl) => {
+        saved.forEach((tpl) => {
           renderTemplateToCanvas(tpl, {}, 72)
             .then((canvas) => {
               setThumbnails((prev) => ({

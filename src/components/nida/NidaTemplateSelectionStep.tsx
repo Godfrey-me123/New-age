@@ -53,21 +53,15 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
   // Load all templates (sample + saved)
   useEffect(() => {
     loadSavedTemplates().then((saved) => {
-      const merged = [...SAMPLE_TEMPLATES];
-      saved.forEach((st) => {
-        if (!merged.some((m) => m.id === st.id)) {
-          merged.push(st);
-        }
-      });
-      setAllTemplates(merged);
+      setAllTemplates(saved);
 
       // Resolve Front Template
       const targetFrontId =
         selectedFrontTemplateId || defaultNidaFrontTemplateId || 'sample_tanzania_nida';
       const foundFront =
-        merged.find((t) => t.id === targetFrontId) ||
-        merged.find((t) => !t.id.includes('back')) ||
-        SAMPLE_TEMPLATES[0];
+        saved.find((t) => t.id === targetFrontId) ||
+        saved.find((t) => !t.id.includes('back')) ||
+        saved[0];
 
       if (foundFront) {
         setFrontTemplate(foundFront);
@@ -78,10 +72,10 @@ export const NidaTemplateSelectionStep: React.FC<NidaTemplateSelectionStepProps>
       const targetBackId =
         selectedBackTemplateId || defaultNidaBackTemplateId || 'sample_tanzania_nida_back';
       const foundBack =
-        merged.find((t) => t.id === targetBackId) ||
-        merged.find((t) => t.id.includes('back')) ||
-        SAMPLE_TEMPLATES[1] ||
-        SAMPLE_TEMPLATES[0];
+        saved.find((t) => t.id === targetBackId) ||
+        saved.find((t) => t.id.includes('back')) ||
+        saved[1] ||
+        saved[0];
 
       if (foundBack) {
         setBackTemplate(foundBack);

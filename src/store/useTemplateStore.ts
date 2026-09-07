@@ -840,11 +840,13 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       map.set(t.id, ensureTemplateFieldIds(t));
     });
 
-    // Always ensure built-in SAMPLE_TEMPLATES use current code version with explicit field IDs
+    // Always ensure built-in SAMPLE_TEMPLATES use current code version with explicit field IDs, without overwriting user-modified versions
     for (const sample of SAMPLE_TEMPLATES) {
-      const sanitized = ensureTemplateFieldIds(sample);
-      map.set(sanitized.id, sanitized);
-      await saveTemplateDB(sanitized);
+      if (!map.has(sample.id)) {
+        const sanitized = ensureTemplateFieldIds(sample);
+        map.set(sanitized.id, sanitized);
+        await saveTemplateDB(sanitized);
+      }
     }
 
     const all = Array.from(map.values());

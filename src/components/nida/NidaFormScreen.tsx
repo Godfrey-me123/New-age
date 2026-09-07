@@ -162,16 +162,13 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
   // Load and resolve Front and Back templates
   useEffect(() => {
     loadSavedTemplates().then((saved) => {
-      const pool = [...SAMPLE_TEMPLATES];
-      saved.forEach((st) => {
-        if (!pool.some((p) => p.id === st.id)) pool.push(st);
-      });
+      const pool = saved;
 
       const targetFrontId = selectedFrontTemplateId || defaultNidaFrontTemplateId || 'sample_tanzania_nida';
-      const foundFront = pool.find((t) => t.id === targetFrontId) || pool.find((t) => !t.id.includes('back')) || SAMPLE_TEMPLATES[0];
+      const foundFront = pool.find((t) => t.id === targetFrontId) || pool.find((t) => !t.id.includes('back')) || pool[0];
 
       const targetBackId = selectedBackTemplateId || defaultNidaBackTemplateId || 'sample_tanzania_nida_back';
-      const foundBack = pool.find((t) => t.id === targetBackId) || pool.find((t) => t.id.includes('back')) || SAMPLE_TEMPLATES[1] || SAMPLE_TEMPLATES[0];
+      const foundBack = pool.find((t) => t.id === targetBackId) || pool.find((t) => t.id.includes('back')) || pool[1] || pool[0];
 
       setResolvedFrontTpl(foundFront);
       setResolvedBackTpl(foundBack);
@@ -360,22 +357,18 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     await delay(200);
 
     // Resolve templates pool
-    const allSaved = await loadSavedTemplates();
-    const pool = [...SAMPLE_TEMPLATES];
-    allSaved.forEach((st) => {
-      if (!pool.some((p) => p.id === st.id)) pool.push(st);
-    });
+    const pool = await loadSavedTemplates();
 
     const frontId = selectedFrontTemplateId || defaultNidaFrontTemplateId || 'sample_tanzania_nida';
     const backId = selectedBackTemplateId || defaultNidaBackTemplateId || 'sample_tanzania_nida_back';
 
     // Prefer in-memory currentTemplate if it matches the selected ID to capture active unsaved edits
-    let frontSourceRaw = pool.find((t) => t.id === frontId) || pool.find((t) => !t.id.includes('back')) || SAMPLE_TEMPLATES[0];
+    let frontSourceRaw = pool.find((t) => t.id === frontId) || pool.find((t) => !t.id.includes('back')) || pool[0];
     if (currentTemplate && currentTemplate.id === frontId) {
       frontSourceRaw = currentTemplate;
     }
 
-    let backSourceRaw = pool.find((t) => t.id === backId) || pool.find((t) => t.id.includes('back')) || SAMPLE_TEMPLATES[1] || SAMPLE_TEMPLATES[0];
+    let backSourceRaw = pool.find((t) => t.id === backId) || pool.find((t) => t.id.includes('back')) || pool[1] || pool[0];
     if (currentTemplate && currentTemplate.id === backId) {
       backSourceRaw = currentTemplate;
     }
