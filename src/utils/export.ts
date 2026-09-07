@@ -31,10 +31,10 @@ export async function renderTemplateToCanvas(
     ...cardData,
   };
 
-  // 2. Determine effective template: prefer store's populated front/back template if available
-  if (store.frontPopulatedTemplate && (!template.side || template.side === 'Front Side' || template.id === store.frontPopulatedTemplate.id)) {
+  // 2. Determine effective template: prefer store's populated front/back template if available and IDs match exactly
+  if (store.frontPopulatedTemplate && template.id === store.frontPopulatedTemplate.id) {
     template = store.frontPopulatedTemplate;
-  } else if (store.backPopulatedTemplate && (template.side === 'Back Side' || template.id === store.backPopulatedTemplate.id || isBackSideTemplate(template))) {
+  } else if (store.backPopulatedTemplate && template.id === store.backPopulatedTemplate.id) {
     template = store.backPopulatedTemplate;
   }
 
@@ -358,9 +358,9 @@ export async function download2In1PDF(
     ...cardData,
   };
 
-  // Source of truth for templates: prefer populated templates in store if present
-  let fTpl = store.frontPopulatedTemplate || frontTemplate || store.currentTemplate;
-  let bTpl = store.backPopulatedTemplate || backTemplate;
+  // Source of truth for templates: prefer explicitly passed arguments first, then fall back to store
+  let fTpl = frontTemplate || store.frontPopulatedTemplate || store.currentTemplate;
+  let bTpl = backTemplate || store.backPopulatedTemplate;
 
   if (!bTpl) {
     // If no back template provided, find or generate sample back

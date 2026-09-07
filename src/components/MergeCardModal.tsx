@@ -72,22 +72,16 @@ export const MergeCardModal: React.FC = () => {
     const generatePreviews = async () => {
       const store = useTemplateStore.getState();
       const formData = store.lastNidaFormData || {};
-      const fTpl = (store.frontPopulatedTemplate && store.frontPopulatedTemplate.id === frontTemplateId)
-        ? store.frontPopulatedTemplate
-        : frontTemplate;
-      const bTpl = (store.backPopulatedTemplate && store.backPopulatedTemplate.id === backTemplateId)
-        ? store.backPopulatedTemplate
-        : backTemplate;
 
-      if (fTpl || frontTemplate) {
+      if (frontTemplate) {
         try {
-          const c = await renderTemplateToCanvas((fTpl || frontTemplate)!, formData, 100);
+          const c = await renderTemplateToCanvas(frontTemplate, formData, 100);
           if (active) setFrontPreview(c.toDataURL('image/png'));
         } catch {}
       }
-      if (bTpl || backTemplate) {
+      if (backTemplate) {
         try {
-          const c = await renderTemplateToCanvas((bTpl || backTemplate)!, formData, 100);
+          const c = await renderTemplateToCanvas(backTemplate, formData, 100);
           if (active) setBackPreview(c.toDataURL('image/png'));
         } catch {}
       }
@@ -102,21 +96,15 @@ export const MergeCardModal: React.FC = () => {
 
   const handleExportPDF = async () => {
     const store = useTemplateStore.getState();
-    const fTpl = (store.frontPopulatedTemplate && store.frontPopulatedTemplate.id === frontTemplateId)
-      ? store.frontPopulatedTemplate
-      : frontTemplate;
-    const bTpl = (store.backPopulatedTemplate && store.backPopulatedTemplate.id === backTemplateId)
-      ? store.backPopulatedTemplate
-      : backTemplate;
     const formData = store.lastNidaFormData || {};
 
-    if (!fTpl && !frontTemplate) {
+    if (!frontTemplate) {
       alert('Please select a Front template.');
       return;
     }
     setIsExporting(true);
     try {
-      await download2In1PDF((fTpl || frontTemplate)!, (bTpl || backTemplate)!, formData);
+      await download2In1PDF(frontTemplate, backTemplate || undefined, formData);
     } catch (e) {
       console.error(e);
       alert('Error generating 2-in-1 PDF.');
