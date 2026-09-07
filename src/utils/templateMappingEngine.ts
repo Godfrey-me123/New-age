@@ -244,11 +244,11 @@ export function matchLayerToBinding(layer: Layer, binding: SupportedBinding, all
 export function getFormValueForBinding(binding: SupportedBinding, formData: Partial<NidaFormData>): string {
   switch (binding) {
     case 'FIRST_NAME':
-      return formData.firstName?.trim().toUpperCase() || '';
+      return formData.firstName?.trim() || '';
     case 'MIDDLE_NAME':
-      return formData.middleName?.trim().toUpperCase() || '';
+      return formData.middleName?.trim() || '';
     case 'LAST_NAME':
-      return formData.lastName?.trim().toUpperCase() || '';
+      return formData.lastName?.trim() || '';
     case 'DOB':
       return formData.dob || '';
     case 'GENDER': {
@@ -307,7 +307,7 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
 
     switch (binding) {
       case 'FIRST_NAME': {
-        const val = (formData.firstName || '').trim().toUpperCase();
+        const val = (formData.firstName || '').trim();
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, val);
         } else if (/^(?:jina|given\s*name)\s*[:：\-]?\s*/i.test(text)) {
@@ -318,7 +318,7 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
         break;
       }
       case 'MIDDLE_NAME': {
-        const val = (formData.middleName || '').trim().toUpperCase();
+        const val = (formData.middleName || '').trim();
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, val);
         } else if (/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*/i.test(text)) {
@@ -329,7 +329,7 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
         break;
       }
       case 'LAST_NAME': {
-        const val = (formData.lastName || '').trim().toUpperCase();
+        const val = (formData.lastName || '').trim();
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/gi, val);
         } else if (/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*/i.test(text)) {

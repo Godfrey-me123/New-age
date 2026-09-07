@@ -810,9 +810,13 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   setActiveMobileSheet: (sheet) => set({ activeMobileSheet: sheet }),
 
   saveCurrentTemplate: async () => {
-    const template = get().currentTemplate;
+    const template = {
+      ...get().currentTemplate,
+      updatedAt: new Date().toISOString(),
+    };
     const sanitized = sanitizeTemplateForSaving(template);
     await saveTemplateDB(sanitized);
+    set({ currentTemplate: template });
   },
 
   saveAsNewTemplate: async (newName: string, cardType?: any, side?: any) => {
