@@ -267,7 +267,7 @@ export const HomeScreen: React.FC = () => {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-[#101010] text-sm sm:text-base tracking-tight font-sans">
-                ID Template Studio
+                BIGsta
               </span>
               <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#E7E2DE] text-[#101010] border border-[#dad5d0]">
                 <ShieldCheck className="w-3 h-3 text-[#101010]" />

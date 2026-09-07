@@ -322,7 +322,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-extrabold text-[#000000] tracking-wide uppercase">
-                ID Template Studio
+                BIGsta
               </h2>
               <p className="text-[11px] text-[#555555] font-semibold">Government & Identity Services</p>
             </div>

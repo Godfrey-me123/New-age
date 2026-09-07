@@ -76,7 +76,7 @@ export async function generateQRCodeDataUrl(
   darkColor: string = '#000000',
   lightColor: string = '#ffffff'
 ): Promise<string> {
-  let text = rawText || 'ID TEMPLATE STUDIO';
+  let text = rawText || 'BIGSTA';
   if (text.includes('{{')) {
     text = text.replace(/\{\{.*?\}\}/g, 'SAMPLE-ID-12345');
   }

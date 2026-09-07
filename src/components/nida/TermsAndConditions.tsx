@@ -104,52 +104,184 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
             </div>
 
             {/* Scrollable Content Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm text-[#C5C8CD] leading-relaxed">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-[#C5C8CD] leading-relaxed select-text">
+              <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-2">
+                <p className="text-xs font-bold text-white uppercase tracking-wider">Welcome to BIGsta</p>
+                <p className="text-xs text-[#A0A4A8]">
+                  BIGsta is a document template creation, card design, sample document generation, and visual preview platform intended for educational, design, demonstration, testing, training, record-keeping, and template development purposes only.
+                </p>
+                <p className="text-xs text-[#A0A4A8]">
+                  By accessing or using BIGsta, you agree to comply with and be bound by the following Terms and Conditions.
+                </p>
+              </div>
+
               <section className="space-y-2">
-                <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                  <FileText className="w-4 h-4 text-[#47A5FF]" />
-                  <h4>1. Lawful Data Input & Verification</h4>
-                </div>
-                <p className="text-xs text-[#A0A4A8] pl-6 leading-relaxed">
-                  The user warrants and confirms that all provided national identification data (including Full Names, Date of Birth, Gender, 20-digit NIDA number, Passport Photograph, and Digital Specimen Signature) are authentic, accurate, and belong to the authorized identity holder. Any fraudulent generation of national credentials is strictly prohibited.
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  1. Independent Private Application
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  BIGsta is a privately developed application.<br />
+                  BIGsta is <strong>NOT</strong>:<br />
+                  • A government website<br />
+                  • A government system<br />
+                  • A government service<br />
+                  • A government agency<br />
+                  • A government database<br />
+                  • A government verification platform<br />
+                  • An official identification authority<br /><br />
+                  BIGsta operates independently and has no affiliation, partnership, endorsement, authorization, or approval from any government institution. This includes but is not limited to: NIDA, RITA, Immigration Department, TRA, NHIF, HESLB, eCitizen, BRELA, Police Force, Local Government Authorities, or any government ministry, agency, or department.
                 </p>
               </section>
 
               <section className="space-y-2">
-                <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                  <Lock className="w-4 h-4 text-emerald-400" />
-                  <h4>2. Purpose of Processing & Security</h4>
-                </div>
-                <p className="text-xs text-[#A0A4A8] pl-6 leading-relaxed">
-                  Information input into this module is dedicated strictly to automated card template mapping, barcode encoding, and document layout formatting. All image data (portrait and signature) remain within local browser memory and session state. No external distribution, commercial broker resale, or unauthorized sharing of citizen identification data is executed.
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  2. Purpose of the Platform
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  BIGsta is designed for: Educational purposes, Template creation, Design demonstrations, UI/UX prototyping, Record keeping, Training environments, Software testing, Sample document generation, and Visual previews.<br /><br />
+                  The platform is not intended to replace official government systems or legally recognized document issuance processes.
                 </p>
               </section>
 
               <section className="space-y-2">
-                <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                  <Eye className="w-4 h-4 text-amber-400" />
-                  <h4>3. Biometric Image & Media Preservation</h4>
-                </div>
-                <p className="text-xs text-[#A0A4A8] pl-6 leading-relaxed">
-                  The original biometric photograph and specimen signature files provided by the user are preserved in their native format and transparency. The application applies positioning and dimensional fitting to standard CR80 templates without altering the integrity of the underlying digital assets.
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  3. Generated Documents Are Not Official
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  Any document, card, permit, certificate, license, identification card, or visual output generated through BIGsta is considered: A sample, A template, A preview, A demonstration, or A design example.<br /><br />
+                  Generated outputs must never be represented as genuine, official, government-issued, or legally valid documents unless independently issued and authorized by the appropriate lawful authority.
                 </p>
               </section>
 
               <section className="space-y-2">
-                <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                  <Shield className="w-4 h-4 text-purple-400" />
-                  <h4>4. Legal Compliance & Limitation of Liability</h4>
-                </div>
-                <p className="text-xs text-[#A0A4A8] pl-6 leading-relaxed">
-                  Generated identification templates and documents are formatted according to official CR80 dimension standards. Users are responsible for ensuring that physical card production and cardholder verification adhere to all relevant statutory regulations governing official identification documents.
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  4. No Government Verification
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  BIGsta does not verify: Identity records, Citizenship records, National ID records, Birth records, Passport records, Tax records, Health records, Educational records, or Government databases.<br /><br />
+                  All information displayed within generated documents originates solely from user input. BIGsta does not confirm the accuracy, existence, validity, or legality of any information entered by users.
                 </p>
               </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <Scale className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  5. User Responsibility
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  Users are fully responsible for all information submitted into the platform. This includes: First names, Middle names, Last names, Photos, Signatures, Identification numbers, Dates of birth, Addresses, Uploaded files, Logos, or any other content.<br /><br />
+                  Users acknowledge that all generated outputs are created based on information they provide.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wide flex items-center gap-2">
+                  <X className="w-3.5 h-3.5 text-rose-400" />
+                  6. Prohibited Activities
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  Users must not use BIGsta for: Fraud, Forgery, Identity theft, Impersonation, Deception, Misrepresentation, Criminal activity, Financial scams, Government impersonation, Unauthorized document production, Illegal transactions, Cybercrime, or any activity prohibited by law.<br /><br />
+                  Any misuse of the platform is solely the responsibility of the user.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <Eye className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  7. User Content Ownership
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  Users are responsible for ensuring they have the legal right to use and upload: Photographs, Signatures, Logos, Graphics, Images, Text content, and Brand materials.<br /><br />
+                  BIGsta does not assume ownership of user-generated content.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <Scale className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  8. Artificial Intelligence and Automation
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  Some features within BIGsta may utilize automated processing, intelligent design tools, template engines, or artificial intelligence technologies. Generated results may contain user-provided content, template placeholders, sample information, or AI-assisted outputs.<br /><br />
+                  Users must independently review all generated content before use.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  9. No Legal Validity
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  Documents generated through BIGsta carry no automatic legal recognition. BIGsta does not grant: Legal identity, Citizenship status, Government approval, Official certification, or Legal authentication. Only authorized institutions may issue legally recognized documents.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  10. Privacy and Information Processing
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  BIGsta may temporarily process information submitted by users for the purpose of generating previews, templates, and documents. Users should avoid entering information they are unwilling to process through the application. Users remain responsible for protecting their own information and devices.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-[#A0A4A8] uppercase tracking-wide flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-[#A0A4A8]" />
+                  11. Limitation of Liability
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  To the maximum extent permitted by law, BIGsta, its developers, owners, contributors, employees, and service providers shall not be liable for: Data loss, Financial loss, Business interruption, Damages, Claims, Penalties, Legal disputes, User misuse, or Third-party actions. Use of the platform is entirely at the user's own risk.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-[#47A5FF]" />
+                  12. Availability of Services
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  BIGsta may modify, update, improve, suspend, or discontinue any feature at any time without prior notice. This includes: Templates, Design tools, Export systems, Storage systems, User interfaces, Services, and Platform functionality. Continued use of BIGsta after updates constitutes acceptance of those changes.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  13. Acceptance of Terms
+                </h4>
+                <p className="text-[#A0A4A8] pl-5">
+                  By using BIGsta, you confirm that: You have read these Terms and Conditions; You understand the limitations of the platform; You understand that generated documents are not official documents; You agree not to use generated content unlawfully; You accept responsibility for your use of the platform; and You agree to comply with applicable laws within your jurisdiction.
+                </p>
+              </section>
+
+              <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl space-y-2 mt-4 text-xs">
+                <p className="font-extrabold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400" />
+                  IMPORTANT NOTICE
+                </p>
+                <div className="space-y-1.5 text-[#C5C8CD] pl-1">
+                  <p>⚠️ BIGsta is not an official government application, government portal, government database, or government verification service.</p>
+                  <p>⚠️ BIGsta does not connect to, access, or verify records from NIDA, RITA, Immigration, TRA, NHIF, HESLB, or any government institution.</p>
+                  <p>⚠️ All documents generated within BIGsta are templates, samples, demonstrations, previews, or design examples only.</p>
+                  <p>⚠️ Generated outputs should not be used for identity verification, legal transactions, government submissions, immigration processes, banking services, financial services, employment verification, or any activity requiring genuine official documents.</p>
+                  <p>⚠️ Users are solely responsible for any information entered into the platform and for how generated outputs are used.</p>
+                  <p>⚠️ Misuse of generated documents may violate local laws and regulations and may result in civil or criminal consequences.</p>
+                  <p>⚠️ By continuing to use BIGsta, you acknowledge and accept all terms, conditions, responsibilities, limitations, and notices described above.</p>
+                </div>
+              </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-[#2D3139] bg-[#14171D]">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-[#2D3139] bg-[#14171D] shrink-0">
               <p className="text-xs text-[#7D8287]">
-                Last updated: March 2026
+                Last Updated: January 01, 2026
               </p>
               <div className="flex items-center gap-2">
                 {!checked && (

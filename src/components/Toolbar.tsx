@@ -135,7 +135,7 @@ export const Toolbar: React.FC = () => {
           {/* Application Brand / App Name */}
           <div className="hidden lg:flex flex-col border-r border-[#E7E9EB] pr-3">
             <span className="text-xs font-bold text-[#000000] tracking-wide uppercase font-sans">
-              ID Template Studio
+              BIGsta
             </span>
             <span className="text-[10px] text-[#555555] font-mono">
               Card Specification

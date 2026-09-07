@@ -1,5 +1,5 @@
 {
-  "name": "ID Template Studio",
+  "name": "BIGsta",
   "description": "Specialized ID Card Template Designer and Renderer with millimeter precision, magnetic snap guides, template variables, and multi-format export.",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

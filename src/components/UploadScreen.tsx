@@ -198,7 +198,7 @@ export const UploadScreen: React.FC = () => {
 
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#000000] text-white text-xs sm:text-sm font-bold tracking-wide">
               <CreditCard className="w-4 h-4" />
-              <span>ID TEMPLATE STUDIO</span>
+              <span>BIGSTA</span>
             </div>
           </div>
 
