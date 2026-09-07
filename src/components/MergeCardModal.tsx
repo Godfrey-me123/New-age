@@ -63,8 +63,14 @@ export const MergeCardModal: React.FC = () => {
     }
   }, [isMergeModalOpen]);
 
-  const frontTemplate = templates.find((t) => t.id === frontTemplateId);
-  const backTemplate = templates.find((t) => t.id === backTemplateId);
+  const store = useTemplateStore();
+  const frontTemplate = (store.frontPopulatedTemplate && store.frontPopulatedTemplate.id === frontTemplateId)
+    ? store.frontPopulatedTemplate
+    : templates.find((t) => t.id === frontTemplateId);
+
+  const backTemplate = (store.backPopulatedTemplate && store.backPopulatedTemplate.id === backTemplateId)
+    ? store.backPopulatedTemplate
+    : templates.find((t) => t.id === backTemplateId);
 
   // Render previews when selection changes
   useEffect(() => {

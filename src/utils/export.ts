@@ -358,9 +358,22 @@ export async function download2In1PDF(
     ...cardData,
   };
 
-  // Source of truth for templates: prefer explicitly passed arguments first, then fall back to store
-  let fTpl = frontTemplate || store.frontPopulatedTemplate || store.currentTemplate;
-  let bTpl = backTemplate || store.backPopulatedTemplate;
+  // Source of truth for templates:
+  // If the passed template ID matches the active populated template in the store, use the store's populated template directly!
+  // This guarantees that the PDF export matches the preview exactly, with all latest layout and text edits intact.
+  let fTpl = frontTemplate;
+  if (fTpl && store.frontPopulatedTemplate && fTpl.id === store.frontPopulatedTemplate.id) {
+    fTpl = store.frontPopulatedTemplate;
+  } else if (!fTpl) {
+    fTpl = store.frontPopulatedTemplate || store.currentTemplate;
+  }
+
+  let bTpl = backTemplate;
+  if (bTpl && store.backPopulatedTemplate && bTpl.id === store.backPopulatedTemplate.id) {
+    bTpl = store.backPopulatedTemplate;
+  } else if (!bTpl) {
+    bTpl = store.backPopulatedTemplate;
+  }
 
   if (!bTpl) {
     // If no back template provided, find or generate sample back

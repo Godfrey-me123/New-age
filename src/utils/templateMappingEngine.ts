@@ -1,5 +1,6 @@
 import { CardTemplate, Layer, TextLayer, ImageLayer, PlaceholderLayer, BarcodeLayer, QRCodeLayer } from '../types';
 import { NidaFormData } from '../components/nida/NidaFormScreen';
+import { normalizeDateInput } from './dateValidation';
 
 export type { NidaFormData };
 
@@ -272,6 +273,35 @@ export function getFormValueForBinding(binding: SupportedBinding, formData: Part
  * Injects EXACT value into a matched layer.
  * Guarantees that a layer assigned to `lastName` receives `formData.lastName`, `dob` receives `formData.dob`, `gender` receives `'M'`/`'F'`, etc.
  */
+/**
+ * Detects the casing requested by the template placeholder (uppercase vs lowercase as saved in template)
+ * and formats the injected value to match.
+ */
+function followCasing(textLayer: TextLayer, value: string): string {
+  const originalText = textLayer.text || '';
+  
+  // 1. Check if the original text contains any uppercase placeholder token
+  const hasUpperPlaceholder = /\{\{[A-Z0-9_]+\}\}/.test(originalText);
+  const hasLowerPlaceholder = /\{\{[a-z0-9_]+\}\}/.test(originalText);
+  
+  if (hasUpperPlaceholder) {
+    return value.toUpperCase();
+  }
+  if (hasLowerPlaceholder) {
+    return value; // Keep as typed (case-preserving)
+  }
+
+  // 2. Fall back to checking if the original text layer was entirely uppercase
+  if (originalText === originalText.toUpperCase() && originalText !== originalText.toLowerCase()) {
+    return value.toUpperCase();
+  }
+  if (originalText === originalText.toLowerCase() && originalText !== originalText.toUpperCase()) {
+    return value.toLowerCase();
+  }
+
+  return value;
+}
+
 export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, formData: NidaFormData): Layer {
   const targetGender: 'M' | 'F' = (formData.gender || '').trim().toUpperCase().startsWith('M') ? 'M' : 'F';
 
@@ -307,7 +337,8 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
 
     switch (binding) {
       case 'FIRST_NAME': {
-        const val = (formData.firstName || '').trim();
+        const rawVal = (formData.firstName || '').trim();
+        const val = followCasing(textLayer, rawVal);
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, val);
         } else if (/^(?:jina|given\s*name)\s*[:：\-]?\s*/i.test(text)) {
@@ -318,7 +349,8 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
         break;
       }
       case 'MIDDLE_NAME': {
-        const val = (formData.middleName || '').trim();
+        const rawVal = (formData.middleName || '').trim();
+        const val = followCasing(textLayer, rawVal);
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, val);
         } else if (/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*/i.test(text)) {
@@ -329,7 +361,8 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
         break;
       }
       case 'LAST_NAME': {
-        const val = (formData.lastName || '').trim();
+        const rawVal = (formData.lastName || '').trim();
+        const val = followCasing(textLayer, rawVal);
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/gi, val);
         } else if (/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*/i.test(text)) {
@@ -340,7 +373,8 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
         break;
       }
       case 'DOB': {
-        const val = formData.dob || '';
+        // DOB must always follow standard format as commanded (e.g., 01 MAR 1998)
+        const val = normalizeDateInput(formData.dob || '');
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:dob|date_of_birth|birth_date|birthdate)\}\}/gi, val);
         } else if (/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*/i.test(text)) {
@@ -642,32 +676,87 @@ export function sanitizeTemplateForSaving(template: CardTemplate): CardTemplate 
 
     if (layer.type === 'text') {
       const textLayer = layer as TextLayer;
-      let placeholderText = textLayer.text || '';
+      let text = textLayer.text || '';
 
+      // Non-destructive sanitization: preserve prefixes and case indicators of placeholders
       switch (binding) {
-        case 'FIRST_NAME':
-          placeholderText = '{{first_name}}';
+        case 'FIRST_NAME': {
+          const isUpper = text.includes('{{FIRST_NAME') || text.includes('{{FIRSTNAME') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{FIRST_NAME}}' : '{{first_name}}';
+          if (/^(?:jina|given\s*name)\s*[:：\-]?\s*/i.test(text)) {
+            text = text.replace(/^(?:jina|given\s*name)\s*[:：\-]?\s*.*/i, `JINA : ${placeholder}`);
+          } else if (text.includes('{{')) {
+            // Keep original placeholder token as is
+          } else {
+            text = placeholder;
+          }
           break;
-        case 'MIDDLE_NAME':
-          placeholderText = '{{middle_name}}';
+        }
+        case 'MIDDLE_NAME': {
+          const isUpper = text.includes('{{MIDDLE_NAME') || text.includes('{{MNAME') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{MIDDLE_NAME}}' : '{{middle_name}}';
+          if (/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*/i.test(text)) {
+            text = text.replace(/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*.*/i, `MIDDLE NAME : ${placeholder}`);
+          } else if (text.includes('{{')) {
+            // Keep as is
+          } else {
+            text = placeholder;
+          }
           break;
-        case 'LAST_NAME':
-          placeholderText = '{{last_name}}';
+        }
+        case 'LAST_NAME': {
+          const isUpper = text.includes('{{LAST_NAME') || text.includes('{{SURNAME') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{LAST_NAME}}' : '{{last_name}}';
+          if (/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*/i.test(text)) {
+            text = text.replace(/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*.*/i, `JINA LA MWISHO : ${placeholder}`);
+          } else if (text.includes('{{')) {
+            // Keep as is
+          } else {
+            text = placeholder;
+          }
           break;
-        case 'DOB':
-          placeholderText = '{{dob}}';
+        }
+        case 'DOB': {
+          const isUpper = text.includes('{{DOB') || text.includes('{{DATE') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{DOB}}' : '{{dob}}';
+          if (/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*/i.test(text)) {
+            text = text.replace(/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*.*/i, `TAREHE YA KUZALIWA: ${placeholder}`);
+          } else if (text.includes('{{')) {
+            // Keep as is
+          } else {
+            text = placeholder;
+          }
           break;
-        case 'GENDER':
-          placeholderText = '{{gender}}';
+        }
+        case 'GENDER': {
+          const isUpper = text.includes('{{GENDER') || text.includes('{{SEX') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{GENDER}}' : '{{gender}}';
+          if (/^(?:jinsi|jinsia|sex|gender)\s*[:：\-]?\s*/i.test(text)) {
+            text = text.replace(/^(?:jinsi|jinsia|sex|gender)\s*[:：\-]?\s*.*/i, `JINSI : ${placeholder}`);
+          } else if (text.includes('{{')) {
+            // Keep as is
+          } else {
+            text = placeholder;
+          }
           break;
-        case 'NIDA_NUMBER':
-          placeholderText = '{{nida_number}}';
+        }
+        case 'NIDA_NUMBER': {
+          const isUpper = text.includes('{{NIDA_NUMBER') || text.includes('{{NIN') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{NIDA_NUMBER}}' : '{{nida_number}}';
+          if (/^(?:national\s*id\s*no|nambari\s*ya\s*nida|nida\s*no)\s*[:：\-]?\s*/i.test(text)) {
+            text = text.replace(/^(?:national\s*id\s*no|nambari\s*ya\s*nida|nida\s*no)\s*[:：\-]?\s*.*/i, `NATIONAL ID NO: ${placeholder}`);
+          } else if (text.includes('{{')) {
+            // Keep as is
+          } else {
+            text = placeholder;
+          }
           break;
+        }
       }
 
       return {
         ...textLayer,
-        text: placeholderText,
+        text,
       };
     }
 
