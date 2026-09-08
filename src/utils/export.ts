@@ -114,7 +114,10 @@ export async function renderTemplateToCanvas(
       ) {
         return displayNameLine1;
       }
-      if (trimmed === 'first_name' || trimmed === 'given_names' || trimmed === 'fname' || trimmed === 'firstname') return f;
+      if (trimmed === 'first_name' || trimmed === 'given_names' || trimmed === 'fname' || trimmed === 'firstname') {
+        const hasMiddleToken = /middle_name|middlename|other_names|mname/i.test(str);
+        return (hasMiddleToken || !m) ? f : displayNameLine1;
+      }
       if (trimmed === 'middle_name' || trimmed === 'middlename' || trimmed === 'other_names' || trimmed === 'mname') return m;
       if (trimmed === 'last_name' || trimmed === 'surname' || trimmed === 'family_name' || trimmed === 'lname' || trimmed === 'lastname') return l;
       if (trimmed === 'dob' || trimmed === 'date_of_birth' || trimmed === 'birth_date' || trimmed === 'birthdate') return (effectiveCardData.dob as string) || '';

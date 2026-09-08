@@ -228,7 +228,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
 
     // Check Composite Text Label Prefixes (supporting optional colons)
     if (/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) return 'FIRST_MIDDLE_NAME';
-    if (/^jina\s*[:：\-]?\s*/i.test(text) && !/jina\s+la\s+(?:mwisho|ukoo)/i.test(text)) return 'FIRST_NAME';
+    if (/^(?:jina|given\s*names?)\s*[:：\-]?\s*/i.test(text) && !/jina\s+la\s+(?:mwisho|ukoo)/i.test(text)) return 'FIRST_MIDDLE_NAME';
     if (/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*/i.test(text)) return 'LAST_NAME';
     if (/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*/i.test(text)) return 'MIDDLE_NAME';
     if (/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*/i.test(text)) return 'DOB';
@@ -315,7 +315,12 @@ function followCasing(textLayer: TextLayer, value: string): string {
   return value;
 }
 
-export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, formData: NidaFormData): Layer {
+export function injectValueIntoLayer(
+  layer: Layer,
+  binding: SupportedBinding,
+  formData: NidaFormData,
+  allLayers: Layer[] = []
+): Layer {
   const targetGender: 'M' | 'F' = (formData.gender || '').trim().toUpperCase().startsWith('M') ? 'M' : 'F';
 
   if (binding === 'PHOTO') {
@@ -364,22 +369,27 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
             }
             text = t.replace(/\s+/g, ' ').trim();
           } else {
-            text = text.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|first_plus_middle_name|first_name_\+_middle_name|display_name_line1|displaynameline1|first_name_and_middle_name)\}\}/gi, val);
+            text = text.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|first_plus_middle_name|first_name_\+_middle_name|display_name_line1|displaynameline1|first_name_and_middle_name|first_name|firstname|given_name|given_names|fname)\}\}/gi, val);
           }
-        } else if (/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*.*/i, `FIRST & MIDDLE NAME: ${val}`);
+        } else if (/^(?:jina|given\s*names?|first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) {
+          text = text.replace(/^(?:jina|given\s*names?|first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*.*/i, `JINA : ${val}`);
         } else {
           text = val;
         }
         break;
       }
       case 'FIRST_NAME': {
-        const rawVal = (formData.firstName || '').trim();
+        const fVal = (formData.firstName || '').trim();
+        const mVal = (formData.middleName || '').trim();
+        const hasMiddleLayer = allLayers.some(
+          (l) => l.type === 'text' && getLayerBinding(l, allLayers) === 'MIDDLE_NAME'
+        );
+        const rawVal = (!hasMiddleLayer && mVal) ? `${fVal} ${mVal}` : fVal;
         const val = followCasing(textLayer, rawVal);
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, val);
-        } else if (/^(?:jina|given\s*name)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:jina|given\s*name)\s*[:：\-]?\s*.*/i, `JINA : ${val}`);
+        } else if (/^(?:jina|given\s*names?)\s*[:：\-]?\s*/i.test(text)) {
+          text = text.replace(/^(?:jina|given\s*names?)\s*[:：\-]?\s*.*/i, `JINA : ${val}`);
         } else {
           text = val;
         }
@@ -610,7 +620,7 @@ export function applyTemplateMapping(template: CardTemplate, formData: NidaFormD
 
     if (isBackSide) {
       if (binding === 'NIDA_NUMBER') {
-        const injected = injectValueIntoLayer(layer, 'NIDA_NUMBER', formData);
+        const injected = injectValueIntoLayer(layer, 'NIDA_NUMBER', formData, sanitizedTemplate.layers);
         clonedLayers.push(injected);
         populatedCount++;
       } else {
@@ -620,7 +630,7 @@ export function applyTemplateMapping(template: CardTemplate, formData: NidaFormD
     }
 
     if (binding) {
-      const injected = injectValueIntoLayer(layer, binding, formData);
+      const injected = injectValueIntoLayer(layer, binding, formData, sanitizedTemplate.layers);
       clonedLayers.push(injected);
       populatedCount++;
     } else {
@@ -664,7 +674,9 @@ export function replaceTextTokens(text: string, formData: NidaFormData): string 
   result = result.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|first_plus_middle_name|first_name_\+_middle_name|display_name_line1|displaynameline1|first_name_and_middle_name)\}\}/gi, displayNameLine1.toUpperCase());
 
   if (formData.firstName !== undefined && formData.firstName !== null) {
-    result = result.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, fVal.toUpperCase());
+    const hasMiddleToken = /\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/i.test(text);
+    const valForFirstName = (hasMiddleToken || !mVal) ? fVal : displayNameLine1;
+    result = result.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, valForFirstName.toUpperCase());
   }
   if (formData.middleName !== undefined && formData.middleName !== null) {
     if (mVal) {
