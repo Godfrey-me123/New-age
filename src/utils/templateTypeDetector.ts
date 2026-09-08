@@ -17,7 +17,8 @@ export type SupportedBindingKey =
   | 'NIDA_NUMBER'
   | 'PHOTO'
   | 'SIGNATURE'
-  | 'CUSTOM';
+  | 'CUSTOM'
+  | 'FIRST_MIDDLE_NAME';
 
 export interface TemplateFieldRequirement {
   bindingKey: SupportedBindingKey;
