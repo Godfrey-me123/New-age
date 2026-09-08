@@ -30,7 +30,7 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
     let bindingKey: any = undefined;
     let fieldId: string | undefined = undefined;
 
-    if (defaultText.includes('first_middle_name')) {
+    if (defaultText.includes('first_middle_name') || defaultText.includes('full_name')) {
       layerName = 'First Name + Middle Name';
       bindingKey = 'FIRST_MIDDLE_NAME';
       fieldId = 'firstMiddleName';
@@ -247,7 +247,7 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
             className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
           >
             <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">First Name + Middle Name</span>
+            <span className="truncate">First Name + Middle Name (Full Name)</span>
           </button>
           <button
             onClick={() => handleAddText('{{last_name}}')}
