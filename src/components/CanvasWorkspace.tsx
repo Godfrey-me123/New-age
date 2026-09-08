@@ -22,6 +22,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
+import { replaceTextTokens } from '../utils/templateMappingEngine';
 import { mmToPx, pxToMm, calculateCanvasPxSize } from '../utils/units';
 import { generateBarcodeDataUrl, generateQRCodeDataUrl } from '../utils/barcodes';
 import { FONT_WEIGHTS_BY_FAMILY } from '../utils/fonts';
@@ -35,6 +36,7 @@ export const CanvasWorkspace: React.FC = () => {
 
   const {
     currentTemplate,
+    lastNidaFormData,
     zoom,
     setZoom,
     panOffset,
@@ -799,6 +801,9 @@ export const CanvasWorkspace: React.FC = () => {
 
                     // Text Case display transformation (Display-only, original unchanged)
                     let displayText = layer.text || '';
+                    if (lastNidaFormData && displayText.includes('{{')) {
+                      displayText = replaceTextTokens(displayText, lastNidaFormData);
+                    }
                     const textCase = (layer as any).textCase || 'original';
                     if (textCase === 'uppercase') {
                       displayText = displayText.toUpperCase();

@@ -139,7 +139,8 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     const textLayer = layer as TextLayer;
     const text = (textLayer.text || '').trim();
 
-    if (/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|firstname_middlename)\}\}/i.test(text)) return 'FIRST_MIDDLE_NAME';
+    if (/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|first_plus_middle_name|first_name_\+_middle_name|display_name_line1|displaynameline1|first_name_and_middle_name)\}\}/i.test(text)) return 'FIRST_MIDDLE_NAME';
+    if (/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/i.test(text) && /\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/i.test(text)) return 'FIRST_MIDDLE_NAME';
     if (/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/i.test(text)) return 'FIRST_NAME';
     if (/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/i.test(text)) return 'MIDDLE_NAME';
     if (/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/i.test(text)) return 'LAST_NAME';
@@ -157,7 +158,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   ).toLowerCase();
 
   if (explicitField) {
-    if (/first_?middle_?name|firstname_?middlename|first_?name_?plus_?middle_?name/i.test(explicitField)) return 'FIRST_MIDDLE_NAME';
+    if (/first_?middle_?name|firstname_?middlename|first_?name_?plus_?middle_?name|display_?name_?line1/i.test(explicitField)) return 'FIRST_MIDDLE_NAME';
     if (/first_?name|fname|given_?name/i.test(explicitField)) return 'FIRST_NAME';
     if (/middle_?name|mname|other_?name/i.test(explicitField)) return 'MIDDLE_NAME';
     if (/last_?name|lname|surname|family_?name/i.test(explicitField)) return 'LAST_NAME';
@@ -354,7 +355,17 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
         const rawVal = mVal ? `${fVal} ${mVal}` : fVal;
         const val = followCasing(textLayer, rawVal);
         if (text.includes('{{')) {
-          text = text.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|firstname_middlename)\}\}/gi, val);
+          if (/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/i.test(text) && /\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/i.test(text)) {
+            let t = text.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, fVal ? followCasing(textLayer, fVal) : '');
+            if (mVal) {
+              t = t.replace(/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, followCasing(textLayer, mVal));
+            } else {
+              t = t.replace(/\s*\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, '');
+            }
+            text = t.replace(/\s+/g, ' ').trim();
+          } else {
+            text = text.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|first_plus_middle_name|first_name_\+_middle_name|display_name_line1|displaynameline1|first_name_and_middle_name)\}\}/gi, val);
+          }
         } else if (/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) {
           text = text.replace(/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*.*/i, `FIRST & MIDDLE NAME: ${val}`);
         } else {
@@ -647,19 +658,25 @@ export function replaceTextTokens(text: string, formData: NidaFormData): string 
   let result = text;
   const fVal = (formData.firstName || '').trim();
   const mVal = (formData.middleName || '').trim();
-  const combined = mVal ? `${fVal} ${mVal}` : fVal;
-  result = result.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|firstname_middlename)\}\}/gi, combined.toUpperCase());
+  const lVal = (formData.lastName || '').trim();
+  const displayNameLine1 = mVal ? `${fVal} ${mVal}`.trim() : fVal;
 
-  if (formData.firstName) {
-    result = result.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, formData.firstName.trim().toUpperCase());
+  result = result.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|first_plus_middle_name|first_name_\+_middle_name|display_name_line1|displaynameline1|first_name_and_middle_name)\}\}/gi, displayNameLine1.toUpperCase());
+
+  if (formData.firstName !== undefined && formData.firstName !== null) {
+    result = result.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, fVal.toUpperCase());
   }
-  if (formData.middleName) {
-    result = result.replace(/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, formData.middleName.trim().toUpperCase());
+  if (formData.middleName !== undefined && formData.middleName !== null) {
+    if (mVal) {
+      result = result.replace(/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, mVal.toUpperCase());
+    } else {
+      result = result.replace(/\s*\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, '');
+    }
   } else {
-    result = result.replace(/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}\s*/gi, '');
+    result = result.replace(/\s*\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, '');
   }
-  if (formData.lastName) {
-    result = result.replace(/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/gi, formData.lastName.trim().toUpperCase());
+  if (formData.lastName !== undefined && formData.lastName !== null) {
+    result = result.replace(/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/gi, lVal.toUpperCase());
   }
   if (formData.dob) {
     result = result.replace(/\{\{(?:dob|date_of_birth|birth_date|birthdate)\}\}/gi, formData.dob);

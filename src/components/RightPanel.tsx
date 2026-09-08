@@ -176,6 +176,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
   };
 
   const variableOptions = [
+    { label: 'First Name + Middle Name', val: '{{first_middle_name}}' },
     { label: 'First Name', val: '{{first_name}}' },
     { label: 'Middle Name', val: '{{middle_name}}' },
     { label: 'Last Name', val: '{{last_name}}' },
@@ -768,8 +769,21 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                 <select
                   onChange={(e) => {
                     if (e.target.value) {
+                      const valToInsert = e.target.value;
+                      const updatedText = selectedLayer.text ? selectedLayer.text + ' ' + valToInsert : valToInsert;
+                      let newBinding = (selectedLayer as any).bindingKey;
+                      if (valToInsert.includes('first_middle_name')) {
+                        newBinding = 'FIRST_MIDDLE_NAME';
+                      } else if (valToInsert.includes('first_name')) {
+                        newBinding = 'FIRST_NAME';
+                      } else if (valToInsert.includes('middle_name')) {
+                        newBinding = 'MIDDLE_NAME';
+                      } else if (valToInsert.includes('last_name')) {
+                        newBinding = 'LAST_NAME';
+                      }
                       updateLayer(selectedLayer.id, {
-                        text: (selectedLayer.text ? selectedLayer.text + ' ' : '') + e.target.value,
+                        text: updatedText,
+                        bindingKey: newBinding || (selectedLayer as any).bindingKey,
                       });
                       e.target.value = '';
                     }

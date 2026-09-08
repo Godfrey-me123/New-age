@@ -26,9 +26,45 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
 
   const handleAddText = (defaultText: string = '{{first_name}}') => {
     const isVar = defaultText.startsWith('{{');
+    let layerName = 'Text Layer';
+    let bindingKey: any = undefined;
+    let fieldId: string | undefined = undefined;
+
+    if (defaultText.includes('first_middle_name')) {
+      layerName = 'First Name + Middle Name';
+      bindingKey = 'FIRST_MIDDLE_NAME';
+      fieldId = 'firstMiddleName';
+    } else if (defaultText.includes('first_name')) {
+      layerName = 'First Name';
+      bindingKey = 'FIRST_NAME';
+      fieldId = 'firstName';
+    } else if (defaultText.includes('middle_name')) {
+      layerName = 'Middle Name';
+      bindingKey = 'MIDDLE_NAME';
+      fieldId = 'middleName';
+    } else if (defaultText.includes('last_name')) {
+      layerName = 'Last Name';
+      bindingKey = 'LAST_NAME';
+      fieldId = 'lastName';
+    } else if (defaultText.includes('id_number')) {
+      layerName = 'ID Number';
+      bindingKey = 'NIDA_NUMBER';
+      fieldId = 'nidaNumber';
+    } else if (defaultText.includes('dob')) {
+      layerName = 'Date of Birth';
+      bindingKey = 'DOB';
+      fieldId = 'dateOfBirth';
+    } else if (defaultText.includes('gender')) {
+      layerName = 'Gender / Sex';
+      bindingKey = 'GENDER';
+      fieldId = 'gender';
+    } else if (isVar) {
+      layerName = defaultText.replace(/[{}]/g, '');
+    }
+
     const newLayer: Layer = {
       id: 'text_' + Date.now(),
-      name: isVar ? defaultText.replace(/[{}]/g, '') : 'Text Layer',
+      name: layerName,
       type: 'text',
       x: 10,
       y: 10,
@@ -39,6 +75,9 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
       locked: false,
       hidden: false,
       text: defaultText,
+      bindingKey,
+      fieldId,
+      fieldName: fieldId || (bindingKey ? String(bindingKey).toLowerCase() : undefined),
       fontFamily: 'Helvetica',
       fontSize: 3.5, // mm
       fontWeight: 700,
@@ -208,7 +247,7 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
             className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
           >
             <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">First & Middle Name</span>
+            <span className="truncate">First Name + Middle Name</span>
           </button>
           <button
             onClick={() => handleAddText('{{last_name}}')}

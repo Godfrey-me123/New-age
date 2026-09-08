@@ -97,12 +97,29 @@ export async function renderTemplateToCanvas(
       const val = cardData[trimmed] !== undefined ? cardData[trimmed] : effectiveCardData[trimmed];
       if (val !== undefined && val !== null && String(val).trim() !== '') return String(val);
 
+      const f = ((cardData.firstName ?? effectiveCardData.firstName ?? '') as string).trim();
+      const m = ((cardData.middleName ?? effectiveCardData.middleName ?? '') as string).trim();
+      const l = ((cardData.lastName ?? effectiveCardData.lastName ?? '') as string).trim();
+      const displayNameLine1 = m ? `${f} ${m}`.trim() : f;
+
       // Fallback aliases for NIDA fields
-      if (trimmed === 'first_name' || trimmed === 'given_names' || trimmed === 'fname') return (effectiveCardData.firstName as string) || '';
-      if (trimmed === 'last_name' || trimmed === 'surname' || trimmed === 'family_name' || trimmed === 'lname') return (effectiveCardData.lastName as string) || '';
-      if (trimmed === 'dob' || trimmed === 'date_of_birth' || trimmed === 'birth_date') return (effectiveCardData.dob as string) || '';
-      if (trimmed === 'gender' || trimmed === 'sex') return (effectiveCardData.gender as string) || '';
-      if (trimmed === 'nida_number' || trimmed === 'id_number' || trimmed === 'nin') return (effectiveCardData.nidaNumber as string) || '';
+      if (
+        trimmed === 'first_middle_name' ||
+        trimmed === 'first_name_middle_name' ||
+        trimmed === 'first_name_plus_middle_name' ||
+        trimmed === 'first_plus_middle_name' ||
+        trimmed === 'display_name_line1' ||
+        trimmed === 'displaynameline1' ||
+        trimmed === 'first_name_and_middle_name'
+      ) {
+        return displayNameLine1;
+      }
+      if (trimmed === 'first_name' || trimmed === 'given_names' || trimmed === 'fname' || trimmed === 'firstname') return f;
+      if (trimmed === 'middle_name' || trimmed === 'middlename' || trimmed === 'other_names' || trimmed === 'mname') return m;
+      if (trimmed === 'last_name' || trimmed === 'surname' || trimmed === 'family_name' || trimmed === 'lname' || trimmed === 'lastname') return l;
+      if (trimmed === 'dob' || trimmed === 'date_of_birth' || trimmed === 'birth_date' || trimmed === 'birthdate') return (effectiveCardData.dob as string) || '';
+      if (trimmed === 'gender' || trimmed === 'sex' || trimmed === 'jinsi' || trimmed === 'jinsia') return (effectiveCardData.gender as string) || '';
+      if (trimmed === 'nida_number' || trimmed === 'id_number' || trimmed === 'nin' || trimmed === 'national_id') return (effectiveCardData.nidaNumber as string) || '';
 
       return `{{${trimmed}}}`;
     });
