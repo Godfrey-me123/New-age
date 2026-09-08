@@ -13,7 +13,7 @@ import {
 } from '../types';
 import { CR80_WIDTH_MM, CR80_HEIGHT_MM } from '../utils/units';
 import { SAMPLE_TEMPLATES } from '../utils/sampleTemplates';
-import { ensureTemplateFieldIds, sanitizeTemplateForSaving } from '../utils/templateMappingEngine';
+import { ensureTemplateFieldIds, sanitizeTemplateForSaving, SupportedBinding } from '../utils/templateMappingEngine';
 import { getClosestValidWeight } from '../utils/fonts';
 import {
   saveTemplateDB,
@@ -23,6 +23,93 @@ import {
   getAllBackgroundsDB,
   deleteBackgroundDB,
 } from '../utils/idb';
+
+export interface DynamicElementRegistration {
+  id: string;
+  name: string;
+  type: 'text';
+  defaultText: string;
+  bindingKey: SupportedBinding;
+  getterKey: 'displayNameLine1' | string;
+  computeValue: (formData: Record<string, any>) => string;
+  defaultWidth: number;
+  defaultHeight: number;
+}
+
+export function computeDisplayNameLine1(formData: Record<string, any>): string {
+  const f = (formData?.firstName || '').trim();
+  const m = (formData?.middleName || '').trim();
+  return m ? `${f} ${m}` : f;
+}
+
+export const DYNAMIC_ELEMENT_REGISTRY: Record<string, DynamicElementRegistration> = {
+  FULL_NAME: {
+    id: 'full_name',
+    name: 'Full Name',
+    type: 'text',
+    defaultText: '{{first_middle_name}}',
+    bindingKey: 'FIRST_MIDDLE_NAME',
+    getterKey: 'displayNameLine1',
+    computeValue: (formData) => computeDisplayNameLine1(formData),
+    defaultWidth: 50,
+    defaultHeight: 6,
+  },
+  FIRST_MIDDLE_NAME: {
+    id: 'first_middle_name',
+    name: 'First Name + Middle Name',
+    type: 'text',
+    defaultText: '{{first_middle_name}}',
+    bindingKey: 'FIRST_MIDDLE_NAME',
+    getterKey: 'displayNameLine1',
+    computeValue: (formData) => computeDisplayNameLine1(formData),
+    defaultWidth: 50,
+    defaultHeight: 6,
+  },
+  FIRST_NAME: {
+    id: 'first_name',
+    name: 'First Name',
+    type: 'text',
+    defaultText: '{{first_name}}',
+    bindingKey: 'FIRST_NAME',
+    getterKey: 'firstName',
+    computeValue: (formData) => (formData?.firstName || '').trim(),
+    defaultWidth: 35,
+    defaultHeight: 6,
+  },
+  MIDDLE_NAME: {
+    id: 'middle_name',
+    name: 'Middle Name',
+    type: 'text',
+    defaultText: '{{middle_name}}',
+    bindingKey: 'MIDDLE_NAME',
+    getterKey: 'middleName',
+    computeValue: (formData) => (formData?.middleName || '').trim(),
+    defaultWidth: 35,
+    defaultHeight: 6,
+  },
+  LAST_NAME: {
+    id: 'last_name',
+    name: 'Last Name',
+    type: 'text',
+    defaultText: '{{last_name}}',
+    bindingKey: 'LAST_NAME',
+    getterKey: 'lastName',
+    computeValue: (formData) => (formData?.lastName || '').trim(),
+    defaultWidth: 35,
+    defaultHeight: 6,
+  },
+  NIDA_NUMBER: {
+    id: 'nida_number',
+    name: 'NIDA Number',
+    type: 'text',
+    defaultText: '{{nida_number}}',
+    bindingKey: 'NIDA_NUMBER',
+    getterKey: 'nidaNumber',
+    computeValue: (formData) => (formData?.nidaNumber || '').trim(),
+    defaultWidth: 45,
+    defaultHeight: 6,
+  },
+};
 
 interface TemplateState {
   activeScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview';
