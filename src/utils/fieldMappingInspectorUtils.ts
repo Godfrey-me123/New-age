@@ -53,7 +53,12 @@ export function inspectTemplateMapping(
   backTemplate: CardTemplate | null,
   formData: NidaFormData
 ): TemplateInspectionReport {
+  const f = formData.firstName?.trim() || '';
+  const m = formData.middleName?.trim() || '';
+  const combined = m ? `${f} ${m}` : f;
+
   const bindings: { id: SupportedBinding; label: string; rawValue: string }[] = [
+    { id: 'FIRST_MIDDLE_NAME', label: 'First Name + Middle Name', rawValue: combined },
     { id: 'FIRST_NAME', label: 'First Name', rawValue: formData.firstName || '' },
     { id: 'MIDDLE_NAME', label: 'Middle Name', rawValue: formData.middleName || '' },
     { id: 'LAST_NAME', label: 'Last Name', rawValue: formData.lastName || '' },
@@ -97,7 +102,8 @@ export function inspectTemplateMapping(
           } else {
             finalValue = replaceTextTokens(tl.text, formData);
             if (finalValue === tl.text) {
-              if (bindingDef.id === 'FIRST_NAME') finalValue = (formData.firstName || '').toUpperCase();
+              if (bindingDef.id === 'FIRST_MIDDLE_NAME') finalValue = combined.toUpperCase();
+              else if (bindingDef.id === 'FIRST_NAME') finalValue = (formData.firstName || '').toUpperCase();
               else if (bindingDef.id === 'MIDDLE_NAME') finalValue = (formData.middleName || '').toUpperCase();
               else if (bindingDef.id === 'LAST_NAME') finalValue = (formData.lastName || '').toUpperCase();
               else if (bindingDef.id === 'DOB') finalValue = formData.dob || '';

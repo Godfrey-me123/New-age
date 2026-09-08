@@ -12,7 +12,8 @@ export type SupportedBinding =
   | 'GENDER'
   | 'NIDA_NUMBER'
   | 'PHOTO'
-  | 'SIGNATURE';
+  | 'SIGNATURE'
+  | 'FIRST_MIDDLE_NAME';
 
 export const ALL_SUPPORTED_BINDINGS: SupportedBinding[] = [
   'FIRST_NAME',
@@ -23,6 +24,7 @@ export const ALL_SUPPORTED_BINDINGS: SupportedBinding[] = [
   'NIDA_NUMBER',
   'PHOTO',
   'SIGNATURE',
+  'FIRST_MIDDLE_NAME',
 ];
 
 export interface FieldMappingDetail {
@@ -92,6 +94,7 @@ export function ensureTemplateFieldIds(template: CardTemplate): CardTemplate {
     NIDA_NUMBER: 'nidaNumber',
     PHOTO: 'photo',
     SIGNATURE: 'signature',
+    FIRST_MIDDLE_NAME: 'firstMiddleName',
   };
 
   const sanitizedLayers = template.layers.map((layer) => {
@@ -126,7 +129,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   // 1. Explicit Layer bindingKey Check
   if (layer.bindingKey) {
     const b = layer.bindingKey.toUpperCase() as any;
-    if (['FIRST_NAME', 'MIDDLE_NAME', 'LAST_NAME', 'DOB', 'GENDER', 'NIDA_NUMBER', 'PHOTO', 'SIGNATURE'].includes(b)) {
+    if (['FIRST_NAME', 'MIDDLE_NAME', 'LAST_NAME', 'DOB', 'GENDER', 'NIDA_NUMBER', 'PHOTO', 'SIGNATURE', 'FIRST_MIDDLE_NAME'].includes(b)) {
       return b as SupportedBinding;
     }
   }
@@ -136,6 +139,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     const textLayer = layer as TextLayer;
     const text = (textLayer.text || '').trim();
 
+    if (/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|firstname_middlename)\}\}/i.test(text)) return 'FIRST_MIDDLE_NAME';
     if (/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/i.test(text)) return 'FIRST_NAME';
     if (/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/i.test(text)) return 'MIDDLE_NAME';
     if (/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/i.test(text)) return 'LAST_NAME';
@@ -153,6 +157,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   ).toLowerCase();
 
   if (explicitField) {
+    if (/first_?middle_?name|firstname_?middlename|first_?name_?plus_?middle_?name/i.test(explicitField)) return 'FIRST_MIDDLE_NAME';
     if (/first_?name|fname|given_?name/i.test(explicitField)) return 'FIRST_NAME';
     if (/middle_?name|mname|other_?name/i.test(explicitField)) return 'MIDDLE_NAME';
     if (/last_?name|lname|surname|family_?name/i.test(explicitField)) return 'LAST_NAME';
@@ -212,6 +217,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
 
     // Check Specific Layer ID / Name Suffix (supporting spaces, underscores, or hyphens)
     const layerIdentifier = `${layer.id} ${layer.name}`.toLowerCase();
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:first_?middle_?name|firstname_?middlename|first_?name_?plus_?middle_?name)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'FIRST_MIDDLE_NAME';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:first[_\s-]*name|given[_\s-]*name|firstname|givenname|fname)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'FIRST_NAME';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:middle[_\s-]*name|other[_\s-]*names|middlename|othernames|mname)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'MIDDLE_NAME';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:last[_\s-]*name|surname|family[_\s-]*name|lastname|familyname|lname)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'LAST_NAME';
@@ -220,6 +226,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:nida[_\s-]*number|nida|id[_\s-]*number|national[_\s-]*id|nin|id[_\s-]*no|namba[_\s-]*nida|barcode)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'NIDA_NUMBER';
 
     // Check Composite Text Label Prefixes (supporting optional colons)
+    if (/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) return 'FIRST_MIDDLE_NAME';
     if (/^jina\s*[:：\-]?\s*/i.test(text) && !/jina\s+la\s+(?:mwisho|ukoo)/i.test(text)) return 'FIRST_NAME';
     if (/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*/i.test(text)) return 'LAST_NAME';
     if (/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*/i.test(text)) return 'MIDDLE_NAME';
@@ -244,6 +251,11 @@ export function matchLayerToBinding(layer: Layer, binding: SupportedBinding, all
  */
 export function getFormValueForBinding(binding: SupportedBinding, formData: Partial<NidaFormData>): string {
   switch (binding) {
+    case 'FIRST_MIDDLE_NAME': {
+      const f = formData.firstName?.trim() || '';
+      const m = formData.middleName?.trim() || '';
+      return m ? `${f} ${m}` : f;
+    }
     case 'FIRST_NAME':
       return formData.firstName?.trim() || '';
     case 'MIDDLE_NAME':
@@ -336,6 +348,20 @@ export function injectValueIntoLayer(layer: Layer, binding: SupportedBinding, fo
     let text = textLayer.text || '';
 
     switch (binding) {
+      case 'FIRST_MIDDLE_NAME': {
+        const fVal = (formData.firstName || '').trim();
+        const mVal = (formData.middleName || '').trim();
+        const rawVal = mVal ? `${fVal} ${mVal}` : fVal;
+        const val = followCasing(textLayer, rawVal);
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|firstname_middlename)\}\}/gi, val);
+        } else if (/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) {
+          text = text.replace(/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*.*/i, `FIRST & MIDDLE NAME: ${val}`);
+        } else {
+          text = val;
+        }
+        break;
+      }
       case 'FIRST_NAME': {
         const rawVal = (formData.firstName || '').trim();
         const val = followCasing(textLayer, rawVal);
@@ -619,6 +645,11 @@ export function applyTemplateMapping(template: CardTemplate, formData: NidaFormD
  */
 export function replaceTextTokens(text: string, formData: NidaFormData): string {
   let result = text;
+  const fVal = (formData.firstName || '').trim();
+  const mVal = (formData.middleName || '').trim();
+  const combined = mVal ? `${fVal} ${mVal}` : fVal;
+  result = result.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|firstname_middlename)\}\}/gi, combined.toUpperCase());
+
   if (formData.firstName) {
     result = result.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, formData.firstName.trim().toUpperCase());
   }
@@ -680,6 +711,18 @@ export function sanitizeTemplateForSaving(template: CardTemplate): CardTemplate 
 
       // Non-destructive sanitization: preserve prefixes and case indicators of placeholders
       switch (binding) {
+        case 'FIRST_MIDDLE_NAME': {
+          const isUpper = text.includes('{{FIRST_MIDDLE_NAME') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{FIRST_MIDDLE_NAME}}' : '{{first_middle_name}}';
+          if (/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) {
+            text = text.replace(/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*.*/i, `FIRST & MIDDLE NAME: ${placeholder}`);
+          } else if (text.includes('{{')) {
+            // Keep original placeholder token as is
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
         case 'FIRST_NAME': {
           const isUpper = text.includes('{{FIRST_NAME') || text.includes('{{FIRSTNAME') || text === text.toUpperCase();
           const placeholder = isUpper ? '{{FIRST_NAME}}' : '{{first_name}}';

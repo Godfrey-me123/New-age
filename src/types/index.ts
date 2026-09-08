@@ -66,6 +66,36 @@ export interface TextLayer extends BaseLayer {
   align: 'left' | 'center' | 'right' | 'justify';
   letterSpacing: number; // mm
   lineHeight: number;
+
+  // Advanced Typography Properties
+  verticalScale?: number; // stretch ratio, default 1
+  horizontalScale?: number; // stretch ratio, default 1
+  wordSpacing?: number; // in mm, default 0
+
+  // Text Opacity
+  textOpacity?: number; // 0 to 1, default 1
+
+  // Text Stroke / Outline
+  strokeEnabled?: boolean;
+  strokeWidth?: number; // in mm
+  strokeColor?: string;
+
+  // Text Shadow
+  shadowEnabled?: boolean;
+  shadowColor?: string;
+  shadowOpacity?: number; // 0 to 100
+  shadowBlur?: number; // in mm
+  shadowOffsetX?: number; // in mm
+  shadowOffsetY?: number; // in mm
+
+  // Text Case Control (Prompt 6)
+  textCase?: 'original' | 'uppercase' | 'lowercase' | 'capitalize';
+
+  // Bold Simulation (Prompt 7)
+  boldSimulation?: 'normal' | 'bold' | 'simulated_bold';
+
+  // Condensed / Expanded Width Presets (Prompt 8)
+  widthPreset?: 'normal' | 'condensed' | 'semi_condensed' | 'expanded' | 'semi_expanded';
 }
 
 export interface ImageLayer extends BaseLayer {

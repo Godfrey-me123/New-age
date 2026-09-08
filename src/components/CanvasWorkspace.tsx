@@ -24,6 +24,7 @@ import {
 import { useTemplateStore } from '../store/useTemplateStore';
 import { mmToPx, pxToMm, calculateCanvasPxSize } from '../utils/units';
 import { generateBarcodeDataUrl, generateQRCodeDataUrl } from '../utils/barcodes';
+import { FONT_WEIGHTS_BY_FAMILY } from '../utils/fonts';
 import { Layer, SmartGuide } from '../types';
 import { TopRuler, LeftRuler } from './Rulers';
 
@@ -784,16 +785,62 @@ export const CanvasWorkspace: React.FC = () => {
 
                   if (layer.type === 'text') {
                     const fontSizePx = layer.fontSize * pxPerMm;
-                    const weight = layer.fontWeight ?? (layer.fontStyle?.includes('bold') ? 700 : 400);
+
+                    // Text width preset scaling (Normal, Condensed, Expanded)
+                    const PRESET_SCALES: Record<string, number> = {
+                      normal: 1.0,
+                      condensed: 0.75,
+                      semi_condensed: 0.85,
+                      expanded: 1.25,
+                      semi_expanded: 1.15,
+                    };
+                    const presetScale = PRESET_SCALES[(layer as any).widthPreset || 'normal'] || 1.0;
+                    const finalScaleX = (layer.horizontalScale ?? 1) * presetScale;
+
+                    // Text Case display transformation (Display-only, original unchanged)
+                    let displayText = layer.text || '';
+                    const textCase = (layer as any).textCase || 'original';
+                    if (textCase === 'uppercase') {
+                      displayText = displayText.toUpperCase();
+                    } else if (textCase === 'lowercase') {
+                      displayText = displayText.toLowerCase();
+                    } else if (textCase === 'capitalize') {
+                      displayText = displayText.split(' ').map(word => {
+                        if (!word) return '';
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                      }).join(' ');
+                    }
+
+                    // Bold Simulation preference
+                    const availableWeights = FONT_WEIGHTS_BY_FAMILY[layer.fontFamily] || [400, 700];
+                    const hasRealBold = availableWeights.some(w => w >= 600);
+                    const isBoldSimulationActive = (layer as any).boldSimulation === 'simulated_bold' || 
+                      ((layer as any).boldSimulation === 'bold' && !hasRealBold);
+
+                    let finalWeight = layer.fontWeight ?? (layer.fontStyle?.includes('bold') ? 700 : 400);
+                    if ((layer as any).boldSimulation === 'bold' && hasRealBold) {
+                      finalWeight = 700;
+                    } else if ((layer as any).boldSimulation === 'normal' || (layer as any).boldSimulation === 'simulated_bold') {
+                      finalWeight = 400;
+                    }
                     const isItalic = layer.fontStyle?.includes('italic');
-                    const computedStyle = `${weight}${isItalic ? ' italic' : ''}`;
+                    const computedStyle = `${finalWeight}${isItalic ? ' italic' : ''}`;
+
+                    // Text Stroke / Outline combining text stroke and simulated bold
+                    let finalStroke = layer.strokeEnabled ? layer.strokeColor || '#000000' : undefined;
+                    let finalStrokeWidth = layer.strokeEnabled ? (layer.strokeWidth ?? 0.5) * pxPerMm : 0;
+                    if (isBoldSimulationActive) {
+                      finalStroke = layer.color || '#000000';
+                      // Visual bold simulation: a very small, controlled stroke around the letter edges
+                      finalStrokeWidth = fontSizePx * 0.04;
+                    }
 
                     return (
                       <KonvaText
                         {...commonProps}
                         key={layer.id}
                         width={wPx}
-                        text={layer.text}
+                        text={displayText}
                         fontFamily={layer.fontFamily || 'Helvetica'}
                         fontSize={fontSizePx}
                         fontStyle={computedStyle}
@@ -801,6 +848,17 @@ export const CanvasWorkspace: React.FC = () => {
                         fill={layer.color || '#000000'}
                         align={layer.align || 'left'}
                         letterSpacing={layer.letterSpacing ? layer.letterSpacing * pxPerMm : 0}
+                        lineHeight={layer.lineHeight || 1.1}
+                        scaleX={finalScaleX}
+                        scaleY={layer.verticalScale ?? 1}
+                        opacity={(layer.opacity ?? 1) * (layer.textOpacity ?? 1)}
+                        stroke={finalStroke}
+                        strokeWidth={finalStrokeWidth}
+                        shadowColor={layer.shadowColor || '#000000'}
+                        shadowBlur={layer.shadowEnabled ? (layer.shadowBlur ?? 1.5) * pxPerMm : 0}
+                        shadowOffset={layer.shadowEnabled ? { x: (layer.shadowOffsetX ?? 0.5) * pxPerMm, y: (layer.shadowOffsetY ?? 0.5) * pxPerMm } : { x: 0, y: 0 }}
+                        shadowOpacity={layer.shadowEnabled ? (layer.shadowOpacity ?? 50) / 100 : 0}
+                        shadowEnabled={layer.shadowEnabled ?? false}
                       />
                     );
                   }

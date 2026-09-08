@@ -3,6 +3,7 @@ import { CardTemplate, CardData, Layer } from '../types';
 import { generateBarcodeDataUrl, generateQRCodeDataUrl } from './barcodes';
 import { mmToPx } from './units';
 import { applyTemplateMapping, NidaFormData, isBackSideTemplate } from './templateMappingEngine';
+import { FONT_WEIGHTS_BY_FAMILY } from './fonts';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { SAMPLE_TEMPLATES } from './sampleTemplates';
 
@@ -11,6 +12,18 @@ export interface CropRegion {
   y: number; // in mm
   width: number; // in mm
   height: number; // in mm
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  if (!hex || typeof hex !== 'string') return `rgba(0,0,0,${alpha})`;
+  let c = hex.startsWith('#') ? hex.substring(1) : hex;
+  if (c.length === 3) {
+    c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+  }
+  const r = parseInt(c.substring(0, 2), 16) || 0;
+  const g = parseInt(c.substring(2, 4), 16) || 0;
+  const b = parseInt(c.substring(4, 6), 16) || 0;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 /**
@@ -105,7 +118,9 @@ export async function renderTemplateToCanvas(
     const h = mmToPx(layer.height, renderDpi);
 
     ctx.save();
-    ctx.globalAlpha = layer.opacity;
+    ctx.globalAlpha = layer.type === 'text'
+      ? (layer.opacity ?? 1) * ((layer as any).textOpacity ?? 1)
+      : (layer.opacity ?? 1);
 
     if (layer.rotation) {
       ctx.translate(x + w / 2, y + h / 2);
@@ -114,11 +129,39 @@ export async function renderTemplateToCanvas(
     }
 
     if (layer.type === 'text') {
-      const textVal = replaceVars(layer.text);
-      const fontSizePx = mmToPx(layer.fontSize, renderDpi);
-      const fontStyleStr = layer.fontStyle || 'normal';
+      let textVal = replaceVars(layer.text) || '';
 
-      ctx.font = `${fontStyleStr} ${fontSizePx}px ${layer.fontFamily || 'Helvetica'}`;
+      // Text Case Display Transformation (Display-only, original unchanged)
+      const textCase = (layer as any).textCase || 'original';
+      if (textCase === 'uppercase') {
+        textVal = textVal.toUpperCase();
+      } else if (textCase === 'lowercase') {
+        textVal = textVal.toLowerCase();
+      } else if (textCase === 'capitalize') {
+        textVal = textVal.split(' ').map(word => {
+          if (!word) return '';
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }).join(' ');
+      }
+
+      const fontSizePx = mmToPx(layer.fontSize, renderDpi);
+
+      // Bold Simulation
+      const availableWeights = FONT_WEIGHTS_BY_FAMILY[layer.fontFamily] || [400, 700];
+      const hasRealBold = availableWeights.some(w => w >= 600);
+      const isBoldSimulationActive = (layer as any).boldSimulation === 'simulated_bold' || 
+        ((layer as any).boldSimulation === 'bold' && !hasRealBold);
+
+      let finalWeight = layer.fontWeight ?? (layer.fontStyle?.includes('bold') ? 700 : 400);
+      if ((layer as any).boldSimulation === 'bold' && hasRealBold) {
+        finalWeight = 700;
+      } else if ((layer as any).boldSimulation === 'normal' || (layer as any).boldSimulation === 'simulated_bold') {
+        finalWeight = 400;
+      }
+
+      // Format font string for standard canvas: weight italic size family
+      const isItalic = layer.fontStyle?.includes('italic');
+      ctx.font = `${isItalic ? 'italic ' : ''}${finalWeight} ${fontSizePx}px "${layer.fontFamily || 'Helvetica'}"`;
       ctx.fillStyle = layer.color || '#000000';
       ctx.textBaseline = 'top';
 
@@ -128,25 +171,108 @@ export async function renderTemplateToCanvas(
 
       ctx.textAlign = layer.align === 'justify' ? 'left' : layer.align;
 
+      // Text width presets (Normal, Condensed, Expanded)
+      const PRESET_SCALES: Record<string, number> = {
+        normal: 1.0,
+        condensed: 0.75,
+        semi_condensed: 0.85,
+        expanded: 1.25,
+        semi_expanded: 1.15,
+      };
+      const presetScale = PRESET_SCALES[(layer as any).widthPreset || 'normal'] || 1.0;
+      const finalScaleX = ((layer as any).horizontalScale ?? 1) * presetScale;
+      const finalScaleY = (layer as any).verticalScale ?? 1;
+
+      // Letter spacing and word spacing setup
+      const letterSpacingPx = mmToPx(layer.letterSpacing || 0, renderDpi);
+      if (letterSpacingPx) {
+        (ctx as any).letterSpacing = `${letterSpacingPx}px`;
+      } else {
+        (ctx as any).letterSpacing = '0px';
+      }
+
+      const wordSpacingPx = mmToPx((layer as any).wordSpacing || 0, renderDpi);
+      if (wordSpacingPx) {
+        (ctx as any).wordSpacing = `${wordSpacingPx}px`;
+      } else {
+        (ctx as any).wordSpacing = '0px';
+      }
+
+      // Shadow setup
+      if ((layer as any).shadowEnabled) {
+        ctx.shadowColor = hexToRgba((layer as any).shadowColor || '#000000', ((layer as any).shadowOpacity ?? 50) / 100);
+        ctx.shadowBlur = mmToPx((layer as any).shadowBlur ?? 1.5, renderDpi);
+        ctx.shadowOffsetX = mmToPx((layer as any).shadowOffsetX ?? 0.5, renderDpi);
+        ctx.shadowOffsetY = mmToPx((layer as any).shadowOffsetY ?? 0.5, renderDpi);
+      } else {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+
       // Handle multiline text
       const lines = textVal.split('\n');
       const lineGap = fontSizePx * (layer.lineHeight || 1.1);
 
       lines.forEach((line, idx) => {
-        ctx.fillText(line, textX, y + idx * lineGap);
+        const lineY = y + idx * lineGap;
+        ctx.save();
+        
+        // Translate to the specific line's baseline coordinate, then apply scale!
+        ctx.translate(textX, lineY);
+        ctx.scale(finalScaleX, finalScaleY);
+
+        // Draw fill text
+        ctx.fillText(line, 0, 0);
+
+        // Draw outline if enabled (or if simulated bold is active)
+        let drawStroke = false;
+        let strokeColor = '#000000';
+        let strokeWidth = 0;
+
+        if ((layer as any).strokeEnabled && (layer as any).strokeWidth) {
+          drawStroke = true;
+          strokeColor = (layer as any).strokeColor || '#000000';
+          strokeWidth = mmToPx((layer as any).strokeWidth, renderDpi);
+        } else if (isBoldSimulationActive) {
+          drawStroke = true;
+          strokeColor = layer.color || '#000000';
+          strokeWidth = fontSizePx * 0.04;
+        }
+
+        if (drawStroke && strokeWidth > 0) {
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = strokeWidth;
+          ctx.strokeText(line, 0, 0);
+        }
+
+        // Draw underline inside the translated & scaled matrix for mathematical perfection
         if (layer.textDecoration === 'underline') {
           const metrics = ctx.measureText(line);
-          let underlineX = x;
-          if (layer.align === 'center') underlineX = x + (w - metrics.width) / 2;
-          if (layer.align === 'right') underlineX = x + w - metrics.width;
           ctx.beginPath();
           ctx.strokeStyle = layer.color || '#000000';
           ctx.lineWidth = Math.max(1, fontSizePx / 15);
-          ctx.moveTo(underlineX, y + idx * lineGap + fontSizePx + 2);
-          ctx.lineTo(underlineX + metrics.width, y + idx * lineGap + fontSizePx + 2);
+          
+          let uStartX = 0;
+          if (layer.align === 'center') uStartX = -metrics.width / 2;
+          else if (layer.align === 'right') uStartX = -metrics.width;
+          
+          ctx.moveTo(uStartX, fontSizePx + 2);
+          ctx.lineTo(uStartX + metrics.width, fontSizePx + 2);
           ctx.stroke();
         }
+
+        ctx.restore();
       });
+
+      // Clear layout-specific text metrics parameters to avoid bleeding into other canvas layers
+      (ctx as any).letterSpacing = '0px';
+      (ctx as any).wordSpacing = '0px';
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
     } else if (layer.type === 'image') {
       const imgSrc = replaceVars(layer.src);
       if (imgSrc) {

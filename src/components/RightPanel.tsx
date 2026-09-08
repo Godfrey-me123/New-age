@@ -138,6 +138,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
   // Collapsible section open states
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     textProps: true,
+    textAdvanced: false,
+    textStroke: false,
+    textShadow: false,
     positionSize: true,
     appearance: false,
     cardSettings: true,
@@ -752,7 +755,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
         {selectedLayer.type === 'text' && (
           <CollapsibleSection
             id="textProps"
-            title="Text Properties"
+            title="Text Appearance"
             icon={<Type className="w-3.5 h-3.5 text-[#000000]" />}
             badge={selectedLayer.fontFamily || 'Helvetica'}
             isOpen={openSections.textProps}
@@ -789,234 +792,803 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
               />
             </div>
 
-            {/* Font Family & Font Size */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
-                  Font Family
-                </label>
-                <select
-                  value={selectedLayer.fontFamily || 'Helvetica'}
-                  onChange={(e) => handleFontSelectRequest(e.target.value, selectedLayer.id)}
-                  className="w-full px-2 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
-                >
-                  {FONT_LIBRARY.map((f) => (
-                    <option key={f} value={f} style={{ fontFamily: f }}>
-                      {f}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* FONT SUBSECTION */}
+            <div className="border-t border-[#dadcdc] pt-3 mt-3">
+              <span className="text-[10px] font-bold tracking-wider uppercase text-[#555] block mb-2">FONT</span>
+              <div className="space-y-2.5">
+                {/* Font Family & Font Size */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
+                      Font Family
+                    </label>
+                    <select
+                      value={selectedLayer.fontFamily || 'Helvetica'}
+                      onChange={(e) => handleFontSelectRequest(e.target.value, selectedLayer.id)}
+                      className="w-full px-2 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
+                    >
+                      {FONT_LIBRARY.map((f) => (
+                        <option key={f} value={f} style={{ fontFamily: f }}>
+                          {f}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
-                  Size ({activeUnit})
-                </label>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() =>
-                      updateLayer(selectedLayer.id, {
-                        fontSize: Math.max(1, selectedLayer.fontSize - 0.2),
-                      })
-                    }
-                    className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                  <div>
+                    <label className="block text-[#000000] font-semibold mb-1 text-[11px]">
+                      Size ({activeUnit})
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() =>
+                          updateLayer(selectedLayer.id, {
+                            fontSize: Math.max(1, selectedLayer.fontSize - 0.2),
+                          })
+                        }
+                        className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <input
+                        type="number"
+                        step="0.2"
+                        value={selectedLayer.fontSize}
+                        onChange={(e) =>
+                          updateLayer(selectedLayer.id, {
+                            fontSize: parseFloat(e.target.value) || 2,
+                          })
+                        }
+                        className="w-full px-1 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-center text-[#000000] focus:outline-none focus:border-[#000000]"
+                      />
+                      <button
+                        onClick={() =>
+                          updateLayer(selectedLayer.id, {
+                            fontSize: selectedLayer.fontSize + 0.2,
+                          })
+                        }
+                        className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Font Weight Control */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[#000000] font-semibold text-[11px]">
+                      Font Weight
+                    </label>
+                    <span className="text-[10px] text-[#000000] font-mono font-bold">
+                      {selectedLayer.fontWeight ?? (selectedLayer.fontStyle?.includes('bold') ? 700 : 400)}
+                    </span>
+                  </div>
+                  <select
+                    value={getClosestValidWeight(
+                      selectedLayer.fontFamily || 'Helvetica',
+                      selectedLayer.fontWeight ?? (selectedLayer.fontStyle?.includes('bold') ? 700 : 400)
+                    )}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val)) {
+                        handleWeightSelectRequest(val, selectedLayer.id);
+                      }
+                    }}
+                    className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
                   >
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <input
-                    type="number"
-                    step="0.2"
-                    value={selectedLayer.fontSize}
-                    onChange={(e) =>
-                      updateLayer(selectedLayer.id, {
-                        fontSize: parseFloat(e.target.value) || 2,
-                      })
-                    }
-                    className="w-full px-1 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded font-mono text-xs text-center text-[#000000] focus:outline-none focus:border-[#000000]"
-                  />
-                  <button
-                    onClick={() =>
-                      updateLayer(selectedLayer.id, {
-                        fontSize: selectedLayer.fontSize + 0.2,
-                      })
-                    }
-                    className="px-1.5 py-1 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded text-[#000000] cursor-pointer"
-                  >
-                    <Plus className="w-3 h-3" />
-                  </button>
+                    {getAvailableWeightsForFont(selectedLayer.fontFamily || 'Helvetica').map((w) => (
+                      <option key={w.value} value={w.value}>
+                        {w.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Color & Quick Formatting & Alignment */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  {/* Color Picker with hex display */}
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={selectedLayer.color || '#000000'}
+                      onChange={(e) => updateLayer(selectedLayer.id, { color: e.target.value })}
+                      className="w-7 h-7 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
+                    />
+                    <span className="font-mono text-[10px] text-[#000000] font-bold uppercase">
+                      {selectedLayer.color || '#000000'}
+                    </span>
+                  </div>
+
+                  {/* Quick Bold (B), Italic (I), Underline (U) */}
+                  <div className="flex items-center bg-[#E7E9EB] rounded-lg p-0.5 border border-[#dadcdc]">
+                    <button
+                      onClick={() => {
+                        const availableWeights = getAvailableWeightsForFont(
+                          selectedLayer.fontFamily || 'Helvetica'
+                        );
+                        const currentWeight =
+                          selectedLayer.fontWeight ??
+                          (selectedLayer.fontStyle?.includes('bold') ? 700 : 400);
+                        const isBoldNow = currentWeight >= 600;
+
+                        let targetWeight: number;
+                        if (isBoldNow) {
+                          const minWeight = Math.min(...availableWeights.map((w) => w.value));
+                          targetWeight = availableWeights.some((w) => w.value === 400)
+                            ? 400
+                            : minWeight;
+                        } else {
+                          const maxWeight = Math.max(...availableWeights.map((w) => w.value));
+                          targetWeight = availableWeights.some((w) => w.value === 700)
+                            ? 700
+                            : maxWeight;
+                        }
+
+                        const isItalic = selectedLayer.fontStyle?.includes('italic');
+                        const newIsBold = targetWeight >= 600;
+                        let newStyle = 'normal';
+                        if (newIsBold && isItalic) newStyle = 'bold italic';
+                        else if (newIsBold) newStyle = 'bold';
+                        else if (isItalic) newStyle = 'italic';
+
+                        updateLayer(selectedLayer.id, {
+                          fontWeight: targetWeight,
+                          fontStyle: newStyle,
+                        });
+                      }}
+                      title="Quick Bold Toggle"
+                      className={`p-1.5 rounded transition-colors cursor-pointer ${
+                        (selectedLayer.fontWeight ??
+                          (selectedLayer.fontStyle?.includes('bold') ? 700 : 400)) >= 600
+                          ? 'bg-[#000000] text-[#FFFFFF] font-bold'
+                          : 'text-[#000000] hover:bg-[#dadcdc]'
+                      }`}
+                    >
+                      <Bold className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const isItalic = selectedLayer.fontStyle?.includes('italic');
+                        const isBold =
+                          selectedLayer.fontStyle?.includes('bold') ||
+                          (selectedLayer.fontWeight ?? 400) >= 600;
+                        let newStyle = 'normal';
+                        if (isBold && !isItalic) newStyle = 'bold italic';
+                        else if (!isBold && !isItalic) newStyle = 'italic';
+                        else if (isBold && isItalic) newStyle = 'bold';
+                        updateLayer(selectedLayer.id, { fontStyle: newStyle });
+                      }}
+                      title="Italic"
+                      className={`p-1.5 rounded transition-colors cursor-pointer ${
+                        selectedLayer.fontStyle?.includes('italic')
+                          ? 'bg-[#000000] text-[#FFFFFF]'
+                          : 'text-[#000000] hover:bg-[#dadcdc]'
+                      }`}
+                    >
+                      <Italic className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        updateLayer(selectedLayer.id, {
+                          textDecoration:
+                            selectedLayer.textDecoration === 'underline' ? 'none' : 'underline',
+                        })
+                      }
+                      title="Underline"
+                      className={`p-1.5 rounded transition-colors cursor-pointer ${
+                        selectedLayer.textDecoration === 'underline'
+                          ? 'bg-[#000000] text-[#FFFFFF]'
+                          : 'text-[#000000] hover:bg-[#dadcdc]'
+                      }`}
+                    >
+                      <Underline className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Text Alignment */}
+                  <div className="flex items-center bg-[#E7E9EB] rounded-lg p-0.5 border border-[#dadcdc]">
+                    <button
+                      onClick={() => updateLayer(selectedLayer.id, { align: 'left' })}
+                      className={`p-1.5 rounded cursor-pointer ${
+                        selectedLayer.align === 'left'
+                          ? 'bg-[#000000] text-[#FFFFFF]'
+                          : 'text-[#000000] hover:bg-[#dadcdc]'
+                      }`}
+                      title="Left"
+                    >
+                      <AlignLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => updateLayer(selectedLayer.id, { align: 'center' })}
+                      className={`p-1.5 rounded cursor-pointer ${
+                        selectedLayer.align === 'center'
+                          ? 'bg-[#000000] text-[#FFFFFF]'
+                          : 'text-[#000000] hover:bg-[#dadcdc]'
+                      }`}
+                      title="Center"
+                    >
+                      <AlignCenter className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => updateLayer(selectedLayer.id, { align: 'right' })}
+                      className={`p-1.5 rounded cursor-pointer ${
+                        selectedLayer.align === 'right'
+                          ? 'bg-[#000000] text-[#FFFFFF]'
+                          : 'text-[#000000] hover:bg-[#dadcdc]'
+                      }`}
+                      title="Right"
+                    >
+                      <AlignRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Font Weight Control directly below Font Family (Exact Available Weights only) */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[#000000] font-semibold text-[11px]">
-                  Font Weight / Boldness
-                </label>
-                <span className="text-[10px] text-[#000000] font-mono font-bold">
-                  {selectedLayer.fontWeight ?? (selectedLayer.fontStyle?.includes('bold') ? 700 : 400)}
-                </span>
+            {/* TRANSFORM SUBSECTION */}
+            <div className="border-t border-[#dadcdc] pt-3 mt-3">
+              <span className="text-[10px] font-bold tracking-wider uppercase text-[#555] block mb-2">TRANSFORM</span>
+              <div className="space-y-3.5">
+                {/* Width Preset Selector */}
+                <div className="space-y-1">
+                  <label className="block text-[#000000] font-semibold text-[11px]">
+                    Condensed / Expanded Width Preset
+                  </label>
+                  <select
+                    value={(selectedLayer as any).widthPreset || 'normal'}
+                    onChange={(e) => updateLayer(selectedLayer.id, { widthPreset: e.target.value as any })}
+                    className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
+                  >
+                    <option value="condensed">Condensed (75%)</option>
+                    <option value="semi_condensed">Semi-Condensed (85%)</option>
+                    <option value="normal">Normal (100%)</option>
+                    <option value="semi_expanded">Semi-Expanded (115%)</option>
+                    <option value="expanded">Expanded (125%)</option>
+                  </select>
+                </div>
+
+                {/* Vertical Scale */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#000000]">Vertical Scale</span>
+                    <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).verticalScale ?? 1).toFixed(1)}x</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3"
+                      step="0.1"
+                      value={(selectedLayer as any).verticalScale ?? 1}
+                      onChange={(e) => updateLayer(selectedLayer.id, { verticalScale: parseFloat(e.target.value) || 1 })}
+                      className="flex-1 accent-[#000000] cursor-pointer"
+                    />
+                    <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { verticalScale: Math.max(0.5, parseFloat((((selectedLayer as any).verticalScale ?? 1) - 0.1).toFixed(1))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Minus className="w-2.5 h-2.5" />
+                      </button>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={parseFloat(((selectedLayer as any).verticalScale ?? 1).toFixed(1))}
+                        onChange={(e) => updateLayer(selectedLayer.id, { verticalScale: parseFloat(e.target.value) || 1 })}
+                        className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                      />
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { verticalScale: Math.min(3, parseFloat((((selectedLayer as any).verticalScale ?? 1) + 0.1).toFixed(1))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Horizontal Scale */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#000000]">Horizontal Scale</span>
+                    <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).horizontalScale ?? 1).toFixed(1)}x</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3"
+                      step="0.1"
+                      value={(selectedLayer as any).horizontalScale ?? 1}
+                      onChange={(e) => updateLayer(selectedLayer.id, { horizontalScale: parseFloat(e.target.value) || 1 })}
+                      className="flex-1 accent-[#000000] cursor-pointer"
+                    />
+                    <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { horizontalScale: Math.max(0.5, parseFloat((((selectedLayer as any).horizontalScale ?? 1) - 0.1).toFixed(1))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Minus className="w-2.5 h-2.5" />
+                      </button>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={parseFloat(((selectedLayer as any).horizontalScale ?? 1).toFixed(1))}
+                        onChange={(e) => updateLayer(selectedLayer.id, { horizontalScale: parseFloat(e.target.value) || 1 })}
+                        className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                      />
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { horizontalScale: Math.min(3, parseFloat((((selectedLayer as any).horizontalScale ?? 1) + 0.1).toFixed(1))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <select
-                value={getClosestValidWeight(
-                  selectedLayer.fontFamily || 'Helvetica',
-                  selectedLayer.fontWeight ?? (selectedLayer.fontStyle?.includes('bold') ? 700 : 400)
-                )}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  if (!isNaN(val)) {
-                    handleWeightSelectRequest(val, selectedLayer.id);
-                  }
-                }}
-                className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
-              >
-                {getAvailableWeightsForFont(selectedLayer.fontFamily || 'Helvetica').map((w) => (
-                  <option key={w.value} value={w.value}>
-                    {w.label}
-                  </option>
-                ))}
-              </select>
             </div>
 
-            {/* Color & Quick Formatting & Alignment */}
-            <div className="flex items-center justify-between gap-2 pt-1">
-              {/* Color Picker with hex display */}
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="color"
-                  value={selectedLayer.color || '#000000'}
-                  onChange={(e) => updateLayer(selectedLayer.id, { color: e.target.value })}
-                  className="w-7 h-7 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
-                />
-                <span className="font-mono text-[10px] text-[#000000] font-bold uppercase">
-                  {selectedLayer.color || '#000000'}
-                </span>
+            {/* SPACING SUBSECTION */}
+            <div className="border-t border-[#dadcdc] pt-3 mt-3">
+              <span className="text-[10px] font-bold tracking-wider uppercase text-[#555] block mb-2">SPACING</span>
+              <div className="space-y-3.5">
+                {/* Letter Spacing */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#000000]">Letter Spacing (mm)</span>
+                    <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).letterSpacing || 0).toFixed(2)} mm</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="-2"
+                      max="10"
+                      step="0.1"
+                      value={(selectedLayer as any).letterSpacing || 0}
+                      onChange={(e) => updateLayer(selectedLayer.id, { letterSpacing: parseFloat(e.target.value) || 0 })}
+                      className="flex-1 accent-[#000000] cursor-pointer"
+                    />
+                    <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { letterSpacing: Math.max(-2, parseFloat((((selectedLayer as any).letterSpacing || 0) - 0.1).toFixed(2))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Minus className="w-2.5 h-2.5" />
+                      </button>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={parseFloat(((selectedLayer as any).letterSpacing || 0).toFixed(2))}
+                        onChange={(e) => updateLayer(selectedLayer.id, { letterSpacing: parseFloat(e.target.value) || 0 })}
+                        className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                      />
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { letterSpacing: Math.min(10, parseFloat((((selectedLayer as any).letterSpacing || 0) + 0.1).toFixed(2))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Word Spacing */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#000000]">Word Spacing (mm)</span>
+                    <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).wordSpacing || 0).toFixed(2)} mm</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="-2"
+                      max="15"
+                      step="0.1"
+                      value={(selectedLayer as any).wordSpacing || 0}
+                      onChange={(e) => updateLayer(selectedLayer.id, { wordSpacing: parseFloat(e.target.value) || 0 })}
+                      className="flex-1 accent-[#000000] cursor-pointer"
+                    />
+                    <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { wordSpacing: Math.max(-2, parseFloat((((selectedLayer as any).wordSpacing || 0) - 0.1).toFixed(2))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Minus className="w-2.5 h-2.5" />
+                      </button>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={parseFloat(((selectedLayer as any).wordSpacing || 0).toFixed(2))}
+                        onChange={(e) => updateLayer(selectedLayer.id, { wordSpacing: parseFloat(e.target.value) || 0 })}
+                        className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                      />
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { wordSpacing: Math.min(15, parseFloat((((selectedLayer as any).wordSpacing || 0) + 0.1).toFixed(2))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Line Height */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#000000]">Line Height</span>
+                    <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).lineHeight || 1.1).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3"
+                      step="0.1"
+                      value={(selectedLayer as any).lineHeight || 1.1}
+                      onChange={(e) => updateLayer(selectedLayer.id, { lineHeight: parseFloat(e.target.value) || 1.1 })}
+                      className="flex-1 accent-[#000000] cursor-pointer"
+                    />
+                    <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { lineHeight: Math.max(0.5, parseFloat((((selectedLayer as any).lineHeight || 1.1) - 0.1).toFixed(2))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Minus className="w-2.5 h-2.5" />
+                      </button>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={parseFloat(((selectedLayer as any).lineHeight || 1.1).toFixed(2))}
+                        onChange={(e) => updateLayer(selectedLayer.id, { lineHeight: parseFloat(e.target.value) || 1.1 })}
+                        className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                      />
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { lineHeight: Math.min(3, parseFloat((((selectedLayer as any).lineHeight || 1.1) + 0.1).toFixed(2))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {/* Quick Bold (B), Italic (I), Underline (U) */}
-              <div className="flex items-center bg-[#E7E9EB] rounded-lg p-0.5 border border-[#dadcdc]">
-                <button
-                  onClick={() => {
-                    const availableWeights = getAvailableWeightsForFont(
-                      selectedLayer.fontFamily || 'Helvetica'
-                    );
-                    const currentWeight =
-                      selectedLayer.fontWeight ??
-                      (selectedLayer.fontStyle?.includes('bold') ? 700 : 400);
-                    const isBoldNow = currentWeight >= 600;
+            {/* STYLE SUBSECTION */}
+            <div className="border-t border-[#dadcdc] pt-3 mt-3">
+              <span className="text-[10px] font-bold tracking-wider uppercase text-[#555] block mb-2">STYLE</span>
+              <div className="space-y-4">
+                {/* Text Case Control */}
+                <div className="space-y-1">
+                  <label className="block text-[#000000] font-semibold text-[11px]">Text Case</label>
+                  <select
+                    value={(selectedLayer as any).textCase || 'original'}
+                    onChange={(e) => updateLayer(selectedLayer.id, { textCase: e.target.value as any })}
+                    className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
+                  >
+                    <option value="original">Original</option>
+                    <option value="uppercase">UPPERCASE</option>
+                    <option value="lowercase">lowercase</option>
+                    <option value="capitalize">Capitalize</option>
+                  </select>
+                </div>
 
-                    let targetWeight: number;
-                    if (isBoldNow) {
-                      const minWeight = Math.min(...availableWeights.map((w) => w.value));
-                      targetWeight = availableWeights.some((w) => w.value === 400)
-                        ? 400
-                        : minWeight;
-                    } else {
-                      const maxWeight = Math.max(...availableWeights.map((w) => w.value));
-                      targetWeight = availableWeights.some((w) => w.value === 700)
-                        ? 700
-                        : maxWeight;
-                    }
+                {/* Bold Simulation */}
+                <div className="space-y-1">
+                  <label className="block text-[#000000] font-semibold text-[11px]">Bold Simulation Option</label>
+                  <select
+                    value={(selectedLayer as any).boldSimulation || 'normal'}
+                    onChange={(e) => updateLayer(selectedLayer.id, { boldSimulation: e.target.value as any })}
+                    className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-xs cursor-pointer text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="bold">Bold (Prefers Real Bold Font)</option>
+                    <option value="simulated_bold">Simulated Bold</option>
+                  </select>
+                </div>
 
-                    const isItalic = selectedLayer.fontStyle?.includes('italic');
-                    const newIsBold = targetWeight >= 600;
-                    let newStyle = 'normal';
-                    if (newIsBold && isItalic) newStyle = 'bold italic';
-                    else if (newIsBold) newStyle = 'bold';
-                    else if (isItalic) newStyle = 'italic';
+                {/* Opacity */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#000000]">Opacity</span>
+                    <span className="text-[10px] font-mono text-[#000000] font-bold">{Math.round(((selectedLayer as any).textOpacity ?? 1) * 100)}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={(selectedLayer as any).textOpacity ?? 1}
+                      onChange={(e) => updateLayer(selectedLayer.id, { textOpacity: parseFloat(e.target.value) })}
+                      className="flex-1 accent-[#000000] cursor-pointer"
+                    />
+                    <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { textOpacity: Math.max(0, parseFloat((((selectedLayer as any).textOpacity ?? 1) - 0.05).toFixed(2))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Minus className="w-2.5 h-2.5" />
+                      </button>
+                      <input
+                        type="number"
+                        step="5"
+                        value={Math.round(((selectedLayer as any).textOpacity ?? 1) * 100)}
+                        onChange={(e) => updateLayer(selectedLayer.id, { textOpacity: Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)) / 100 })}
+                        className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                      />
+                      <button
+                        onClick={() => updateLayer(selectedLayer.id, { textOpacity: Math.min(1, parseFloat((((selectedLayer as any).textOpacity ?? 1) + 0.05).toFixed(2))) })}
+                        className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-                    updateLayer(selectedLayer.id, {
-                      fontWeight: targetWeight,
-                      fontStyle: newStyle,
-                    });
-                  }}
-                  title="Quick Bold Toggle"
-                  className={`p-1.5 rounded transition-colors cursor-pointer ${
-                    (selectedLayer.fontWeight ??
-                      (selectedLayer.fontStyle?.includes('bold') ? 700 : 400)) >= 600
-                      ? 'bg-[#000000] text-[#FFFFFF] font-bold'
-                      : 'text-[#000000] hover:bg-[#dadcdc]'
-                  }`}
-                >
-                  <Bold className="w-3.5 h-3.5" />
-                </button>
+                {/* Stroke / Outline Subsection Accordion */}
+                <div className="border border-[#dadcdc] rounded-lg p-2.5 bg-[#f6f7f8] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#000000]">Stroke Outline</span>
+                    <input
+                      type="checkbox"
+                      checked={(selectedLayer as any).strokeEnabled ?? false}
+                      onChange={(e) => updateLayer(selectedLayer.id, { strokeEnabled: e.target.checked })}
+                      className="w-4 h-4 accent-[#000000] cursor-pointer"
+                    />
+                  </div>
 
-                <button
-                  onClick={() => {
-                    const isItalic = selectedLayer.fontStyle?.includes('italic');
-                    const isBold =
-                      selectedLayer.fontStyle?.includes('bold') ||
-                      (selectedLayer.fontWeight ?? 400) >= 600;
-                    let newStyle = 'normal';
-                    if (isBold && !isItalic) newStyle = 'bold italic';
-                    else if (!isBold && !isItalic) newStyle = 'italic';
-                    else if (isBold && isItalic) newStyle = 'bold';
-                    updateLayer(selectedLayer.id, { fontStyle: newStyle });
-                  }}
-                  title="Italic"
-                  className={`p-1.5 rounded transition-colors cursor-pointer ${
-                    selectedLayer.fontStyle?.includes('italic')
-                      ? 'bg-[#000000] text-[#FFFFFF]'
-                      : 'text-[#000000] hover:bg-[#dadcdc]'
-                  }`}
-                >
-                  <Italic className="w-3.5 h-3.5" />
-                </button>
+                  {(selectedLayer as any).strokeEnabled && (
+                    <div className="space-y-2.5 pt-1.5 border-t border-[#dadcdc]">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-[#000000]">Stroke Color</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={(selectedLayer as any).strokeColor || '#000000'}
+                            onChange={(e) => updateLayer(selectedLayer.id, { strokeColor: e.target.value })}
+                            className="w-7 h-7 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
+                          />
+                          <span className="font-mono text-[10px] text-[#000000] font-bold uppercase">
+                            {(selectedLayer as any).strokeColor || '#000000'}
+                          </span>
+                        </div>
+                      </div>
 
-                <button
-                  onClick={() =>
-                    updateLayer(selectedLayer.id, {
-                      textDecoration:
-                        selectedLayer.textDecoration === 'underline' ? 'none' : 'underline',
-                    })
-                  }
-                  title="Underline"
-                  className={`p-1.5 rounded transition-colors cursor-pointer ${
-                    selectedLayer.textDecoration === 'underline'
-                      ? 'bg-[#000000] text-[#FFFFFF]'
-                      : 'text-[#000000] hover:bg-[#dadcdc]'
-                  }`}
-                >
-                  <Underline className="w-3.5 h-3.5" />
-                </button>
-              </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-[#000000]">Stroke Thickness (mm)</span>
+                          <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).strokeWidth ?? 0.5).toFixed(2)} mm</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="4"
+                            step="0.05"
+                            value={(selectedLayer as any).strokeWidth ?? 0.5}
+                            onChange={(e) => updateLayer(selectedLayer.id, { strokeWidth: parseFloat(e.target.value) || 0.1 })}
+                            className="flex-1 accent-[#000000] cursor-pointer"
+                          />
+                          <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { strokeWidth: Math.max(0.1, parseFloat((((selectedLayer as any).strokeWidth ?? 0.5) - 0.05).toFixed(2))) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
+                            <input
+                              type="number"
+                              step="0.05"
+                              value={parseFloat(((selectedLayer as any).strokeWidth ?? 0.5).toFixed(2))}
+                              onChange={(e) => updateLayer(selectedLayer.id, { strokeWidth: parseFloat(e.target.value) || 0.1 })}
+                              className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                            />
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { strokeWidth: Math.min(4, parseFloat((((selectedLayer as any).strokeWidth ?? 0.5) + 0.05).toFixed(2))) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-              {/* Text Alignment */}
-              <div className="flex items-center bg-[#E7E9EB] rounded-lg p-0.5 border border-[#dadcdc]">
-                <button
-                  onClick={() => updateLayer(selectedLayer.id, { align: 'left' })}
-                  className={`p-1.5 rounded cursor-pointer ${
-                    selectedLayer.align === 'left'
-                      ? 'bg-[#000000] text-[#FFFFFF]'
-                      : 'text-[#000000] hover:bg-[#dadcdc]'
-                  }`}
-                  title="Left"
-                >
-                  <AlignLeft className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => updateLayer(selectedLayer.id, { align: 'center' })}
-                  className={`p-1.5 rounded cursor-pointer ${
-                    selectedLayer.align === 'center'
-                      ? 'bg-[#000000] text-[#FFFFFF]'
-                      : 'text-[#000000] hover:bg-[#dadcdc]'
-                  }`}
-                  title="Center"
-                >
-                  <AlignCenter className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => updateLayer(selectedLayer.id, { align: 'right' })}
-                  className={`p-1.5 rounded cursor-pointer ${
-                    selectedLayer.align === 'right'
-                      ? 'bg-[#000000] text-[#FFFFFF]'
-                      : 'text-[#000000] hover:bg-[#dadcdc]'
-                  }`}
-                  title="Right"
-                >
-                  <AlignRight className="w-3.5 h-3.5" />
-                </button>
+                {/* Text Shadow Subsection Accordion */}
+                <div className="border border-[#dadcdc] rounded-lg p-2.5 bg-[#f6f7f8] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#000000]">Shadow Effects</span>
+                    <input
+                      type="checkbox"
+                      checked={(selectedLayer as any).shadowEnabled ?? false}
+                      onChange={(e) => updateLayer(selectedLayer.id, { shadowEnabled: e.target.checked })}
+                      className="w-4 h-4 accent-[#000000] cursor-pointer"
+                    />
+                  </div>
+
+                  {(selectedLayer as any).shadowEnabled && (
+                    <div className="space-y-3.5 pt-1.5 border-t border-[#dadcdc]">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-[#000000]">Shadow Color</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={(selectedLayer as any).shadowColor || '#000000'}
+                            onChange={(e) => updateLayer(selectedLayer.id, { shadowColor: e.target.value })}
+                            className="w-7 h-7 rounded border border-[#dadcdc] cursor-pointer bg-transparent"
+                          />
+                          <span className="font-mono text-[10px] text-[#000000] font-bold uppercase">
+                            {(selectedLayer as any).shadowColor || '#000000'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-[#000000]">Shadow Opacity</span>
+                          <span className="text-[10px] font-mono text-[#000000] font-bold">{(selectedLayer as any).shadowOpacity ?? 50}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="5"
+                            value={(selectedLayer as any).shadowOpacity ?? 50}
+                            onChange={(e) => updateLayer(selectedLayer.id, { shadowOpacity: parseInt(e.target.value, 10) || 0 })}
+                            className="flex-1 accent-[#000000] cursor-pointer"
+                          />
+                          <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { shadowOpacity: Math.max(0, ((selectedLayer as any).shadowOpacity ?? 50) - 5) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
+                            <input
+                              type="number"
+                              value={(selectedLayer as any).shadowOpacity ?? 50}
+                              onChange={(e) => updateLayer(selectedLayer.id, { shadowOpacity: Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)) })}
+                              className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                            />
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { shadowOpacity: Math.min(100, ((selectedLayer as any).shadowOpacity ?? 50) + 5) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-[#000000]">Blur Radius (mm)</span>
+                          <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).shadowBlur ?? 1.0).toFixed(2)} mm</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min="0"
+                            max="5"
+                            step="0.05"
+                            value={(selectedLayer as any).shadowBlur ?? 1.0}
+                            onChange={(e) => updateLayer(selectedLayer.id, { shadowBlur: parseFloat(e.target.value) || 0 })}
+                            className="flex-1 accent-[#000000] cursor-pointer"
+                          />
+                          <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { shadowBlur: Math.max(0, parseFloat((((selectedLayer as any).shadowBlur ?? 1.0) - 0.05).toFixed(2))) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
+                            <input
+                              type="number"
+                              step="0.05"
+                              value={parseFloat(((selectedLayer as any).shadowBlur ?? 1.0).toFixed(2))}
+                              onChange={(e) => updateLayer(selectedLayer.id, { shadowBlur: parseFloat(e.target.value) || 0 })}
+                              className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                            />
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { shadowBlur: Math.min(5, parseFloat((((selectedLayer as any).shadowBlur ?? 1.0) + 0.05).toFixed(2))) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-[#000000]">X Offset (mm)</span>
+                          <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).shadowOffsetX ?? 0.5).toFixed(2)} mm</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min="-5"
+                            max="5"
+                            step="0.05"
+                            value={(selectedLayer as any).shadowOffsetX ?? 0.5}
+                            onChange={(e) => updateLayer(selectedLayer.id, { shadowOffsetX: parseFloat(e.target.value) || 0 })}
+                            className="flex-1 accent-[#000000] cursor-pointer"
+                          />
+                          <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { shadowOffsetX: Math.max(-5, parseFloat((((selectedLayer as any).shadowOffsetX ?? 0.5) - 0.05).toFixed(2))) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
+                            <input
+                              type="number"
+                              step="0.05"
+                              value={parseFloat(((selectedLayer as any).shadowOffsetX ?? 0.5).toFixed(2))}
+                              onChange={(e) => updateLayer(selectedLayer.id, { shadowOffsetX: parseFloat(e.target.value) || 0 })}
+                              className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                            />
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { shadowOffsetX: Math.min(5, parseFloat((((selectedLayer as any).shadowOffsetX ?? 0.5) + 0.05).toFixed(2))) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-[#000000]">Y Offset (mm)</span>
+                          <span className="text-[10px] font-mono text-[#000000] font-bold">{((selectedLayer as any).shadowOffsetY ?? 0.5).toFixed(2)} mm</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min="-5"
+                            max="5"
+                            step="0.05"
+                            value={(selectedLayer as any).shadowOffsetY ?? 0.5}
+                            onChange={(e) => updateLayer(selectedLayer.id, { shadowOffsetY: parseFloat(e.target.value) || 0 })}
+                            className="flex-1 accent-[#000000] cursor-pointer"
+                          />
+                          <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-[#E7E9EB] p-0.5">
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { shadowOffsetY: Math.max(-5, parseFloat((((selectedLayer as any).shadowOffsetY ?? 0.5) - 0.05).toFixed(2))) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
+                            <input
+                              type="number"
+                              step="0.05"
+                              value={parseFloat(((selectedLayer as any).shadowOffsetY ?? 0.5).toFixed(2))}
+                              onChange={(e) => updateLayer(selectedLayer.id, { shadowOffsetY: parseFloat(e.target.value) || 0 })}
+                              className="w-10 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                            />
+                            <button
+                              onClick={() => updateLayer(selectedLayer.id, { shadowOffsetY: Math.min(5, parseFloat((((selectedLayer as any).shadowOffsetY ?? 0.5) + 0.05).toFixed(2))) })}
+                              className="p-1 hover:bg-[#dadcdc] rounded text-[#000000] cursor-pointer"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </CollapsibleSection>
