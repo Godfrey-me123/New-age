@@ -144,6 +144,164 @@ export function convertIsoToDdMmmYyyy(isoDate: string): string | null {
 }
 
 /**
+ * Converts ISO date (YYYY-MM-DD) to DD/MM/YYYY
+ * e.g. "2021-08-23" -> "23/08/2021"
+ */
+export function convertIsoToDdMmYyyy(isoDate: string): string | null {
+  if (!isoDate) return null;
+  const parts = isoDate.split('-');
+  if (parts.length !== 3) return null;
+
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+  if (month < 1 || month > 12) return null;
+
+  const dayStr = day.toString().padStart(2, '0');
+  const monthStr = month.toString().padStart(2, '0');
+
+  return `${dayStr}/${monthStr}/${year}`;
+}
+
+/**
+ * Standardizes any date string (ISO, DD MMM YYYY, DD-MM-YYYY, YYYYMMDD, DD/MM/YYYY)
+ * to strict Driving Licence format: DD/MM/YYYY (e.g. 23/08/2021, 15/09/2027)
+ */
+export function formatToDdMmYyyy(val: string | null | undefined): string {
+  if (!val || typeof val !== 'string') return '';
+  const trimmed = val.trim();
+  if (!trimmed) return '';
+
+  // Already DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // DD-MM-YYYY
+  if (/^\d{2}-\d{2}-\d{4}$/.test(trimmed)) {
+    const parts = trimmed.split('-');
+    return `${parts[0]}/${parts[1]}/${parts[2]}`;
+  }
+
+  // ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const res = convertIsoToDdMmYyyy(trimmed);
+    if (res) return res;
+  }
+
+  // DD MMM YYYY (e.g. 23 AUG 2021 or 01 MAR 1998)
+  const parts = trimmed.toUpperCase().split(' ');
+  if (parts.length === 3) {
+    const [dayStr, monthStr, yearStr] = parts;
+    const mIdx = MONTH_ABBREVIATIONS.indexOf(monthStr as MonthAbbr);
+    if (mIdx !== -1 && /^\d{1,2}$/.test(dayStr) && /^\d{4}$/.test(yearStr)) {
+      const day = parseInt(dayStr, 10).toString().padStart(2, '0');
+      const month = (mIdx + 1).toString().padStart(2, '0');
+      return `${day}/${month}/${yearStr}`;
+    }
+  }
+
+  // 8-digit numeric YYYYMMDD
+  if (/^\d{8}$/.test(trimmed)) {
+    const yyyy = trimmed.slice(0, 4);
+    const mm = trimmed.slice(4, 6);
+    const dd = trimmed.slice(6, 8);
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  return trimmed;
+}
+
+/**
+ * Converts any date format to ISO YYYY-MM-DD for native <input type="date">
+ */
+export function convertAnyDateToIso(val: string | null | undefined): string {
+  if (!val || typeof val !== 'string') return '';
+  const trimmed = val.trim();
+  if (!trimmed) return '';
+
+  // If already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // If DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+    const parts = trimmed.split('/');
+    const dd = parts[0].padStart(2, '0');
+    const mm = parts[1].padStart(2, '0');
+    const yyyy = parts[2];
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // If DD-MM-YYYY
+  if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(trimmed)) {
+    const parts = trimmed.split('-');
+    const dd = parts[0].padStart(2, '0');
+    const mm = parts[1].padStart(2, '0');
+    const yyyy = parts[2];
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // If DD MMM YYYY
+  const parts = trimmed.toUpperCase().split(' ');
+  if (parts.length === 3) {
+    const [dayStr, monthStr, yearStr] = parts;
+    const mIdx = MONTH_ABBREVIATIONS.indexOf(monthStr as MonthAbbr);
+    if (mIdx !== -1 && /^\d{1,2}$/.test(dayStr) && /^\d{4}$/.test(yearStr)) {
+      const dd = parseInt(dayStr, 10).toString().padStart(2, '0');
+      const mm = (mIdx + 1).toString().padStart(2, '0');
+      return `${yearStr}-${mm}-${dd}`;
+    }
+  }
+
+  // 8-digit numeric YYYYMMDD
+  if (/^\d{8}$/.test(trimmed)) {
+    const yyyy = trimmed.slice(0, 4);
+    const mm = trimmed.slice(4, 6);
+    const dd = trimmed.slice(6, 8);
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return '';
+}
+
+/**
+ * Validates strict DD/MM/YYYY format
+ */
+export function validateDdMmYyyy(input: string): { isValid: boolean; error?: string } {
+  if (!input || input.trim() === '') {
+    return { isValid: false, error: 'Date is required.' };
+  }
+
+  const trimmed = input.trim();
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+    return {
+      isValid: false,
+      error: 'Date must follow DD/MM/YYYY format (e.g. 23/08/2021)',
+    };
+  }
+
+  const [dayStr, monthStr, yearStr] = trimmed.split('/');
+  const day = parseInt(dayStr, 10);
+  const month = parseInt(monthStr, 10);
+  const year = parseInt(yearStr, 10);
+
+  if (month < 1 || month > 12) {
+    return { isValid: false, error: 'Month must be between 01 and 12.' };
+  }
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+  if (day < 1 || day > daysInMonth) {
+    return { isValid: false, error: `Invalid day for month: ${day}. Max is ${daysInMonth}.` };
+  }
+
+  return { isValid: true };
+}
+
+/**
  * Normalizes user input into DD MMM YYYY if possible
  */
 export function normalizeDateInput(val: string): string {
@@ -161,4 +319,42 @@ export function normalizeDateInput(val: string): string {
   }
 
   return upper;
+}
+
+/**
+ * Converts any date representation (DD/MM/YYYY, DD MMM YYYY, DD-MM-YYYY, YYYY-MM-DD)
+ * to ISO YYYY-MM-DD for native HTML5 date input binding.
+ */
+export function convertDateToIso(val: string): string {
+  if (!val) return '';
+  const trimmed = val.trim();
+
+  // Already ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+  // DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+    const [d, m, y] = trimmed.split('/');
+    return `${y}-${m}-${d}`;
+  }
+
+  // DD-MM-YYYY
+  if (/^\d{2}-\d{2}-\d{4}$/.test(trimmed)) {
+    const [d, m, y] = trimmed.split('-');
+    return `${y}-${m}-${d}`;
+  }
+
+  // DD MMM YYYY
+  const parts = trimmed.toUpperCase().split(/\s+/);
+  if (parts.length === 3) {
+    const [dayStr, monthStr, yearStr] = parts;
+    const mIndex = MONTH_ABBREVIATIONS.indexOf(monthStr as MonthAbbr);
+    if (mIndex !== -1) {
+      const dd = dayStr.padStart(2, '0');
+      const mm = (mIndex + 1).toString().padStart(2, '0');
+      return `${yearStr}-${mm}-${dd}`;
+    }
+  }
+
+  return '';
 }

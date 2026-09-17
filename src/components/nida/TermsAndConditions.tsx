@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, AlertCircle, Check, X, FileText, Lock, Eye, Scale } from 'lucide-react';
 
 interface TermsAndConditionsProps {
@@ -15,6 +15,16 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
   disabled = false,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Escape key listener for modal
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsModalOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
 
   return (
     <div className="w-full font-sans">

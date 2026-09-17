@@ -9,6 +9,8 @@ export const BottomStatusBar: React.FC = () => {
     cursorPosMm,
     activeUnit,
     zoom,
+    resetView,
+    recenterWorkspace,
     snapSettings,
     selectedLayerIds,
   } = useTemplateStore();
@@ -53,7 +55,13 @@ export const BottomStatusBar: React.FC = () => {
           <span>Snap: {snapSettings.snapToObjects || snapSettings.snapToGuides ? 'ON' : 'OFF'}</span>
         </div>
 
-        <div>Zoom: {Math.round(zoom * 100)}%</div>
+        <button
+          onClick={resetView}
+          className="hover:text-blue-400 transition-colors cursor-pointer font-semibold"
+          title="Click to Reset View (Center Card & 100% Zoom)"
+        >
+          Zoom: {Math.round(zoom * 100)}%
+        </button>
       </div>
     </footer>
   );

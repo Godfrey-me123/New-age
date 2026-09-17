@@ -18,6 +18,7 @@ import { SAMPLE_TEMPLATES } from '../utils/sampleTemplates';
 import { TemplateBadge } from './TemplateBadge';
 import { renderTemplateToCanvas } from '../utils/export';
 import { AppFooter } from './common/AppFooter';
+import { UniversalBackButton } from './common/UniversalBackButton';
 
 export const UploadScreen: React.FC = () => {
   const {
@@ -186,6 +187,8 @@ export const UploadScreen: React.FC = () => {
         {/* Brand Header & Top Actions */}
         <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-[#E7E9EB]">
           <div className="flex items-center gap-2">
+            <UniversalBackButton />
+
             <button
               type="button"
               onClick={() => setActiveScreen('home')}

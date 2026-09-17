@@ -14,6 +14,7 @@ import {
   Sliders,
   ChevronDown,
   Maximize2,
+  Crosshair,
   Home,
   CreditCard,
   UserCheck,
@@ -23,11 +24,19 @@ import {
   CheckCircle2,
   Shield,
   ShieldCheck,
+  LogOut,
+  Key,
+  Eye,
+  Sparkles,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { Unit } from '../types';
 import { ServiceMenuDrawer } from './navigation/ServiceMenuDrawer';
 import { HorizontalActionRow } from './common/HorizontalActionRow';
+
+import { UserUsageBadge } from './auth/UserUsageBadge';
+import { SampleDataPreviewModal } from './SampleDataPreviewModal';
+import { UniversalBackButton } from './common/UniversalBackButton';
 
 export const Toolbar: React.FC = () => {
   const {
@@ -38,6 +47,8 @@ export const Toolbar: React.FC = () => {
     zoom,
     setZoom,
     setPanOffset,
+    recenterWorkspace,
+    resetView,
     showRulers,
     toggleRulers,
     showGuides,
@@ -57,9 +68,18 @@ export const Toolbar: React.FC = () => {
     historyIndex,
     history,
     setActiveScreen,
+    navigateSafely,
+    authRole,
+    logoutPasskey,
+    setPasskeyManagerOpen,
+    activeServiceId,
+    setActiveServiceId,
+    saveUniversalFrontTemplate,
+    saveUniversalBackTemplate,
   } = useTemplateStore();
 
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
+  const [isSamplePreviewOpen, setIsSamplePreviewOpen] = useState(false);
   const [infoService, setInfoService] = useState<{
     name: string;
     authority: string;
@@ -121,10 +141,13 @@ export const Toolbar: React.FC = () => {
             <Menu className="w-4 h-4 text-[#000000]" />
           </button>
 
+          {/* Universal Back Button */}
+          <UniversalBackButton />
+
           {/* Return Home Button */}
           <button
             type="button"
-            onClick={() => setActiveScreen('home')}
+            onClick={() => navigateSafely('home')}
             className="p-2 rounded-xl bg-[#E7E9EB] hover:bg-[#dadcdc] text-[#000000] border border-[#dadcdc] transition-colors flex items-center justify-center cursor-pointer"
             title="Return to Services Home"
             aria-label="Return to Services Overview"
@@ -138,8 +161,29 @@ export const Toolbar: React.FC = () => {
               BIGsta
             </span>
             <span className="text-[10px] text-[#555555] font-mono">
-              Card Specification
+              Multi-Service Studio
             </span>
+          </div>
+
+          {/* Service Selector Dropdown */}
+          <div className="flex flex-col justify-center border-r border-[#E7E9EB] pr-3">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#555555]">Studio Service</span>
+            <select
+              value={activeServiceId}
+              onChange={(e) => setActiveServiceId(e.target.value)}
+              className="bg-[#CEE9E9] text-xs font-bold text-[#000000] px-2 py-0.5 rounded-lg border border-[#a1d3d3] focus:outline-none cursor-pointer"
+              title="Select Active Studio Service Context"
+            >
+              <option value="nida">NIDA</option>
+              <option value="driving_license">Driving Licence</option>
+              <option value="passport">Passport</option>
+              <option value="birth_certificate">Birth Certificate</option>
+              <option value="tin">TIN Certificate</option>
+              <option value="business_license">Business License</option>
+              <option value="heslb">HESLB</option>
+              <option value="nhif">NHIF Health Card</option>
+              <option value="ajira">Ajira Portal</option>
+            </select>
           </div>
 
           {/* Current Template Name & Dimensions */}
@@ -195,35 +239,50 @@ export const Toolbar: React.FC = () => {
           </select>
         </div>
 
-        {/* Zoom Controls & Fit */}
+        {/* Zoom Controls, Fit & Recenter */}
         <div className="flex items-center bg-[#E7E9EB] rounded-lg p-0.5 border border-[#dadcdc] text-xs text-[#000000]">
           <button
             onClick={() => setZoom((z) => Math.max(0.25, z - 0.25))}
-            className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center transition-colors cursor-pointer"
-            title="Zoom Out"
+            disabled={zoom <= 0.25}
+            className="p-1.5 hover:bg-[#dadcdc] disabled:opacity-30 rounded flex items-center justify-center transition-colors cursor-pointer"
+            title="Zoom Out (-25%)"
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={handleFitScreen}
-            className="px-2 font-mono text-[11px] text-center font-bold hover:text-[#000000] flex items-center justify-center cursor-pointer"
-            title="Fit Screen (100%)"
+            onClick={resetView}
+            className="px-2 font-mono text-[11px] text-center font-bold hover:bg-[#dadcdc] rounded py-1 transition-colors flex items-center justify-center cursor-pointer"
+            title="Reset View (Center Card & Reset Zoom to 100%)"
           >
             {Math.round(zoom * 100)}%
           </button>
           <button
-            onClick={() => setZoom((z) => Math.min(4.0, z + 0.25))}
-            className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center transition-colors cursor-pointer"
-            title="Zoom In"
+            onClick={() => setZoom((z) => Math.min(5.0, z + 0.25))}
+            disabled={zoom >= 5.0}
+            className="p-1.5 hover:bg-[#dadcdc] disabled:opacity-30 rounded flex items-center justify-center transition-colors cursor-pointer"
+            title="Zoom In (+25%)"
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
+
+          <div className="w-[1px] h-4 bg-[#dadcdc] mx-0.5" />
+
+          {/* Fit To Screen */}
           <button
-            onClick={handleFitScreen}
+            onClick={resetView}
             className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center text-[#000000] transition-colors cursor-pointer"
-            title="Fit Card to Screen"
+            title="Fit To Screen (Auto Fit Card)"
           >
             <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Recenter Workspace */}
+          <button
+            onClick={recenterWorkspace}
+            className="p-1.5 hover:bg-[#dadcdc] rounded flex items-center justify-center text-[#000000] transition-colors cursor-pointer"
+            title="Recenter Workspace (Center Card, Keep Zoom Level)"
+          >
+            <Crosshair className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -448,14 +507,14 @@ export const Toolbar: React.FC = () => {
             </button>
           </div>
 
-          {/* NIDA Auto-Fill Button */}
+          {/* Sample Data Preview Test Button */}
           <button
-            onClick={() => setActiveScreen('nida')}
-            className="h-8 px-2.5 bg-[#CEE9E9] hover:bg-[#b8dede] border border-[#a1d3d3] text-[#000000] text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer shadow-xs"
-            title="NIDA Form"
+            onClick={() => setIsSamplePreviewOpen(true)}
+            className="h-8 px-2.5 bg-[#FEF08A] hover:bg-[#fde047] border border-[#facc15] text-[#000000] text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer shadow-xs"
+            title="Preview Template With Sample Data"
           >
-            <UserCheck className="w-3.5 h-3.5 text-[#000000] shrink-0" />
-            <span className="text-xs whitespace-nowrap">NIDA</span>
+            <Eye className="w-3.5 h-3.5 text-[#000000] shrink-0" />
+            <span className="text-xs whitespace-nowrap">Sample Preview</span>
           </button>
 
           {/* Templates Button */}
@@ -497,13 +556,37 @@ export const Toolbar: React.FC = () => {
                     top: dropdownCoords ? `${dropdownCoords.top + 6}px` : '52px',
                     left: dropdownCoords ? `${Math.max(8, dropdownCoords.left)}px` : 'auto',
                     right: dropdownCoords ? 'auto' : '16px',
-                    width: '224px',
+                    width: '260px',
                   }}
                 >
                   <button
                     onClick={async () => {
-                      updateTemplateMeta({ side: 'Front Side' });
-                      // Allow state update to settle before saving
+                      await saveUniversalFrontTemplate(activeServiceId, currentTemplate);
+                      setIsSavedNotice(true);
+                      setShowSaveDropdown(false);
+                      setTimeout(() => setIsSavedNotice(false), 2000);
+                    }}
+                    className="w-full text-left px-3 py-2 bg-[#F0FDF4] hover:bg-[#DCFCE7] rounded-lg text-[#000000] font-bold transition-colors cursor-pointer flex items-center justify-between border border-[#BBF7D0]"
+                  >
+                    <span className="truncate">Save as Universal Front</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#16A34A] text-white uppercase shrink-0">UNIVERSAL FRONT</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await saveUniversalBackTemplate(activeServiceId, currentTemplate);
+                      setIsSavedNotice(true);
+                      setShowSaveDropdown(false);
+                      setTimeout(() => setIsSavedNotice(false), 2000);
+                    }}
+                    className="w-full text-left px-3 py-2 bg-[#FAF5FF] hover:bg-[#F3E8FF] rounded-lg text-[#000000] font-bold transition-colors cursor-pointer flex items-center justify-between border border-[#E9D5FF]"
+                  >
+                    <span className="truncate">Save as Universal Back</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#9333EA] text-white uppercase shrink-0">UNIVERSAL BACK</span>
+                  </button>
+                  <div className="my-1 border-t border-[#E7E9EB]" />
+                  <button
+                    onClick={async () => {
+                      updateTemplateMeta({ side: 'Front Side', serviceId: activeServiceId });
                       setTimeout(async () => {
                         await saveCurrentTemplate();
                         setIsSavedNotice(true);
@@ -513,13 +596,12 @@ export const Toolbar: React.FC = () => {
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-[#E7E9EB] rounded-lg text-[#000000] font-bold transition-colors cursor-pointer flex items-center justify-between"
                   >
-                    <span>Save as Front Template</span>
+                    <span>Save as Custom Front</span>
                     <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#CEE9B9] text-[#000000] border border-[#b8df9d]">FRONT</span>
                   </button>
                   <button
                     onClick={async () => {
-                      updateTemplateMeta({ side: 'Back Side' });
-                      // Allow state update to settle before saving
+                      updateTemplateMeta({ side: 'Back Side', serviceId: activeServiceId });
                       setTimeout(async () => {
                         await saveCurrentTemplate();
                         setIsSavedNotice(true);
@@ -529,7 +611,7 @@ export const Toolbar: React.FC = () => {
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-[#E7E9EB] rounded-lg text-[#000000] font-bold transition-colors cursor-pointer flex items-center justify-between"
                   >
-                    <span>Save as Back Template</span>
+                    <span>Save as Custom Back</span>
                     <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#ECA6FC] text-[#000000] border border-[#dd76f8]">BACK</span>
                   </button>
                 </div>
@@ -556,6 +638,46 @@ export const Toolbar: React.FC = () => {
             <Download className="w-3.5 h-3.5 shrink-0" />
             <span className="text-xs whitespace-nowrap">Export</span>
           </button>
+
+          {/* Passkey Gateway Role Badge & Logout */}
+          <div className="flex items-center gap-1.5 border-l border-[#E7E9EB] pl-2 ml-1 shrink-0">
+            {authRole === 'user' && <UserUsageBadge />}
+
+            <span
+              className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border shrink-0 ${
+                authRole === 'admin'
+                  ? 'bg-blue-100 text-blue-900 border-blue-300'
+                  : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+              }`}
+              title={`Role Active: ${authRole?.toUpperCase()}`}
+            >
+              {authRole === 'admin' ? (
+                <ShieldCheck className="w-3 h-3 text-blue-600 shrink-0" />
+              ) : (
+                <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+              )}
+              <span className="hidden sm:inline">{authRole === 'admin' ? 'ADMIN' : 'USER'}</span>
+            </span>
+
+            {authRole === 'admin' && (
+              <button
+                onClick={() => setPasskeyManagerOpen(true)}
+                className="h-8 p-1.5 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] rounded-lg text-[#000000] transition-colors flex items-center justify-center cursor-pointer shrink-0"
+                title="Manage Passkeys"
+              >
+                <Key className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            <button
+              onClick={logoutPasskey}
+              className="h-8 px-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold text-xs rounded-lg transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+              title="Toka / Logout"
+            >
+              <LogOut className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
 
         {/* More Tools (Mobile & Small Screens) */}
         <div className="flex md:hidden relative">
@@ -793,6 +915,12 @@ export const Toolbar: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Sample Data Live Test Preview Modal */}
+      <SampleDataPreviewModal
+        isOpen={isSamplePreviewOpen}
+        onClose={() => setIsSamplePreviewOpen(false)}
+      />
     </>
   );
 };

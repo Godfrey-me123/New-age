@@ -45,6 +45,7 @@ import { SubmissionProgressModal } from './SubmissionProgressModal';
 import { ServiceMenuDrawer } from '../navigation/ServiceMenuDrawer';
 import { HorizontalActionRow } from '../common/HorizontalActionRow';
 import { AppFooter } from '../common/AppFooter';
+import { UniversalBackButton } from '../common/UniversalBackButton';
 import { NidaTemplateSelectionStep } from './NidaTemplateSelectionStep';
 import {
   INITIAL_SUBMISSION_STEPS,
@@ -85,6 +86,8 @@ export interface NidaFormData {
   termsAccepted: boolean;
 }
 
+import { UserUsageBadge } from '../auth/UserUsageBadge';
+
 export interface NidaFormScreenProps {
   onSuccess?: (data: NidaFormData) => void;
   onCancel?: () => void;
@@ -107,6 +110,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     setSelectedBackTemplateId,
     saveNidaSubmissionRecord,
     loadSavedTemplates,
+    setLastNidaFormData,
   } = useTemplateStore();
 
   // Step state: 'templates' (Template Selection) | 'form' (Filling Form)
@@ -129,6 +133,10 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     signatureUrl: lastNidaFormData?.signatureUrl || null,
     termsAccepted: lastNidaFormData?.termsAccepted ?? false,
   }));
+
+  useEffect(() => {
+    setLastNidaFormData(formData);
+  }, [formData, setLastNidaFormData]);
 
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
 
@@ -441,6 +449,15 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     setCurrentStepId('step9_open');
     updateStep('step9_open', 'in_progress');
     await delay(280);
+
+    const accessVal = useTemplateStore.getState().validateServiceAccess('nida');
+    if (!accessVal.allowed) {
+      updateStep('step9_open', 'failed', accessVal.message || 'Access Required: Approved payment & available tokens needed.');
+      setSubmissionError(accessVal.message || 'Access Required: Please recharge or check payment status.');
+      setIsProcessing(false);
+      return;
+    }
+
     updateStep('step9_open', 'completed');
     setIsWorkflowCompleted(true);
     setIsProcessing(false);
@@ -482,7 +499,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
   };
 
   return (
-    <div className="min-h-screen bg-[#D8D2CE] text-[#101010] flex flex-col items-center justify-start p-3 sm:p-6 lg:p-10 font-sans overflow-y-auto">
+    <div className="min-h-screen bg-[#D8D2CE] text-[#101010] flex flex-col items-center justify-start p-3 sm:p-6 lg:p-10 font-sans overflow-y-auto pb-24 sm:pb-12">
       {/* Main Container Card */}
       <div className="relative w-full max-w-2xl bg-[#E7E2DE] border border-[#C8C2BE] rounded-2xl sm:rounded-3xl shadow-xl p-5 sm:p-8 lg:p-9 my-2 sm:my-4 transition-all">
         
@@ -500,6 +517,8 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               <Menu className="w-4 h-4 text-[#101010]" />
             </button>
 
+            <UniversalBackButton />
+
             {/* Authority Icon */}
             <div className="w-11 h-11 rounded-2xl bg-[#101010] text-[#FFFFFF] flex items-center justify-center shadow-md shrink-0">
               <ShieldCheck className="w-6 h-6 text-[#FFFFFF]" />
@@ -514,13 +533,15 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                   NIDA Portal
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-[#101010]/70 mt-0.5 font-medium">
+              <p className="text-[11px] sm:text-xs text-[#101010]/70 mt-0.5 font-medium hidden sm:block">
                 Standardized Identification & Automated Card Population
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            <UserUsageBadge />
+
             {/* Direct Home Navigation Button */}
             <button
               type="button"
@@ -1021,8 +1042,14 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
 
       {/* Informational modal for non-active services */}
       {infoService && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-[#E7E2DE] border border-[#C8C2BE] rounded-2xl shadow-2xl p-5 space-y-4 text-left">
+        <div
+          onClick={() => setInfoService(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-[#E7E2DE] border border-[#C8C2BE] rounded-2xl shadow-2xl p-5 space-y-4 text-left cursor-default"
+          >
             <div className="flex items-start justify-between border-b border-[#C8C2BE] pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-[#101010] text-[#FFFFFF]">

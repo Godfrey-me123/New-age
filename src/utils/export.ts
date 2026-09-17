@@ -2,7 +2,15 @@ import jsPDF from 'jspdf';
 import { CardTemplate, CardData, Layer } from '../types';
 import { generateBarcodeDataUrl, generateQRCodeDataUrl } from './barcodes';
 import { mmToPx } from './units';
-import { applyTemplateMapping, NidaFormData, isBackSideTemplate } from './templateMappingEngine';
+import {
+  applyTemplateMapping,
+  NidaFormData,
+  isBackSideTemplate,
+  formatDrivingLicenceCategoriesFront,
+  formatDrivingLicenceCategoriesBack,
+  getLayerBinding,
+} from './templateMappingEngine';
+import { formatToDdMmYyyy } from './dateValidation';
 import { FONT_WEIGHTS_BY_FAMILY } from './fonts';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { SAMPLE_TEMPLATES } from './sampleTemplates';
@@ -37,8 +45,9 @@ export async function renderTemplateToCanvas(
 ): Promise<HTMLCanvasElement> {
   const store = useTemplateStore.getState();
 
-  // 1. Determine effective card data (fallback to store's lastNidaFormData)
-  const storeFormData = store.lastNidaFormData || {};
+  // 1. Determine effective card data (fallback to store's lastNidaFormData or lastDrivingLicenseFormData)
+  const isDrivingLicense = template.cardType === 'Driving License' || store.activeServiceId === 'driving_license';
+  const storeFormData = (isDrivingLicense ? store.lastDrivingLicenseFormData : store.lastNidaFormData) || {};
   const effectiveCardData: CardData = {
     ...storeFormData,
     ...cardData,
@@ -52,7 +61,11 @@ export async function renderTemplateToCanvas(
   }
 
   // 3. Apply mapping engine pass if form data exists
-  if (effectiveCardData && (effectiveCardData.nidaNumber || effectiveCardData.firstName || effectiveCardData.lastName || effectiveCardData.dob)) {
+  const hasFormData = isDrivingLicense 
+    ? (effectiveCardData.licenceNumber || effectiveCardData.firstName || effectiveCardData.lastName || (effectiveCardData.classes && effectiveCardData.classes.length > 0))
+    : (effectiveCardData.nidaNumber || effectiveCardData.firstName || effectiveCardData.lastName || effectiveCardData.dob);
+
+  if (effectiveCardData && hasFormData) {
     const mappedRes = applyTemplateMapping(template, effectiveCardData as unknown as NidaFormData);
     if (mappedRes.populatedTemplate) {
       template = mappedRes.populatedTemplate;
@@ -78,7 +91,10 @@ export async function renderTemplateToCanvas(
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
+        ctx.save();
+        ctx.globalAlpha = template.background?.opacity ?? 1;
         ctx.drawImage(img, 0, 0, widthPx, heightPx);
+        ctx.restore();
         resolve();
       };
       img.onerror = () => resolve();
@@ -90,6 +106,13 @@ export async function renderTemplateToCanvas(
   }
 
   // Replace variable helper function with alias resolution
+  const isDL = template.cardType === 'Driving License' ||
+    template.serviceId === 'driving_license' ||
+    template.id?.includes('driving_license') ||
+    template.templateName?.toLowerCase().includes('driving license') ||
+    template.templateName?.toLowerCase().includes('driving licence') ||
+    Boolean(cardData.classes || effectiveCardData.classes || cardData.licenceNumber || effectiveCardData.licenceNumber);
+
   const replaceVars = (str: string): string => {
     if (!str) return '';
     return str.replace(/\{\{(.*?)\}\}/g, (_, key) => {
@@ -98,9 +121,75 @@ export async function renderTemplateToCanvas(
       if (val !== undefined && val !== null && String(val).trim() !== '') return String(val);
 
       const f = ((cardData.firstName ?? effectiveCardData.firstName ?? '') as string).trim();
-      const m = ((cardData.middleName ?? effectiveCardData.middleName ?? '') as string).trim();
-      const l = ((cardData.lastName ?? effectiveCardData.lastName ?? '') as string).trim();
+      const m = ((cardData.secondName ?? cardData.middleName ?? effectiveCardData.secondName ?? effectiveCardData.middleName ?? '') as string).trim();
+      const l = ((cardData.thirdName ?? cardData.lastName ?? effectiveCardData.thirdName ?? effectiveCardData.lastName ?? '') as string).trim();
       const displayNameLine1 = m ? `${f} ${m}`.trim() : f;
+
+      if (trimmed === 'given_names') return displayNameLine1;
+      if (trimmed === 'family_name' || trimmed === 'third_name') return l;
+      if (trimmed === 'first_name' || trimmed === 'fname' || trimmed === 'firstname') return f;
+      if (trimmed === 'second_name' || trimmed === 'middle_name' || trimmed === 'mname') return m;
+      if (
+        trimmed === 'issue_date' ||
+        trimmed === 'date_of_issue' ||
+        trimmed === 'issued_date' ||
+        trimmed === 'issueddate' ||
+        trimmed === 'dateofissue' ||
+        trimmed === 'issuedate' ||
+        trimmed === 'first_issue_date' ||
+        trimmed === 'first_issued_date' ||
+        trimmed === 'date_of_first_issue' ||
+        trimmed === 'valid_from' ||
+        trimmed === 'date_issued' ||
+        trimmed === 'issue'
+      ) {
+        const raw = ((cardData.dateOfIssue ?? effectiveCardData.dateOfIssue ?? cardData.issueDate ?? effectiveCardData.issueDate ?? '') as string);
+        return isDL && raw ? formatToDdMmYyyy(raw) : raw;
+      }
+      if (
+        trimmed === 'expiry_date' ||
+        trimmed === 'date_of_expiry' ||
+        trimmed === 'expirydate' ||
+        trimmed === 'dateofexpiry' ||
+        trimmed === 'expiration_date' ||
+        trimmed === 'expirationdate' ||
+        trimmed === 'expires' ||
+        trimmed === 'expire_date' ||
+        trimmed === 'valid_to' ||
+        trimmed === 'valid_until' ||
+        trimmed === 'date_expired' ||
+        trimmed === 'expiry'
+      ) {
+        const raw = ((cardData.dateOfExpiry ?? effectiveCardData.dateOfExpiry ?? cardData.expiryDate ?? effectiveCardData.expiryDate ?? '') as string);
+        return isDL && raw ? formatToDdMmYyyy(raw) : raw;
+      }
+      if (trimmed === 'licence_number' || trimmed === 'license_number') return ((cardData.licenceNumber ?? effectiveCardData.licenceNumber ?? cardData.nidaNumber ?? effectiveCardData.nidaNumber ?? '') as string);
+      if (trimmed === 'pin_number') return ((cardData.pinNumber ?? effectiveCardData.pinNumber ?? '') as string);
+      if (trimmed === 'region') return ((cardData.region ?? effectiveCardData.region ?? '') as string);
+      if (trimmed === 'nationality') return ((cardData.nationality ?? effectiveCardData.nationality ?? '') as string);
+
+      if (trimmed === 'categories_field9' || trimmed === 'field_9' || trimmed === 'categories' || trimmed === 'classes_front' || trimmed === 'categories_of_vehicles') {
+        const classes = cardData.classes || effectiveCardData.classes || (cardData as any).categories;
+        return formatDrivingLicenceCategoriesFront(classes);
+      }
+
+      if (trimmed === 'driving_licence_categories' || trimmed === 'classes_table' || trimmed === 'categories_table' || trimmed === 'categories_back') {
+        const classes = cardData.classes || effectiveCardData.classes || (cardData as any).categories;
+        const issue = ((cardData.dateOfIssue ?? effectiveCardData.dateOfIssue ?? cardData.issueDate ?? effectiveCardData.issueDate ?? '') as string);
+        const expiry = ((cardData.dateOfExpiry ?? effectiveCardData.dateOfExpiry ?? cardData.expiryDate ?? effectiveCardData.expiryDate ?? '') as string);
+        return formatDrivingLicenceCategoriesBack(classes, issue, expiry);
+      }
+
+      if (trimmed === 'classes_list') {
+        const classes = cardData.classes || effectiveCardData.classes;
+        if (Array.isArray(classes)) {
+          const enabledClasses = classes.filter((c: any) => c.enabled);
+          return enabledClasses.length > 0
+            ? enabledClasses.map((c: any) => `${c.classCode}: ${c.issueDate || '-'} to ${c.expiryDate || '-'}`).join('\n')
+            : 'NO ENDORSEMENTS';
+        }
+        return '';
+      }
 
       // Fallback aliases for NIDA fields
       if (
@@ -120,7 +209,10 @@ export async function renderTemplateToCanvas(
       }
       if (trimmed === 'middle_name' || trimmed === 'middlename' || trimmed === 'other_names' || trimmed === 'mname') return m;
       if (trimmed === 'last_name' || trimmed === 'surname' || trimmed === 'family_name' || trimmed === 'lname' || trimmed === 'lastname') return l;
-      if (trimmed === 'dob' || trimmed === 'date_of_birth' || trimmed === 'birth_date' || trimmed === 'birthdate') return (effectiveCardData.dob as string) || '';
+      if (trimmed === 'dob' || trimmed === 'date_of_birth' || trimmed === 'birth_date' || trimmed === 'birthdate') {
+        const raw = ((effectiveCardData.dob ?? cardData.dob ?? '') as string);
+        return isDL && raw ? formatToDdMmYyyy(raw) : raw;
+      }
       if (trimmed === 'gender' || trimmed === 'sex' || trimmed === 'jinsi' || trimmed === 'jinsia') return (effectiveCardData.gender as string) || '';
       if (trimmed === 'nida_number' || trimmed === 'id_number' || trimmed === 'nin' || trimmed === 'national_id') return (effectiveCardData.nidaNumber as string) || '';
 
@@ -149,7 +241,68 @@ export async function renderTemplateToCanvas(
     }
 
     if (layer.type === 'text') {
+      const isCategoryLayer = (layer as any).licenseCategoriesSeparator !== undefined ||
+        layer.id === 'dl_var_categories' ||
+        layer.name?.toLowerCase().includes('categories of vehicles') ||
+        layer.name?.toLowerCase().includes('licence categories') ||
+        layer.name?.toLowerCase().includes('license categories');
+
+      const isCategoryDateLayer = (layer as any).licenseCategoryGroup !== undefined;
+
       let textVal = replaceVars(layer.text) || '';
+
+      if (isCategoryDateLayer) {
+        const classes = cardData.classes || effectiveCardData.classes || (cardData as any).categories || [];
+        const matchedClass = Array.isArray(classes)
+          ? classes.find((c: any) => c && c.classCode === (layer as any).licenseCategoryGroup)
+          : undefined;
+        const isEnabled = matchedClass && Boolean(matchedClass.enabled);
+        if (isEnabled) {
+          const rawDate = (layer as any).licenseCategoryDateType === 'expiryDate'
+            ? (matchedClass.expiryDate || cardData.dateOfExpiry || effectiveCardData.dateOfExpiry || cardData.expiryDate || effectiveCardData.expiryDate || '')
+            : (matchedClass.issueDate || cardData.dateOfIssue || effectiveCardData.dateOfIssue || cardData.issueDate || effectiveCardData.issueDate || '');
+          textVal = rawDate ? formatToDdMmYyyy(rawDate) : '';
+        } else {
+          textVal = '';
+        }
+      } else if (isCategoryLayer) {
+        const classes = cardData.classes || effectiveCardData.classes || (cardData as any).categories;
+        if (classes) {
+          textVal = formatDrivingLicenceCategoriesFront(classes);
+        } else if (textVal) {
+          textVal = formatDrivingLicenceCategoriesFront(textVal);
+        }
+      } else {
+        const layerBinding = getLayerBinding(layer, template.layers);
+        if (layerBinding === 'ISSUE_DATE') {
+          const raw = ((cardData.dateOfIssue ?? effectiveCardData.dateOfIssue ?? cardData.issueDate ?? effectiveCardData.issueDate ?? '') as string).trim();
+          if (raw) {
+            textVal = isDL ? (formatToDdMmYyyy(raw) || raw) : raw;
+          }
+        } else if (layerBinding === 'EXPIRY_DATE') {
+          const raw = ((cardData.dateOfExpiry ?? effectiveCardData.dateOfExpiry ?? cardData.expiryDate ?? effectiveCardData.expiryDate ?? '') as string).trim();
+          if (raw) {
+            textVal = isDL ? (formatToDdMmYyyy(raw) || raw) : raw;
+          }
+        } else if (layerBinding === 'DOB') {
+          const raw = ((effectiveCardData.dob ?? cardData.dob ?? (cardData as any).dateOfBirth ?? '') as string).trim();
+          if (raw) {
+            textVal = isDL ? (formatToDdMmYyyy(raw) || raw) : raw;
+          }
+        } else if (isDL) {
+          // Standardize any driving licence date layer to DD/MM/YYYY
+          const isDateLayer = layer.id === 'dl_var_dob' ||
+            layer.id === 'dl_var_issue' ||
+            layer.id === 'dl_var_expiry' ||
+            layer.name?.toLowerCase().includes('issue date') ||
+            layer.name?.toLowerCase().includes('expiry date') ||
+            layer.name?.toLowerCase().includes('birth date') ||
+            layer.name?.toLowerCase().includes('dob');
+          if (isDateLayer && textVal) {
+            textVal = formatToDdMmYyyy(textVal) || textVal;
+          }
+        }
+      }
 
       // Text Case Display Transformation (Display-only, original unchanged)
       const textCase = (layer as any).textCase || 'original';
@@ -204,14 +357,14 @@ export async function renderTemplateToCanvas(
       const finalScaleY = (layer as any).verticalScale ?? 1;
 
       // Letter spacing and word spacing setup
-      const letterSpacingPx = mmToPx(layer.letterSpacing || 0, renderDpi);
+      const letterSpacingPx = isCategoryLayer ? 0 : mmToPx(layer.letterSpacing || 0, renderDpi);
       if (letterSpacingPx) {
         (ctx as any).letterSpacing = `${letterSpacingPx}px`;
       } else {
         (ctx as any).letterSpacing = '0px';
       }
 
-      const wordSpacingPx = mmToPx((layer as any).wordSpacing || 0, renderDpi);
+      const wordSpacingPx = isCategoryLayer ? 0 : mmToPx((layer as any).wordSpacing || 0, renderDpi);
       if (wordSpacingPx) {
         (ctx as any).wordSpacing = `${wordSpacingPx}px`;
       } else {
@@ -441,9 +594,25 @@ export async function downloadPNG(
   cropRegion?: CropRegion
 ) {
   const canvas = await renderTemplateToCanvas(template, cardData, 300, cropRegion);
+  const dataUrl = canvas.toDataURL('image/png');
+  const finalFilename = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_300dpi.png`;
+  
+  import('./idb').then(async (m) => {
+    await m.saveDownloadRecordDB({
+      id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      fileName: finalFilename,
+      service: template.templateName,
+      format: 'PNG',
+      date: new Date().toLocaleString(),
+      timestamp: Date.now(),
+      dataUrl,
+      status: 'COMPLETED'
+    });
+  }).catch(e => console.warn('Could not save download to history:', e));
+
   const link = document.createElement('a');
-  link.download = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_300dpi.png`;
-  link.href = canvas.toDataURL('image/png');
+  link.download = finalFilename;
+  link.href = dataUrl;
   link.click();
 }
 
@@ -454,9 +623,25 @@ export async function downloadJPG(
   cropRegion?: CropRegion
 ) {
   const canvas = await renderTemplateToCanvas(template, cardData, 300, cropRegion);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+  const finalFilename = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_300dpi.jpg`;
+
+  import('./idb').then(async (m) => {
+    await m.saveDownloadRecordDB({
+      id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      fileName: finalFilename,
+      service: template.templateName,
+      format: 'JPG',
+      date: new Date().toLocaleString(),
+      timestamp: Date.now(),
+      dataUrl,
+      status: 'COMPLETED'
+    });
+  }).catch(e => console.warn('Could not save download to history:', e));
+
   const link = document.createElement('a');
-  link.download = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_300dpi.jpg`;
-  link.href = canvas.toDataURL('image/jpeg', 0.95);
+  link.download = finalFilename;
+  link.href = dataUrl;
   link.click();
 }
 
@@ -487,7 +672,24 @@ export async function downloadPDF(
   const y = (pageHeight - cardHeight) / 2;
 
   pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
-  pdf.save(filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_print.pdf`);
+  const finalFilename = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_print.pdf`;
+  
+  import('./idb').then(async (m) => {
+    // Generate a data URL of the PDF for storage
+    const pdfDataUrl = pdf.output('datauristring');
+    await m.saveDownloadRecordDB({
+      id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      fileName: finalFilename,
+      service: template.templateName,
+      format: 'PDF',
+      date: new Date().toLocaleString(),
+      timestamp: Date.now(),
+      dataUrl: pdfDataUrl,
+      status: 'COMPLETED'
+    });
+  }).catch(e => console.warn('Could not save download to history:', e));
+
+  pdf.save(finalFilename);
 }
 
 export async function download2In1PDF(
@@ -522,10 +724,13 @@ export async function download2In1PDF(
   }
 
   if (!bTpl) {
-    // If no back template provided, find or generate sample back
-    const sampleBack = SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1];
+    // If no back template provided, find or generate appropriate service back
+    const isDL = store.activeServiceId === 'driving_license' || fTpl?.cardType === 'Driving License';
+    const sampleBack = isDL
+      ? (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_driving_license_back') || SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tz_dl_back') || SAMPLE_TEMPLATES[1])
+      : (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1]);
     if (sampleBack) {
-      const bRes = applyTemplateMapping(sampleBack, effectiveCardData as unknown as NidaFormData);
+      const bRes = applyTemplateMapping(sampleBack, effectiveCardData as any);
       bTpl = bRes.populatedTemplate || sampleBack;
     } else {
       bTpl = fTpl;
@@ -533,13 +738,13 @@ export async function download2In1PDF(
   }
 
   // Ensure both front and back templates have 1:1 mapping applied
-  if (fTpl && effectiveCardData && (effectiveCardData.firstName || effectiveCardData.nidaNumber || effectiveCardData.lastName)) {
-    const fRes = applyTemplateMapping(fTpl, effectiveCardData as unknown as NidaFormData);
+  if (fTpl && effectiveCardData && (effectiveCardData.firstName || effectiveCardData.nidaNumber || effectiveCardData.lastName || effectiveCardData.licenceNumber)) {
+    const fRes = applyTemplateMapping(fTpl, effectiveCardData as any);
     if (fRes.populatedTemplate) fTpl = fRes.populatedTemplate;
   }
 
-  if (bTpl && effectiveCardData && (effectiveCardData.firstName || effectiveCardData.nidaNumber || effectiveCardData.lastName)) {
-    const bRes = applyTemplateMapping(bTpl, effectiveCardData as unknown as NidaFormData);
+  if (bTpl && effectiveCardData && (effectiveCardData.firstName || effectiveCardData.nidaNumber || effectiveCardData.lastName || effectiveCardData.licenceNumber)) {
+    const bRes = applyTemplateMapping(bTpl, effectiveCardData as any);
     if (bRes.populatedTemplate) bTpl = bRes.populatedTemplate;
   }
 
@@ -578,9 +783,23 @@ export async function download2In1PDF(
   const backY = frontY + frontH + gapMm;
   pdf.addImage(backImg, 'PNG', backX, backY, backW, backH);
 
-  pdf.save(
-    filename || `merged_2in1_${fTpl.templateName.toLowerCase().replace(/\s+/g, '_')}.pdf`
-  );
+  const finalFilename = filename || `merged_2in1_${fTpl.templateName.toLowerCase().replace(/\s+/g, '_')}.pdf`;
+  
+  import('./idb').then(async (m) => {
+    const pdfDataUrl = pdf.output('datauristring');
+    await m.saveDownloadRecordDB({
+      id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      fileName: finalFilename,
+      service: `2-in-1: ${fTpl.templateName}`,
+      format: 'PDF',
+      date: new Date().toLocaleString(),
+      timestamp: Date.now(),
+      dataUrl: pdfDataUrl,
+      status: 'COMPLETED'
+    });
+  }).catch(e => console.warn('Could not save download to history:', e));
+
+  pdf.save(finalFilename);
 }
 
 export function downloadJSON(template: CardTemplate, filename?: string) {
@@ -606,8 +825,28 @@ export function downloadJSON(template: CardTemplate, filename?: string) {
   const jsonStr = JSON.stringify(exportPayload, null, 2);
   const blob = new Blob([jsonStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
+  
+  const finalFilename = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_template.json`;
+  
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    import('./idb').then(async (m) => {
+      await m.saveDownloadRecordDB({
+        id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        fileName: finalFilename,
+        service: template.templateName,
+        format: 'JSON',
+        date: new Date().toLocaleString(),
+        timestamp: Date.now(),
+        dataUrl: reader.result as string,
+        status: 'COMPLETED'
+      });
+    }).catch(e => console.warn('Could not save download to history:', e));
+  };
+  reader.readAsDataURL(blob);
+
   const link = document.createElement('a');
-  link.download = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_template.json`;
+  link.download = finalFilename;
   link.href = url;
   link.click();
   URL.revokeObjectURL(url);
@@ -636,8 +875,28 @@ export async function downloadSVG(template: CardTemplate, cardData: CardData = {
 
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
+  
+  const finalFilename = `${template.templateName.toLowerCase().replace(/\s+/g, '_')}.svg`;
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    import('./idb').then(async (m) => {
+      await m.saveDownloadRecordDB({
+        id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        fileName: finalFilename,
+        service: template.templateName,
+        format: 'SVG',
+        date: new Date().toLocaleString(),
+        timestamp: Date.now(),
+        dataUrl: reader.result as string,
+        status: 'COMPLETED'
+      });
+    }).catch(e => console.warn('Could not save download to history:', e));
+  };
+  reader.readAsDataURL(blob);
+
   const link = document.createElement('a');
-  link.download = `${template.templateName.toLowerCase().replace(/\s+/g, '_')}.svg`;
+  link.download = finalFilename;
   link.href = url;
   link.click();
   URL.revokeObjectURL(url);

@@ -1,0 +1,100 @@
+const fs = require('fs');
+
+const file = 'src/utils/sampleTemplates.ts';
+let content = fs.readFileSync(file, 'utf8');
+
+const backLayersStr = `    layers: [
+      {
+        id: 'dl_var_pin_number',
+        name: 'PIN Number Var',
+        type: 'text',
+        x: 60,
+        y: 4.0,
+        width: 25,
+        height: 3.5,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        hidden: false,
+        text: '{{pin_number}}',
+        fontFamily: 'Helvetica',
+        fontSize: 3.5,
+        fontStyle: 'bold',
+        textDecoration: 'none',
+        color: '#000000',
+        align: 'right',
+        letterSpacing: 0,
+        lineHeight: 1.0,
+      },
+      {
+        id: 'dl_var_categories_table',
+        name: 'Categories Table Dates',
+        type: 'text',
+        x: 27,
+        y: 8.5,
+        width: 28,
+        height: 44.0,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        hidden: false,
+        text: '{{driving_licence_categories}}',
+        bindingKey: 'DRIVING_LICENCE_CATEGORIES',
+        fontFamily: 'Courier Prime',
+        fontSize: 2.25,
+        fontStyle: 'normal',
+        textDecoration: 'none',
+        color: '#000000',
+        align: 'left',
+        letterSpacing: -0.2,
+        lineHeight: 1.45,
+      },
+      {
+        id: 'dl_licence_barcode',
+        name: 'Licence Barcode',
+        type: 'placeholder',
+        placeholderKey: 'barcode',
+        label: 'Barcode',
+        placeholderType: 'barcode',
+        x: 55,
+        y: 42,
+        width: 26,
+        height: 8,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        hidden: false,
+        borderColor: '#000000',
+        backgroundColor: '#ffffff',
+      },
+      {
+        id: 'dl_barcode_text',
+        name: 'Barcode Text',
+        type: 'text',
+        x: 55,
+        y: 50.5,
+        width: 26,
+        height: 2.0,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        hidden: false,
+        text: '{{licence_number}}',
+        fontFamily: 'Helvetica',
+        fontSize: 2.0,
+        fontStyle: 'bold',
+        textDecoration: 'none',
+        color: '#000000',
+        align: 'center',
+        letterSpacing: 0,
+        lineHeight: 1.0,
+      }
+    ],`;
+
+let updatedContent = content.replace(
+  /id: 'sample_driving_license_back',\s*templateName: 'Tanzania Driving License \(Back Side\)',[\s\S]*?layers: \[[\s\S]*?\],\s*createdAt:/,
+  content.match(/id: 'sample_driving_license_back',\s*templateName: 'Tanzania Driving License \(Back Side\)',[\s\S]*?layers: \[/)[0].replace('layers: [', backLayersStr) + '\n    createdAt:'
+);
+
+fs.writeFileSync(file, updatedContent, 'utf8');
+console.log('Successfully updated sampleTemplates.ts for Back');

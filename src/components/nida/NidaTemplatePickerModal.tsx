@@ -98,9 +98,27 @@ export const NidaTemplatePickerModal: React.FC<NidaTemplatePickerModalProps> = (
     return true;
   });
 
+  // Escape key listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#0E1013] border border-[#30363D] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-white font-sans">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-4xl max-h-[90vh] bg-[#0E1013] border border-[#30363D] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-white font-sans cursor-default"
+      >
         {/* Header */}
         <div className="px-5 py-4 border-b border-[#21262D] flex items-center justify-between bg-[#161B22]/60 shrink-0">
           <div className="flex items-center gap-3">

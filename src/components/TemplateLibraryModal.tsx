@@ -39,6 +39,16 @@ export const TemplateLibraryModal: React.FC = () => {
     }
   }, [isTemplateLibraryOpen, loadSavedTemplates]);
 
+  // Escape key listener
+  useEffect(() => {
+    if (!isTemplateLibraryOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setTemplateLibraryOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isTemplateLibraryOpen, setTemplateLibraryOpen]);
+
   if (!isTemplateLibraryOpen) return null;
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -111,8 +121,14 @@ export const TemplateLibraryModal: React.FC = () => {
   );
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div
+      onClick={() => setTemplateLibraryOpen(false)}
+      className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] cursor-default"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
           <div className="flex items-center gap-3">
@@ -176,6 +192,7 @@ export const TemplateLibraryModal: React.FC = () => {
                 onClick={() => {
                   loadTemplate(tpl);
                   setTemplateLibraryOpen(false);
+                  setActiveScreen('editor');
                 }}
                 className="group p-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-blue-500 rounded-xl transition-all cursor-pointer flex flex-col justify-between"
               >

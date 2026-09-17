@@ -1,6 +1,6 @@
 import { CardTemplate, Layer, TextLayer, ImageLayer, PlaceholderLayer, BarcodeLayer, QRCodeLayer } from '../types';
 import { NidaFormData } from '../components/nida/NidaFormScreen';
-import { normalizeDateInput } from './dateValidation';
+import { normalizeDateInput, formatToDdMmYyyy } from './dateValidation';
 
 export type { NidaFormData };
 
@@ -13,7 +13,16 @@ export type SupportedBinding =
   | 'NIDA_NUMBER'
   | 'PHOTO'
   | 'SIGNATURE'
-  | 'FIRST_MIDDLE_NAME';
+  | 'FIRST_MIDDLE_NAME'
+  | 'CATEGORIES_FIELD9'
+  | 'DRIVING_LICENCE_CATEGORIES'
+  | 'CLASSES_TABLE'
+  | 'ISSUE_DATE'
+  | 'EXPIRY_DATE'
+  | 'ISSUING_AUTHORITY'
+  | 'REGION'
+  | 'PIN_NUMBER'
+  | 'LICENCE_NUMBER';
 
 export const ALL_SUPPORTED_BINDINGS: SupportedBinding[] = [
   'FIRST_NAME',
@@ -25,6 +34,14 @@ export const ALL_SUPPORTED_BINDINGS: SupportedBinding[] = [
   'PHOTO',
   'SIGNATURE',
   'FIRST_MIDDLE_NAME',
+  'CATEGORIES_FIELD9',
+  'DRIVING_LICENCE_CATEGORIES',
+  'CLASSES_TABLE',
+  'ISSUE_DATE',
+  'EXPIRY_DATE',
+  'ISSUING_AUTHORITY',
+  'REGION',
+  'PIN_NUMBER',
 ];
 
 export interface FieldMappingDetail {
@@ -95,6 +112,15 @@ export function ensureTemplateFieldIds(template: CardTemplate): CardTemplate {
     PHOTO: 'photo',
     SIGNATURE: 'signature',
     FIRST_MIDDLE_NAME: 'firstMiddleName',
+    CATEGORIES_FIELD9: 'categories',
+    DRIVING_LICENCE_CATEGORIES: 'classes',
+    CLASSES_TABLE: 'classes',
+    ISSUE_DATE: 'dateOfIssue',
+    EXPIRY_DATE: 'dateOfExpiry',
+    ISSUING_AUTHORITY: 'issuingAuthority',
+    REGION: 'region',
+    PIN_NUMBER: 'pinNumber',
+    LICENCE_NUMBER: 'licenceNumber',
   };
 
   const sanitizedLayers = template.layers.map((layer) => {
@@ -129,7 +155,11 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   // 1. Explicit Layer bindingKey Check
   if (layer.bindingKey) {
     const b = layer.bindingKey.toUpperCase() as any;
-    if (['FIRST_NAME', 'MIDDLE_NAME', 'LAST_NAME', 'DOB', 'GENDER', 'NIDA_NUMBER', 'PHOTO', 'SIGNATURE', 'FIRST_MIDDLE_NAME'].includes(b)) {
+    if ([
+      'FIRST_NAME', 'MIDDLE_NAME', 'LAST_NAME', 'DOB', 'GENDER', 'NIDA_NUMBER', 'PHOTO', 'SIGNATURE',
+      'FIRST_MIDDLE_NAME', 'CATEGORIES_FIELD9', 'DRIVING_LICENCE_CATEGORIES', 'CLASSES_TABLE',
+      'ISSUE_DATE', 'EXPIRY_DATE', 'ISSUING_AUTHORITY', 'REGION', 'PIN_NUMBER', 'LICENCE_NUMBER'
+    ].includes(b)) {
       return b as SupportedBinding;
     }
   }
@@ -144,9 +174,16 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/i.test(text)) return 'FIRST_NAME';
     if (/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/i.test(text)) return 'MIDDLE_NAME';
     if (/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/i.test(text)) return 'LAST_NAME';
-    if (/\{\{(?:dob|date_of_birth|birth_date|birthdate)\}\}/i.test(text)) return 'DOB';
+    if (/\{\{\s*(?:dob|date_of_birth|birth_date|birthdate|dateofbirth|birth)\s*\}\}/i.test(text)) return 'DOB';
     if (/\{\{(?:gender|sex|jinsia|jinsi|gender_val|sex_val|jinsi_val)\}\}/i.test(text)) return 'GENDER';
     if (/\{\{(?:nida_number|nida|id_number|national_id|nin|id_no|namba_nida)\}\}/i.test(text)) return 'NIDA_NUMBER';
+    if (/\{\{(?:categories_field9|field_9|categories_of_vehicles|categories|classes_front)\}\}/i.test(text)) return 'CATEGORIES_FIELD9';
+    if (/\{\{(?:driving_licence_categories|classes_table|classes_list|categories_table|categories_back)\}\}/i.test(text)) return 'DRIVING_LICENCE_CATEGORIES';
+    if (/\{\{\s*(?:issue_date|date_of_issue|issued_date|issueddate|dateofissue|issuedate|first_issue_date|first_issued_date|date_of_first_issue|valid_from|date_issued|issue)\s*\}\}/i.test(text)) return 'ISSUE_DATE';
+    if (/\{\{\s*(?:expiry_date|date_of_expiry|expirydate|dateofexpiry|expiration_date|expirationdate|expires|expire_date|valid_to|valid_until|date_expired|expiry)\s*\}\}/i.test(text)) return 'EXPIRY_DATE';
+    if (/\{\{(?:issuing_authority|authority)\}\}/i.test(text)) return 'ISSUING_AUTHORITY';
+    if (/\{\{(?:region|residence|place_of_residence)\}\}/i.test(text)) return 'REGION';
+    if (/\{\{(?:pin_number|pin)\}\}/i.test(text)) return 'PIN_NUMBER';
   }
 
   // 3. Explicit Layer Attribute Checks (fieldName, fieldId, fieldType)
@@ -162,11 +199,18 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/first_?name|fname|given_?name/i.test(explicitField)) return 'FIRST_NAME';
     if (/middle_?name|mname|other_?name/i.test(explicitField)) return 'MIDDLE_NAME';
     if (/last_?name|lname|surname|family_?name/i.test(explicitField)) return 'LAST_NAME';
-    if (/dob|date_?of_?birth|birth_?date/i.test(explicitField)) return 'DOB';
+    if (/dob|date_?of_?birth|birth_?date|birthdate/i.test(explicitField)) return 'DOB';
     if (/gender|sex|jinsi|jinsia/i.test(explicitField)) return 'GENDER';
     if (/nida_?number|nida|id_?number|national_?id|nin/i.test(explicitField)) return 'NIDA_NUMBER';
     if (/photo|portrait|avatar|picture/i.test(explicitField)) return 'PHOTO';
     if (/signature|sign|specimen|sahihi/i.test(explicitField)) return 'SIGNATURE';
+    if (/categories_field9|field_9|categories|classes_front/i.test(explicitField)) return 'CATEGORIES_FIELD9';
+    if (/driving_licence_categories|classes_table|classes_list|categories_back/i.test(explicitField)) return 'DRIVING_LICENCE_CATEGORIES';
+    if (/(?:issue_?date|date_?of_?issue|issued_?date|first_?issue_?date|date_?of_?first_?issue|valid_?from|date_?issued)/i.test(explicitField)) return 'ISSUE_DATE';
+    if (/(?:expiry_?date|date_?of_?expiry|expirydate|expiration_?date|expire_?date|valid_?to|valid_?until|date_?expired)/i.test(explicitField)) return 'EXPIRY_DATE';
+    if (/issuing_authority|authority/i.test(explicitField)) return 'ISSUING_AUTHORITY';
+    if (/region|residence/i.test(explicitField)) return 'REGION';
+    if (/pin_?number|pin/i.test(explicitField)) return 'PIN_NUMBER';
   }
 
   // 4. Static Labels Protection (only blocks if no explicit key/token matches above)
@@ -225,6 +269,13 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:dob|date[_\s-]*of[_\s-]*birth|birth[_\s-]*date|birthdate)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'DOB';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:gender|sex|jinsi|jinsia)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'GENDER';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:nida[_\s-]*number|nida|id[_\s-]*number|national[_\s-]*id|nin|id[_\s-]*no|namba[_\s-]*nida|barcode)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'NIDA_NUMBER';
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:categories_field9|field_9|categories|classes_front)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'CATEGORIES_FIELD9';
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:driving_licence_categories|classes_table|classes_list|categories_back)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'DRIVING_LICENCE_CATEGORIES';
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:issue_?date|date[_\s-]*of[_\s-]*issue|issued[_\s-]*date|first[_\s-]*issue|valid[_\s-]*from|date[_\s-]*issued)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'ISSUE_DATE';
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:expiry_?date|date[_\s-]*of[_\s-]*expiry|expirydate|expiration[_\s-]*date|expire[_\s-]*date|valid[_\s-]*to|valid[_\s-]*until|date[_\s-]*expired)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'EXPIRY_DATE';
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:issuing_authority|authority)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'ISSUING_AUTHORITY';
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:region|residence)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'REGION';
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:pin_number|pin)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'PIN_NUMBER';
 
     // Check Composite Text Label Prefixes (supporting optional colons)
     if (/^(?:first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) return 'FIRST_MIDDLE_NAME';
@@ -232,6 +283,8 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*/i.test(text)) return 'LAST_NAME';
     if (/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*/i.test(text)) return 'MIDDLE_NAME';
     if (/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*/i.test(text)) return 'DOB';
+    if (/^(?:tarehe\s+ya\s+kutolewa|date\s+of\s+issue|issue\s*date|issued\s*date)\s*[:：\-]?\s*/i.test(text)) return 'ISSUE_DATE';
+    if (/^(?:tarehe\s+ya\s+mwisho|tarehe\s+ya\s+kuisha|date\s+of\s+expiry|expiry\s*date|expiration\s*date|expires)\s*[:：\-]?\s*/i.test(text)) return 'EXPIRY_DATE';
     if (/^(?:jinsi|jinsia|sex|gender)\s*[:：\-]?\s*/i.test(text)) return 'GENDER';
     if (/^(?:national\s*id\s*no|nambari\s*ya\s*nida|nida\s*no)\s*[:：\-]?\s*/i.test(text)) return 'NIDA_NUMBER';
   }
@@ -251,6 +304,14 @@ export function matchLayerToBinding(layer: Layer, binding: SupportedBinding, all
  * Extracts form value for a binding
  */
 export function getFormValueForBinding(binding: SupportedBinding, formData: Partial<NidaFormData>): string {
+  const isDL = !!(
+    (formData as any).classes ||
+    (formData as any).categories ||
+    (formData as any).licenceNumber ||
+    (formData as any).issuingAuthority ||
+    (formData as any).pinNumber
+  );
+
   switch (binding) {
     case 'FIRST_MIDDLE_NAME': {
       const f = formData.firstName?.trim() || '';
@@ -263,8 +324,18 @@ export function getFormValueForBinding(binding: SupportedBinding, formData: Part
       return formData.middleName?.trim() || '';
     case 'LAST_NAME':
       return formData.lastName?.trim() || '';
-    case 'DOB':
-      return formData.dob || '';
+    case 'DOB': {
+      const rawDob = (formData.dob || (formData as any).dateOfBirth || '').trim();
+      return rawDob ? (isDL ? formatToDdMmYyyy(rawDob) : normalizeDateInput(rawDob)) : '';
+    }
+    case 'ISSUE_DATE': {
+      const rawIssue = ((formData as any).dateOfIssue || (formData as any).issueDate || '').trim();
+      return rawIssue ? (isDL ? formatToDdMmYyyy(rawIssue) : normalizeDateInput(rawIssue)) : '';
+    }
+    case 'EXPIRY_DATE': {
+      const rawExpiry = ((formData as any).dateOfExpiry || (formData as any).expiryDate || '').trim();
+      return rawExpiry ? (isDL ? formatToDdMmYyyy(rawExpiry) : normalizeDateInput(rawExpiry)) : '';
+    }
     case 'GENDER': {
       const g = (formData.gender || '').trim().toUpperCase();
       if (g.startsWith('M')) return 'M';
@@ -272,7 +343,27 @@ export function getFormValueForBinding(binding: SupportedBinding, formData: Part
       return g || 'M';
     }
     case 'NIDA_NUMBER':
-      return formData.nidaNumber || '';
+      return (formData.nidaNumber || (formData as any).licenceNumber || '').trim();
+    case 'LICENCE_NUMBER':
+      return ((formData as any).licenceNumber || formData.nidaNumber || '').trim();
+    case 'CATEGORIES_FIELD9':
+      return formatDrivingLicenceCategoriesFront((formData as any).classes || (formData as any).categories);
+    case 'DRIVING_LICENCE_CATEGORIES':
+    case 'CLASSES_TABLE': {
+      const rawIssue = ((formData as any).dateOfIssue || (formData as any).issueDate || '').trim();
+      const rawExpiry = ((formData as any).dateOfExpiry || (formData as any).expiryDate || '').trim();
+      return formatDrivingLicenceCategoriesBack(
+        (formData as any).classes || (formData as any).categories,
+        rawIssue ? formatToDdMmYyyy(rawIssue) : '',
+        rawExpiry ? formatToDdMmYyyy(rawExpiry) : ''
+      );
+    }
+    case 'ISSUING_AUTHORITY':
+      return ((formData as any).issuingAuthority || '').trim();
+    case 'REGION':
+      return ((formData as any).region || '').trim();
+    case 'PIN_NUMBER':
+      return ((formData as any).pinNumber || '').trim();
     case 'PHOTO':
       return formData.photoUrl || '';
     case 'SIGNATURE':
@@ -315,7 +406,60 @@ function followCasing(textLayer: TextLayer, value: string): string {
   return value;
 }
 
+
+export function replaceAllTokens(layer: Layer, formData: any): Layer {
+  if (layer.type !== 'text') return layer;
+  let text = (layer as any).text || '';
+  if (!text.includes('{{')) return layer;
+
+  const isDL = !!(
+    formData.classes ||
+    formData.categories ||
+    formData.licenceNumber ||
+    formData.issuingAuthority ||
+    formData.pinNumber
+  );
+
+  const fVal = (formData.firstName || '').trim();
+  const mVal = (formData.middleName || '').trim();
+  const lVal = (formData.lastName || formData.surname || '').trim();
+  const rawDob = (formData.dob || formData.dateOfBirth || '').trim();
+  const dob = rawDob ? (isDL ? formatToDdMmYyyy(rawDob) : normalizeDateInput(rawDob)) : '';
+  const gender = (formData.gender || '').trim().toUpperCase().startsWith('M') ? 'M' : 'F';
+  const nida = (formData.nidaNumber || formData.licenceNumber || '').trim();
+  const rawIssue = (formData.issueDate || formData.dateOfIssue || '').trim();
+  const issue = rawIssue ? (isDL ? formatToDdMmYyyy(rawIssue) : normalizeDateInput(rawIssue)) : '';
+  const rawExpiry = (formData.expiryDate || formData.dateOfExpiry || '').trim();
+  const expiry = rawExpiry ? (isDL ? formatToDdMmYyyy(rawExpiry) : normalizeDateInput(rawExpiry)) : '';
+  const auth = (formData.issuingAuthority || '').trim();
+  const region = (formData.region || '').trim();
+  const pin = (formData.pinNumber || '').trim();
+  const licence = (formData.licenceNumber || formData.nidaNumber || '').trim();
+
+  const categoriesFront = formatDrivingLicenceCategoriesFront(formData.classes || formData.categories);
+  const categoriesBack = formatDrivingLicenceCategoriesBack(formData.classes || formData.categories, issue, expiry);
+
+  text = text.replace(/\{\{(?:first_middle_name|first_name_middle_name|display_name_line1)\}\}/gi, `${fVal} ${mVal}`.trim());
+  text = text.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, fVal);
+  text = text.replace(/\{\{(?:middle_name|middlename|other_names|mname)\}\}/gi, mVal);
+  text = text.replace(/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/gi, lVal);
+  text = text.replace(/\{\{\s*(?:dob|date_of_birth|birth_date|birthdate|dateofbirth|birth)\s*\}\}/gi, dob);
+  text = text.replace(/\{\{(?:gender|sex|jinsia|jinsi)\}\}/gi, gender);
+  text = text.replace(/\{\{(?:nida_number|nida|id_number|national_id|nin)\}\}/gi, nida);
+  text = text.replace(/\{\{\s*(?:issue_date|date_of_issue|issued_date|issueddate|dateofissue|issuedate|first_issue_date|first_issued_date|date_of_first_issue|valid_from|date_issued|issue)\s*\}\}/gi, issue);
+  text = text.replace(/\{\{\s*(?:expiry_date|date_of_expiry|expirydate|dateofexpiry|expiration_date|expirationdate|expires|expire_date|valid_to|valid_until|date_expired|expiry)\s*\}\}/gi, expiry);
+  text = text.replace(/\{\{(?:issuing_authority|authority)\}\}/gi, auth);
+  text = text.replace(/\{\{(?:region|residence|place_of_residence)\}\}/gi, region);
+  text = text.replace(/\{\{(?:pin_number|pin)\}\}/gi, pin);
+  text = text.replace(/\{\{(?:licence_number|license_number|licence|license|dl_no)\}\}/gi, licence);
+  text = text.replace(/\{\{(?:categories_field9|field_9|categories_of_vehicles|categories|classes_front)\}\}/gi, categoriesFront);
+  text = text.replace(/\{\{(?:driving_licence_categories|classes_table|classes_list|categories_table|categories_back)\}\}/gi, categoriesBack);
+
+  return { ...layer, text } as any;
+}
+
 export function injectValueIntoLayer(
+
   layer: Layer,
   binding: SupportedBinding,
   formData: NidaFormData,
@@ -325,11 +469,14 @@ export function injectValueIntoLayer(
 
   if (binding === 'PHOTO') {
     if (layer.type === 'placeholder' || layer.type === 'image') {
-      if (!formData.photoUrl) return layer;
+      if (!formData.photoUrl) {
+        return { ...layer, hidden: true };
+      }
       return {
         ...layer,
         type: 'image',
         src: formData.photoUrl,
+        hidden: false,
         aspectRatioLocked: true,
       } as ImageLayer;
     }
@@ -338,11 +485,14 @@ export function injectValueIntoLayer(
 
   if (binding === 'SIGNATURE') {
     if (layer.type === 'placeholder' || layer.type === 'image') {
-      if (!formData.signatureUrl) return layer;
+      if (!formData.signatureUrl) {
+        return { ...layer, hidden: true };
+      }
       return {
         ...layer,
         type: 'image',
         src: formData.signatureUrl,
+        hidden: false,
         aspectRatioLocked: true,
       } as ImageLayer;
     }
@@ -358,7 +508,7 @@ export function injectValueIntoLayer(
         const fVal = (formData.firstName || '').trim();
         const mVal = (formData.middleName || '').trim();
         const rawVal = mVal ? `${fVal} ${mVal}` : fVal;
-        const val = followCasing(textLayer, rawVal);
+        const val = rawVal ? followCasing(textLayer, rawVal) : '';
         if (text.includes('{{')) {
           if (/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/i.test(text) && /\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/i.test(text)) {
             let t = text.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, fVal ? followCasing(textLayer, fVal) : '');
@@ -372,7 +522,7 @@ export function injectValueIntoLayer(
             text = text.replace(/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|first_plus_middle_name|first_name_\+_middle_name|display_name_line1|displaynameline1|first_name_and_middle_name|first_name|firstname|given_name|given_names|fname)\}\}/gi, val);
           }
         } else if (/^(?:jina|given\s*names?|first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:jina|given\s*names?|first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*.*/i, `JINA : ${val}`);
+          text = val ? text.replace(/^(?:jina|given\s*names?|first\s*and\s*middle\s*name|first\s*\+\s*middle\s*name|first\s*&\s*middle\s*name)\s*[:：\-]?\s*.*/i, `JINA : ${val}`) : '';
         } else {
           text = val;
         }
@@ -385,11 +535,11 @@ export function injectValueIntoLayer(
           (l) => l.type === 'text' && getLayerBinding(l, allLayers) === 'MIDDLE_NAME'
         );
         const rawVal = (!hasMiddleLayer && mVal) ? `${fVal} ${mVal}` : fVal;
-        const val = followCasing(textLayer, rawVal);
+        const val = rawVal ? followCasing(textLayer, rawVal) : '';
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, val);
         } else if (/^(?:jina|given\s*names?)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:jina|given\s*names?)\s*[:：\-]?\s*.*/i, `JINA : ${val}`);
+          text = val ? text.replace(/^(?:jina|given\s*names?)\s*[:：\-]?\s*.*/i, `JINA : ${val}`) : '';
         } else {
           text = val;
         }
@@ -397,11 +547,11 @@ export function injectValueIntoLayer(
       }
       case 'MIDDLE_NAME': {
         const rawVal = (formData.middleName || '').trim();
-        const val = followCasing(textLayer, rawVal);
+        const val = rawVal ? followCasing(textLayer, rawVal) : '';
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/gi, val);
         } else if (/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*.*/i, `MIDDLE NAME : ${val}`);
+          text = val ? text.replace(/^(?:middle\s*name|la\s+kati)\s*[:：\-]?\s*.*/i, `MIDDLE NAME : ${val}`) : '';
         } else {
           text = val;
         }
@@ -409,44 +559,158 @@ export function injectValueIntoLayer(
       }
       case 'LAST_NAME': {
         const rawVal = (formData.lastName || '').trim();
-        const val = followCasing(textLayer, rawVal);
+        const val = rawVal ? followCasing(textLayer, rawVal) : '';
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/gi, val);
         } else if (/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*.*/i, `JINA LA MWISHO : ${val}`);
+          text = val ? text.replace(/^(?:jina\s+la\s+(?:mwisho|ukoo)|surname|last\s*name)\s*[:：\-]?\s*.*/i, `JINA LA MWISHO : ${val}`) : '';
         } else {
           text = val;
         }
         break;
       }
       case 'DOB': {
-        // DOB must always follow standard format as commanded (e.g., 01 MAR 1998)
-        const val = normalizeDateInput(formData.dob || '');
+        const isDrivingLicence = !!(
+          (formData as any).classes ||
+          (formData as any).categories ||
+          (formData as any).licenceNumber ||
+          (formData as any).issuingAuthority ||
+          (formData as any).pinNumber ||
+          (textLayer as any).licenseCategoryGroup !== undefined ||
+          (textLayer as any).licenseCategoriesSeparator !== undefined
+        );
+        const rawDob = (formData.dob || '').trim();
+        const val = rawDob ? (isDrivingLicence ? formatToDdMmYyyy(rawDob) : normalizeDateInput(rawDob)) : '';
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:dob|date_of_birth|birth_date|birthdate)\}\}/gi, val);
         } else if (/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*.*/i, `TAREHE YA KUZALIWA: ${val}`);
+          text = val ? text.replace(/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*.*/i, `TAREHE YA KUZALIWA: ${val}`) : '';
         } else {
           text = val;
         }
         break;
       }
       case 'GENDER': {
+        const rawGender = (formData.gender || '').trim();
+        const val = rawGender ? targetGender : '';
         if (text.includes('{{')) {
-          text = text.replace(/\{\{(?:gender|sex|jinsia|jinsi|gender_val|sex_val|jinsi_val)\}\}/gi, targetGender);
+          text = text.replace(/\{\{(?:gender|sex|jinsia|jinsi|gender_val|sex_val|jinsi_val)\}\}/gi, val);
         } else if (/^(?:jinsi|jinsia|sex|gender)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:jinsi|jinsia|sex|gender)\s*[:：\-]?\s*.*/i, `JINSI : ${targetGender}`);
+          text = val ? text.replace(/^(?:jinsi|jinsia|sex|gender)\s*[:：\-]?\s*.*/i, `JINSI : ${val}`) : '';
         } else {
-          text = targetGender;
+          text = val;
+        }
+        break;
+      }
+      case 'LICENCE_NUMBER': {
+        const val = ((formData as any).licenceNumber || formData.nidaNumber || '').trim();
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:licence_number|license_number|licence|license|dl_no)\}\}/gi, val);
+        } else {
+          text = val;
         }
         break;
       }
       case 'NIDA_NUMBER': {
-        const val = formData.nidaNumber || '';
+        const val = ((formData as any).licenceNumber || formData.nidaNumber || '').trim();
         if (text.includes('{{')) {
-          text = text.replace(/\{\{(?:nida_number|nida|id_number|national_id|nin|id_no|namba_nida)\}\}/gi, val);
-        } else if (/^(?:national\s*id\s*no|nambari\s*ya\s*nida|nida\s*no)\s*[:：\-]?\s*/i.test(text)) {
-          text = text.replace(/^(?:national\s*id\s*no|nambari\s*ya\s*nida|nida\s*no)\s*[:：\-]?\s*.*/i, `NATIONAL ID NO: ${val}`);
+          text = text.replace(/\{\{(?:nida_number|nida|id_number|national_id|nin|id_no|namba_nida|licence_number|license_number)\}\}/gi, val);
+        } else if (/^(?:national\s*id\s*no|nambari\s*ya\s*nida|nida\s*no|licence\s*no|licence\s*number)\s*[:：\-]?\s*/i.test(text)) {
+          text = val ? text.replace(/^(?:national\s*id\s*no|nambari\s*ya\s*nida|nida\s*no|licence\s*no|licence\s*number)\s*[:：\-]?\s*.*/i, `LICENCE NO: ${val}`) : '';
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'CATEGORIES_FIELD9': {
+        const val = formatDrivingLicenceCategoriesFront((formData as any).classes || (formData as any).categories);
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:categories_field9|field_9|categories_of_vehicles|categories|classes_front)\}\}/gi, val);
+        } else {
+          text = val;
+        }
+        // Ensure no artificial stretching letterSpacing
+        if ((textLayer as any).letterSpacing && (textLayer as any).letterSpacing > 0.05) {
+          (textLayer as any).letterSpacing = 0;
+        }
+        break;
+      }
+      case 'DRIVING_LICENCE_CATEGORIES':
+      case 'CLASSES_TABLE': {
+        const val = formatDrivingLicenceCategoriesBack(
+          (formData as any).classes || (formData as any).categories,
+          (formData as any).dateOfIssue || (formData as any).issueDate,
+          (formData as any).dateOfExpiry || (formData as any).expiryDate
+        );
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:driving_licence_categories|classes_table|classes_list|categories_table|categories_back)\}\}/gi, val);
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'ISSUE_DATE': {
+        const isDrivingLicence = !!(
+          (formData as any).classes ||
+          (formData as any).categories ||
+          (formData as any).licenceNumber ||
+          (formData as any).issuingAuthority ||
+          (formData as any).pinNumber
+        );
+        const rawIssue = ((formData as any).dateOfIssue || (formData as any).issueDate || '').trim();
+        const val = rawIssue ? (isDrivingLicence ? formatToDdMmYyyy(rawIssue) : normalizeDateInput(rawIssue)) : '';
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{\s*(?:issue_date|date_of_issue|issued_date|issueddate|dateofissue|issuedate|first_issue_date|first_issued_date|date_of_first_issue|valid_from|date_issued|issue)\s*\}\}/gi, val);
+          if (text.startsWith('{{') && text.endsWith('}}')) {
+            text = val;
+          }
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'EXPIRY_DATE': {
+        const isDrivingLicence = !!(
+          (formData as any).classes ||
+          (formData as any).categories ||
+          (formData as any).licenceNumber ||
+          (formData as any).issuingAuthority ||
+          (formData as any).pinNumber
+        );
+        const rawExpiry = ((formData as any).dateOfExpiry || (formData as any).expiryDate || '').trim();
+        const val = rawExpiry ? (isDrivingLicence ? formatToDdMmYyyy(rawExpiry) : normalizeDateInput(rawExpiry)) : '';
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{\s*(?:expiry_date|date_of_expiry|expirydate|dateofexpiry|expiration_date|expirationdate|expires|expire_date|valid_to|valid_until|date_expired|expiry)\s*\}\}/gi, val);
+          if (text.startsWith('{{') && text.endsWith('}}')) {
+            text = val;
+          }
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'ISSUING_AUTHORITY': {
+        const val = ((formData as any).issuingAuthority || '').trim();
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:issuing_authority|authority)\}\}/gi, val);
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'REGION': {
+        const val = ((formData as any).region || '').trim();
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:region|residence|place_of_residence)\}\}/gi, val);
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'PIN_NUMBER': {
+        const val = ((formData as any).pinNumber || '').trim();
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:pin_number|pin)\}\}/gi, val);
         } else {
           text = val;
         }
@@ -454,7 +718,32 @@ export function injectValueIntoLayer(
       }
     }
 
-    return { ...textLayer, text };
+    // Replace any remaining tokens for general fields
+    if (text.includes('{{')) {
+      const fd = formData as any;
+      const fVal = (fd.firstName || '').trim();
+      const sVal = (fd.secondName || fd.middleName || '').trim();
+      const tVal = (fd.thirdName || fd.lastName || '').trim();
+      const givenNames = sVal ? `${fVal} ${sVal}` : fVal;
+
+      text = text.replace(/\{\{given_names\}\}/gi, givenNames);
+      text = text.replace(/\{\{family_name\}\}/gi, tVal);
+      text = text.replace(/\{\{first_name\}\}/gi, fVal);
+      text = text.replace(/\{\{second_name\}\}/gi, sVal);
+      text = text.replace(/\{\{third_name\}\}/gi, tVal);
+      text = text.replace(/\{\{dob\}\}/gi, fd.dob ? normalizeDateInput(fd.dob) : '');
+      text = text.replace(/\{\{gender\}\}/gi, fd.gender ? ((fd.gender || '').trim().toUpperCase().startsWith('M') ? 'M' : 'F') : '');
+      text = text.replace(/\{\{nationality\}\}/gi, fd.nationality || '');
+    }
+
+    // Clean up empty data / empty labels (PROMPT 44 & 45 Protection)
+    const trimmed = text.trim();
+    const isTrailingLabelOnly = /^[\w\s\/\\&-]+\s*[:：\-]\s*$/i.test(trimmed);
+    if (!trimmed || isTrailingLabelOnly) {
+      return { ...textLayer, text: '', hidden: true };
+    }
+
+    return { ...textLayer, text, hidden: false };
   }
 
   if (layer.type === 'barcode' && binding === 'NIDA_NUMBER') {
@@ -475,6 +764,90 @@ export function injectValueIntoLayer(
 /**
  * Validates the populated template to prevent cross-contamination errors before generating the card.
  */
+/**
+ * Formats Driving Licence categories for front card rendering:
+ * - Selected categories rendered as a continuous list with a single normal space between each selected category.
+ * - Ignore all unselected categories completely.
+ * - Spacing must be based only on selected categories.
+ * - Exactly one space between displayed categories.
+ * - Do not insert commas.
+ * - Do not reserve gaps for unchecked categories.
+ * - Do not stretch spacing based on missing categories.
+ * Formats front-side categories of vehicles continuous display.
+ * Displays only selected categories separated by exactly TWO spaces.
+ * Does not insert commas.
+ * Does not reserve gaps for unselected categories.
+ *
+ * Examples:
+ *   Selected: A, G -> "A  G"
+ *   Selected: A, B, D, E, G -> "A  B  D  E  G"
+ *   Selected: C1, C3 -> "C1  C3"
+ */
+export function formatDrivingLicenceCategoriesFront(classes: any, separator: string = '  '): string {
+  if (!classes) return '';
+  const selectedCodes: string[] = [];
+
+  if (Array.isArray(classes)) {
+    classes.forEach((c: any) => {
+      if (!c) return;
+      if (typeof c === 'string') {
+        const trimmed = c.trim();
+        if (trimmed) selectedCodes.push(trimmed);
+      } else if (typeof c === 'object' && c.enabled && c.classCode) {
+        const trimmed = String(c.classCode).trim();
+        if (trimmed) selectedCodes.push(trimmed);
+      }
+    });
+  } else if (typeof classes === 'string') {
+    classes
+      .split(/[\s,;/]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .forEach((code) => selectedCodes.push(code));
+  }
+
+  // Deduplicate while strictly preserving order
+  const uniqueCodes = Array.from(new Set(selectedCodes));
+  // Continuous list with exactly TWO spaces between each selected category, no commas, no reserved gaps
+  return uniqueCodes.join('  ').trim();
+}
+
+export function formatDrivingLicenceCategoriesBack(
+  classes: any[],
+  defaultIssueDate?: string,
+  defaultExpiryDate?: string
+): string {
+  const ALL_CLASS_CODES = ['A', 'A1', 'A2', 'A3', 'B', 'C', 'C1', 'C2', 'C3', 'D', 'E', 'F', 'G'];
+  const classMap = new Map<string, any>();
+  if (Array.isArray(classes)) {
+    classes.forEach((c: any) => {
+      if (c && c.classCode) {
+        classMap.set(c.classCode, c);
+      }
+    });
+  }
+
+  const lines: string[] = [];
+  ALL_CLASS_CODES.forEach((code) => {
+    const item = classMap.get(code);
+    const isEnabled = !!(item && item.enabled);
+    let issueStr = '';
+    let expiryStr = '';
+
+    if (isEnabled) {
+      const rawIssue = item?.issueDate || defaultIssueDate || '';
+      const rawExpiry = item?.expiryDate || defaultExpiryDate || '';
+      issueStr = rawIssue ? formatToDdMmYyyy(rawIssue) : '';
+      expiryStr = rawExpiry ? formatToDdMmYyyy(rawExpiry) : '';
+    }
+
+    const paddedIssue = issueStr ? issueStr.padEnd(16, ' ') : '                ';
+    lines.push(`${paddedIssue}${expiryStr}`.trimEnd());
+  });
+
+  return lines.join('\n');
+}
+
 export function validatePopulatedTemplate(
   layers: Layer[],
   formData: NidaFormData,
@@ -494,6 +867,8 @@ export function validatePopulatedTemplate(
   let injectedLastName: string | null = null;
   let injectedDob: string | null = null;
   let injectedGender: string | null = null;
+  let injectedLicenceNumber: string | null = null;
+  const licenceNumber = ((formData as any).licenceNumber || formData.nidaNumber || '').trim().toUpperCase();
 
   for (const layer of layers) {
     const binding = getLayerBinding(layer, layers);
@@ -506,13 +881,14 @@ export function validatePopulatedTemplate(
         injectedDob = text;
       } else if (binding === 'GENDER') {
         injectedGender = text;
+      } else if (binding === 'LICENCE_NUMBER' || binding === 'NIDA_NUMBER') {
+        injectedLicenceNumber = text;
       }
     }
   }
 
   // Cross-field collision checks
   if (firstName && lastName && firstName !== lastName && injectedLastName) {
-    // If injectedLastName matches firstName instead of lastName
     if (injectedLastName.endsWith(firstName) || (injectedLastName.includes(firstName) && !injectedLastName.includes(lastName))) {
       return {
         valid: false,
@@ -528,6 +904,17 @@ export function validatePopulatedTemplate(
         valid: false,
         error: `Field Mapping Validation Error: First Name ('${firstName}') was incorrectly injected into Date of Birth field ('${injectedDob}'). Expected '${dob}'.`,
         warnings: [`DOB layer received '${injectedDob}' instead of '${dob}'`],
+      };
+    }
+  }
+
+
+  if (firstName && licenceNumber && firstName !== licenceNumber && injectedLicenceNumber) {
+    if (injectedLicenceNumber.includes(firstName)) {
+      return {
+        valid: false,
+        error: `Field Mapping Validation Error: First Name ('${firstName}') was incorrectly injected into Licence Number field ('${injectedLicenceNumber}'). Expected '${licenceNumber}'.`,
+        warnings: [`Licence Number layer received '${injectedLicenceNumber}' instead of '${licenceNumber}'`],
       };
     }
   }
@@ -555,9 +942,56 @@ export function planTemplateMapping(template: CardTemplate, formData: Partial<Ni
   const fieldMappings: FieldMappingDetail[] = [];
   const warnings: string[] = [];
 
-  const bindingsToCheck: SupportedBinding[] = isBackSide ? ['NIDA_NUMBER'] : ALL_SUPPORTED_BINDINGS;
+  const isDL = !!(
+    sanitizedTemplate.cardType === 'Driving License' ||
+    sanitizedTemplate.id?.includes('driving_license') ||
+    sanitizedTemplate.templateName?.toLowerCase().includes('driving license') ||
+    sanitizedTemplate.templateName?.toLowerCase().includes('driving licence') ||
+    (formData as any).classes ||
+    (formData as any).categories ||
+    (formData as any).licenceNumber
+  );
+
+  const bindingsToCheck: SupportedBinding[] = (isBackSide && !isDL) ? ['NIDA_NUMBER'] : ALL_SUPPORTED_BINDINGS;
 
   for (const layer of sanitizedTemplate.layers) {
+    if (layer.type === 'text') {
+      const textLayer = layer as TextLayer;
+      if (textLayer.licenseCategoryGroup !== undefined) {
+        const classes = (formData as any).classes || (formData as any).categories || [];
+        const matchedClass = classes.find((c: any) => c && c.classCode === textLayer.licenseCategoryGroup);
+        const isEnabled = matchedClass && !!matchedClass.enabled;
+        let dateValue = '';
+        if (isEnabled) {
+          const rawDate = textLayer.licenseCategoryDateType === 'expiryDate'
+            ? (matchedClass.expiryDate || (formData as any).dateOfExpiry || (formData as any).expiryDate || '')
+            : (matchedClass.issueDate || (formData as any).dateOfIssue || (formData as any).issueDate || '');
+          dateValue = rawDate ? formatToDdMmYyyy(rawDate) : '';
+        }
+        fieldMappings.push({
+          binding: 'CUSTOM_CATEGORY_DATE' as any,
+          layerId: layer.id,
+          layerName: layer.name,
+          layerType: layer.type,
+          originalValue: textLayer.text,
+          newValue: dateValue,
+        });
+        continue;
+      } else if (textLayer.licenseCategoriesSeparator !== undefined) {
+        const classes = (formData as any).classes || (formData as any).categories || [];
+        const textValue = formatDrivingLicenceCategoriesFront(classes);
+        fieldMappings.push({
+          binding: 'CUSTOM_CATEGORIES_LIST' as any,
+          layerId: layer.id,
+          layerName: layer.name,
+          layerType: layer.type,
+          originalValue: textLayer.text,
+          newValue: textValue,
+        });
+        continue;
+      }
+    }
+
     const binding = getLayerBinding(layer, sanitizedTemplate.layers);
     if (binding && bindingsToCheck.includes(binding)) {
       matchedBindingsSet.add(binding);
@@ -604,10 +1038,12 @@ export function planTemplateMapping(template: CardTemplate, formData: Partial<Ni
 }
 
 /**
- * Applies the Template Field Mapping Engine to populate NIDA card templates.
+ * Applies the Template Field Mapping Engine to populate card templates.
  */
 export function applyTemplateMapping(template: CardTemplate, formData: NidaFormData): PopulatedTemplateResult {
-  const sanitizedTemplate = ensureTemplateFieldIds(template);
+  // Enforce absolute separation of Template Layout Structure and Cardholder Personal Records:
+  // Sanitize the template first to ensure any embedded sample values are treated strictly as placeholders.
+  const sanitizedTemplate = sanitizeTemplateForSaving(ensureTemplateFieldIds(template));
   const isBackSide = isBackSideTemplate(sanitizedTemplate);
   const plan = planTemplateMapping(sanitizedTemplate, formData);
 
@@ -616,26 +1052,50 @@ export function applyTemplateMapping(template: CardTemplate, formData: NidaFormD
   let skippedCount = 0;
 
   for (const layer of sanitizedTemplate.layers) {
-    const binding = getLayerBinding(layer, sanitizedTemplate.layers);
-
-    if (isBackSide) {
-      if (binding === 'NIDA_NUMBER') {
-        const injected = injectValueIntoLayer(layer, 'NIDA_NUMBER', formData, sanitizedTemplate.layers);
-        clonedLayers.push(injected);
+    if (layer.type === 'text') {
+      const textLayer = layer as TextLayer;
+      if (textLayer.licenseCategoryGroup !== undefined) {
+        const classes = (formData as any).classes || (formData as any).categories || [];
+        const matchedClass = classes.find((c: any) => c && c.classCode === textLayer.licenseCategoryGroup);
+        const isEnabled = matchedClass && !!matchedClass.enabled;
+        let dateValue = '';
+        if (isEnabled) {
+          const rawDate = textLayer.licenseCategoryDateType === 'expiryDate'
+            ? (matchedClass.expiryDate || (formData as any).dateOfExpiry || (formData as any).expiryDate || '')
+            : (matchedClass.issueDate || (formData as any).dateOfIssue || (formData as any).issueDate || '');
+          dateValue = rawDate ? formatToDdMmYyyy(rawDate) : '';
+        }
+        clonedLayers.push({
+          ...textLayer,
+          text: dateValue,
+        });
         populatedCount++;
-      } else {
-        clonedLayers.push({ ...layer });
+        continue;
+      } else if (textLayer.licenseCategoriesSeparator !== undefined) {
+        const classes = (formData as any).classes || (formData as any).categories || [];
+        const textValue = formatDrivingLicenceCategoriesFront(classes);
+        clonedLayers.push({
+          ...textLayer,
+          text: textValue,
+          letterSpacing: 0,
+        });
+        populatedCount++;
+        continue;
       }
-      continue;
     }
+
+    const binding = getLayerBinding(layer, sanitizedTemplate.layers);
 
     if (binding) {
       const injected = injectValueIntoLayer(layer, binding, formData, sanitizedTemplate.layers);
       clonedLayers.push(injected);
       populatedCount++;
     } else {
-      // Static layer, leave untouched
-      clonedLayers.push({ ...layer });
+      // Unbound layers should simply be left alone, or just have strict token replacement.
+      // We will perform a generic token replacement for known placeholders just in case,
+      // without doing destructive fallback overrides.
+      const injected = replaceAllTokens(layer, formData);
+      clonedLayers.push(injected);
       skippedCount++;
     }
   }
@@ -824,6 +1284,94 @@ export function sanitizeTemplateForSaving(template: CardTemplate): CardTemplate 
           }
           break;
         }
+        case 'LICENCE_NUMBER': {
+          const isUpper = text.includes('{{LICENCE_NUMBER') || text.includes('{{LICENSE_NUMBER') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{LICENCE_NUMBER}}' : '{{licence_number}}';
+          if (text.includes('{{')) {
+            // Keep original placeholder token
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
+        case 'PIN_NUMBER': {
+          const isUpper = text.includes('{{PIN_NUMBER') || text.includes('{{PIN') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{PIN_NUMBER}}' : '{{pin_number}}';
+          if (text.includes('{{')) {
+            // Keep original placeholder token
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
+        case 'ISSUE_DATE': {
+          const isUpper = text.includes('{{ISSUE_DATE') || text.includes('{{DATE_OF_ISSUE') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{ISSUE_DATE}}' : '{{issue_date}}';
+          if (text.includes('{{')) {
+            // Keep original placeholder token
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
+        case 'EXPIRY_DATE': {
+          const isUpper = text.includes('{{EXPIRY_DATE') || text.includes('{{DATE_OF_EXPIRY') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{EXPIRY_DATE}}' : '{{expiry_date}}';
+          if (text.includes('{{')) {
+            // Keep original placeholder token
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
+        case 'ISSUING_AUTHORITY': {
+          const isUpper = text.includes('{{ISSUING_AUTHORITY') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{ISSUING_AUTHORITY}}' : '{{issuing_authority}}';
+          if (text.includes('{{')) {
+            // Keep as is
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
+        case 'REGION': {
+          const isUpper = text.includes('{{REGION') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{REGION}}' : '{{region}}';
+          if (text.includes('{{')) {
+            // Keep as is
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
+        case 'CATEGORIES_FIELD9': {
+          const isUpper = text.includes('{{CATEGORIES') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{CATEGORIES_FIELD9}}' : '{{categories_field9}}';
+          if (text.includes('{{')) {
+            // Keep original
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
+        case 'DRIVING_LICENCE_CATEGORIES':
+        case 'CLASSES_TABLE': {
+          const isUpper = text.includes('{{DRIVING_LICENCE_CATEGORIES') || text === text.toUpperCase();
+          const placeholder = isUpper ? '{{DRIVING_LICENCE_CATEGORIES}}' : '{{driving_licence_categories}}';
+          if (text.includes('{{')) {
+            // Keep original
+          } else {
+            text = placeholder;
+          }
+          break;
+        }
+      }
+
+      // Check if it's a Group Category Date element or a Licence Categories List
+      if (textLayer.licenseCategoryGroup !== undefined) {
+        text = textLayer.licenseCategoryDateType === 'expiryDate' ? '{{expiry_date}}' : '{{issue_date}}';
+      } else if (textLayer.licenseCategoriesSeparator !== undefined) {
+        text = '{{categories_field9}}';
       }
 
       return {

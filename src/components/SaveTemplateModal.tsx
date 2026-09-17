@@ -12,11 +12,9 @@ export const SaveTemplateModal: React.FC = () => {
     saveAsNewTemplate,
     loadSavedTemplates,
     updateTemplateMeta,
-    selectedFrontTemplateId,
-    selectedBackTemplateId,
-    defaultNidaFrontTemplateId,
-    defaultNidaBackTemplateId,
-    setUniversalDefaultNidaTemplates,
+    activeServiceId,
+    saveUniversalFrontTemplate,
+    saveUniversalBackTemplate,
   } = useTemplateStore();
 
   const [mode, setMode] = useState<'options' | 'saveAs'>('options');
@@ -42,6 +40,16 @@ export const SaveTemplateModal: React.FC = () => {
     }
   }, [isSaveModalOpen, currentTemplate, loadSavedTemplates]);
 
+  // Escape key listener
+  useEffect(() => {
+    if (!isSaveModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSaveModalOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSaveModalOpen, setSaveModalOpen]);
+
   if (!isSaveModalOpen) return null;
 
   const handleQuickSave = async () => {
@@ -56,20 +64,16 @@ export const SaveTemplateModal: React.FC = () => {
   };
 
   const handleUniversalSave = async () => {
-    updateTemplateMeta({ cardType, side });
-    await saveCurrentTemplate();
+    updateTemplateMeta({ cardType, side, serviceId: activeServiceId });
     
-    // Determine Front & Back Pair for Universal Save
-    const frontId = (side === 'Front Side' || !currentTemplate.id.includes('back'))
-      ? currentTemplate.id
-      : (selectedFrontTemplateId || defaultNidaFrontTemplateId || 'sample_tanzania_nida');
-    
-    const backId = (side === 'Back Side' || currentTemplate.id.includes('back'))
-      ? currentTemplate.id
-      : (selectedBackTemplateId || defaultNidaBackTemplateId || 'sample_tanzania_nida_back');
+    if (side === 'Back Side' || currentTemplate.id.includes('back')) {
+      await saveUniversalBackTemplate(activeServiceId, currentTemplate);
+      setSuccessMessage(`Universal Back Template Saved for ${activeServiceId.replace('_', ' ').toUpperCase()}!`);
+    } else {
+      await saveUniversalFrontTemplate(activeServiceId, currentTemplate);
+      setSuccessMessage(`Universal Front Template Saved for ${activeServiceId.replace('_', ' ').toUpperCase()}!`);
+    }
 
-    setUniversalDefaultNidaTemplates(frontId, backId);
-    setSuccessMessage('Universal Defaults Saved! This template pair is now set as the permanent default for NIDA filling.');
     setIsSavedSuccess(true);
     setTimeout(() => {
       setIsSavedSuccess(false);
@@ -130,8 +134,14 @@ export const SaveTemplateModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-[#FFFFFF] border border-[#E7E9EB] rounded-2xl shadow-xl overflow-hidden flex flex-col">
+    <div
+      onClick={() => setSaveModalOpen(false)}
+      className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg bg-[#FFFFFF] border border-[#E7E9EB] rounded-2xl shadow-xl overflow-hidden flex flex-col cursor-default"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#E7E9EB] flex items-center justify-between bg-[#FFFFFF]">
           <div className="flex items-center gap-3">

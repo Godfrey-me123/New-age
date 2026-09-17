@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Check, Edit3, Trash2, RefreshCw, Palette } from 'lucide-react';
+import { Upload, Check, Edit3, Trash2, RefreshCw, Palette, Sun } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 
 interface BackgroundsPanelProps {
@@ -138,7 +138,7 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
               key={col}
               onClick={() =>
                 updateTemplateMeta({
-                  background: { type: 'color', color: col },
+                  background: { type: 'color', color: col, opacity: currentTemplate.background?.opacity },
                 })
               }
               className="w-6 h-6 rounded-md border border-slate-700/80 shadow-sm transition-transform hover:scale-110 flex items-center justify-center"
@@ -158,6 +158,66 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
           ))}
         </div>
       </div>
+
+      {/* Background Image Opacity Control (when background is an image) */}
+      {currentTemplate.background?.type === 'image' && (
+        <div className="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+              <Sun className="w-3.5 h-3.5 text-blue-400" />
+              <span>Background Opacity</span>
+            </div>
+            <span className="text-xs font-mono font-bold text-slate-200 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+              {Math.round((currentTemplate.background.opacity ?? 1) * 100)}%
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={Math.round((currentTemplate.background.opacity ?? 1) * 100)}
+              onChange={(e) => {
+                const pct = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
+                updateTemplateMeta({
+                  background: {
+                    ...currentTemplate.background,
+                    opacity: pct / 100,
+                  },
+                });
+              }}
+              className="flex-1 accent-blue-500 cursor-pointer h-6"
+            />
+          </div>
+
+          {/* Preset Buttons */}
+          <div className="flex items-center gap-1 pt-1">
+            {[0, 25, 50, 75, 100].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() =>
+                  updateTemplateMeta({
+                    background: {
+                      ...currentTemplate.background,
+                      opacity: preset / 100,
+                    },
+                  })
+                }
+                className={`flex-1 py-1 text-[10px] font-mono font-bold rounded transition-colors ${
+                  Math.round((currentTemplate.background.opacity ?? 1) * 100) === preset
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {preset}%
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 2. Uploaded Background Image Library */}
       <div className="space-y-2">

@@ -47,7 +47,7 @@ export interface ServiceItem {
 }
 
 export const HomeScreen: React.FC = () => {
-  const { setActiveScreen, loadSavedTemplates } = useTemplateStore();
+  const { setActiveScreen, navigateSafely, loadSavedTemplates, authRole, logoutPasskey, setPasskeyManagerOpen } = useTemplateStore();
 
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,137 +60,78 @@ export const HomeScreen: React.FC = () => {
     loadSavedTemplates().then((list) => setSavedCount(list.length)).catch(() => {});
   }, [loadSavedTemplates]);
 
+  // Escape key listener for coming soon modal
+  React.useEffect(() => {
+    if (!comingSoonService) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setComingSoonService(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [comingSoonService]);
+
+  const storeServices = useTemplateStore((state) => state.services);
+
+  // Icon mapping for dynamic loading
+  const iconMap: Record<string, React.ComponentType<any>> = useMemo(() => ({
+    UserCheck,
+    ScrollText,
+    Car,
+    Globe,
+    Receipt,
+    Building2,
+    GraduationCap,
+    HeartPulse,
+    Briefcase,
+    Layers,
+  }), []);
+
+  // Color configurations for services
+  const colorMap: Record<string, { iconBg: string; iconColor: string }> = useMemo(() => ({
+    nida: { iconBg: 'bg-blue-500/15 border-blue-500/30', iconColor: 'text-[#47A5FF]' },
+    driving_license: { iconBg: 'bg-amber-500/15 border-amber-500/30', iconColor: 'text-amber-400' },
+    birth_certificate: { iconBg: 'bg-emerald-500/15 border-emerald-500/30', iconColor: 'text-emerald-400' },
+    passport: { iconBg: 'bg-cyan-500/15 border-cyan-500/30', iconColor: 'text-cyan-400' },
+    tin: { iconBg: 'bg-violet-500/15 border-violet-500/30', iconColor: 'text-violet-400' },
+    business_license: { iconBg: 'bg-orange-500/15 border-orange-500/30', iconColor: 'text-orange-400' },
+    heslb: { iconBg: 'bg-indigo-500/15 border-indigo-500/30', iconColor: 'text-indigo-400' },
+    nhif: { iconBg: 'bg-rose-500/15 border-rose-500/30', iconColor: 'text-rose-400' },
+    ajira: { iconBg: 'bg-teal-500/15 border-teal-500/30', iconColor: 'text-teal-400' },
+    custom_studio: { iconBg: 'bg-blue-600/20 border-blue-500/40', iconColor: 'text-blue-400' },
+  }), []);
+
   // Define services according to instructions
   const services: ServiceItem[] = useMemo(
-    () => [
-      {
-        id: 'nida',
-        name: 'NIDA Services',
-        authority: 'National Identification Authority',
-        description: 'Instant auto-fill, verification & CR80 card generation for Front & Back National IDs.',
-        category: 'identity',
-        icon: UserCheck,
-        iconBg: 'bg-blue-500/15 border-blue-500/30',
-        iconColor: 'text-[#47A5FF]',
-        status: 'active',
-        badgeText: 'Active • Auto-Fill Ready',
-        action: () => setActiveScreen('nida'),
-        primaryActionLabel: 'Open',
-        features: ['20-Digit ID Verification', 'Biometric Photo Cropping', 'Digital Signature Pad', 'Barcode Sync'],
-      },
-      {
-        id: 'birth_certificate',
-        name: 'Birth Certificate Services',
-        authority: 'RITA Civil Registration',
-        description: 'Official birth certificate issuance, verification & digital civil registry documentation.',
-        category: 'civil',
-        icon: ScrollText,
-        iconBg: 'bg-emerald-500/15 border-emerald-500/30',
-        iconColor: 'text-emerald-400',
-        status: 'coming_soon',
-        badgeText: 'Coming Soon',
-        action: () => {},
-        features: ['Birth Certificate Archiving', 'Legal Certification', 'Official Watermark Validation'],
-      },
-      {
-        id: 'driving_license',
-        name: 'Driving License Services',
-        authority: 'Traffic & Vehicle Inspection',
-        description: 'Driver permit issuance, class endorsements & digital driver identification cards.',
-        category: 'civil',
-        icon: Car,
-        iconBg: 'bg-amber-500/15 border-amber-500/30',
-        iconColor: 'text-amber-400',
-        status: 'coming_soon',
-        badgeText: 'Coming Soon',
-        action: () => {},
-        features: ['Class Endorsements (A, B, C, D, E)', 'Penalty Point Tracking', 'Digital QR Validation'],
-      },
-      {
-        id: 'passport',
-        name: 'Passport Services',
-        authority: 'Immigration Services Department',
-        description: 'East African e-Passport booklet formatting, bio-data pages & travel credentials.',
-        category: 'identity',
-        icon: Globe,
-        iconBg: 'bg-cyan-500/15 border-cyan-500/30',
-        iconColor: 'text-cyan-400',
-        status: 'coming_soon',
-        badgeText: 'Coming Soon',
-        action: () => {},
-        features: ['ICAO 9303 Compliant MRZ', 'Biometric Chip Layout', 'Diplomatic & Ordinary Profiles'],
-      },
-      {
-        id: 'tin',
-        name: 'TIN Services',
-        authority: 'Tanzania Revenue Authority',
-        description: 'Taxpayer Identification Number cards, tax compliance credentials & PIN certificates.',
-        category: 'finance',
-        icon: Receipt,
-        iconBg: 'bg-violet-500/15 border-violet-500/30',
-        iconColor: 'text-violet-400',
-        status: 'coming_soon',
-        badgeText: 'Coming Soon',
-        action: () => {},
-        features: ['Taxpayer PIN Sync', 'QR Compliance Stamp', 'Corporate & Individual Formats'],
-      },
-      {
-        id: 'business_license',
-        name: 'Business License Services',
-        authority: 'BRELA & Municipal Authorities',
-        description: 'Commercial enterprise registration certificates, municipal trade permits & corporate IDs.',
-        category: 'finance',
-        icon: Building2,
-        iconBg: 'bg-orange-500/15 border-orange-500/30',
-        iconColor: 'text-orange-400',
-        status: 'coming_soon',
-        badgeText: 'Coming Soon',
-        action: () => {},
-        features: ['BRELA Certificate Layout', 'Annual Renewal Badges', 'Sector Trade Validation'],
-      },
-      {
-        id: 'heslb',
-        name: 'HESLB Student Loans Services',
-        authority: 'Higher Education Students’ Loans Board',
-        description: 'Student beneficiary loan allocation cards, academic verification & repayment IDs.',
-        category: 'education',
-        icon: GraduationCap,
-        iconBg: 'bg-indigo-500/15 border-indigo-500/30',
-        iconColor: 'text-indigo-400',
-        status: 'coming_soon',
-        badgeText: 'Coming Soon',
-        action: () => {},
-        features: ['Index Number Verification', 'Institution Allocation Status', 'Beneficiary Smart Badges'],
-      },
-      {
-        id: 'nhif',
-        name: 'NHIF Services',
-        authority: 'National Health Insurance Fund',
-        description: 'Healthcare membership smart cards, dependent coverage validation & biometric health passes.',
-        category: 'health',
-        icon: HeartPulse,
-        iconBg: 'bg-rose-500/15 border-rose-500/30',
-        iconColor: 'text-rose-400',
-        status: 'coming_soon',
-        badgeText: 'Coming Soon',
-        action: () => {},
-        features: ['Principal & Dependent Mapping', 'Hospital Tier Endorsements', 'Smart Card Chip Specs'],
-      },
-      {
-        id: 'ajira',
-        name: 'Ajira Portal Services',
-        authority: 'Public Service Recruitment Secretariat',
-        description: 'Government job application portfolios, civil service recruitment IDs & applicant profiles.',
-        category: 'education',
-        icon: Briefcase,
-        iconBg: 'bg-teal-500/15 border-teal-500/30',
-        iconColor: 'text-teal-400',
-        status: 'coming_soon',
-        badgeText: 'Coming Soon',
-        action: () => {},
-        features: ['Civil Service Application Sync', 'Cadre Certificate Validation', 'Interview Pass Generation'],
-      },
-      {
+    () => {
+      const list: ServiceItem[] = storeServices.map((s) => {
+        const colors = colorMap[s.id] || { iconBg: 'bg-gray-500/15 border-gray-500/30', iconColor: 'text-gray-400' };
+        const IconComp = iconMap[s.iconName] || ScrollText;
+
+        const action = s.id === 'nida'
+          ? () => navigateSafely('nida', 'nida')
+          : s.id === 'driving_license'
+          ? () => navigateSafely('driving_license', 'driving_license')
+          : () => navigateSafely('nida', s.id);
+
+        return {
+          id: s.id,
+          name: s.name,
+          authority: s.authority,
+          description: s.description,
+          category: s.category as ServiceCategory,
+          icon: IconComp,
+          iconBg: colors.iconBg,
+          iconColor: colors.iconColor,
+          status: s.active ? ('active' as const) : ('coming_soon' as const),
+          badgeText: s.active ? `Active • Cost: ${s.tokenCost ?? 1} Token${(s.tokenCost ?? 1) > 1 ? 's' : ''}` : 'Coming Soon',
+          action,
+          primaryActionLabel: s.active ? 'Open' : undefined,
+          features: s.features,
+        };
+      });
+
+      // Append Custom Card Studio
+      list.push({
         id: 'custom_studio',
         name: 'Custom Card Studio',
         authority: 'ID Template Designer',
@@ -204,14 +145,21 @@ export const HomeScreen: React.FC = () => {
         action: () => setActiveScreen('upload'),
         primaryActionLabel: 'Open Card Studio',
         features: ['Millimeter Precision (CR80)', 'Custom Image Backgrounds', 'Smart Magnetic Snap', 'PDF & SVG Export'],
-      },
-    ],
-    [setActiveScreen]
+      });
+
+      return list;
+    },
+    [storeServices, setActiveScreen, colorMap, iconMap]
   );
 
   // Filtered services
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
+      // Hide studio tools for standard users
+      if (authRole === 'user' && service.id === 'custom_studio') {
+        return false;
+      }
+
       const matchesCategory =
         selectedCategory === 'all' ||
         service.category === selectedCategory ||
@@ -225,7 +173,7 @@ export const HomeScreen: React.FC = () => {
 
       return matchesCategory && matchesSearch;
     });
-  }, [services, selectedCategory, searchQuery]);
+  }, [services, selectedCategory, searchQuery, authRole]);
 
   const categories: { key: ServiceCategory; label: string }[] = [
     { key: 'all', label: 'All Services' },
@@ -274,7 +222,7 @@ export const HomeScreen: React.FC = () => {
                 <span>Service Portal</span>
               </span>
             </div>
-            <span className="text-[11px] text-[#101010]/70 font-medium truncate max-w-[220px] sm:max-w-none">
+            <span className="text-[11px] text-[#101010]/70 font-medium truncate max-w-[220px] sm:max-w-none hidden sm:inline">
               National Documents & Card Specification Platform
             </span>
           </div>
@@ -282,32 +230,47 @@ export const HomeScreen: React.FC = () => {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Custom Designer Direct Button */}
+          {/* Custom Designer Direct Button (Admin Only) */}
+          {authRole === 'admin' && (
+            <button
+              type="button"
+              onClick={() => setActiveScreen('upload')}
+              className="hidden md:flex items-center gap-1.5 px-3.5 py-2 bg-[#E7E2DE] hover:bg-[#dad5d0] border border-[#dad5d0] text-xs font-bold text-[#101010] rounded-2xl transition-all shadow-xs cursor-pointer whitespace-nowrap"
+              title="Card Studio"
+            >
+              <CreditCard className="w-3.5 h-3.5 text-[#101010]" />
+              <span>Studio</span>
+            </button>
+          )}
+
+          {/* Downloads Center Button */}
           <button
             type="button"
-            onClick={() => setActiveScreen('upload')}
-            className="hidden md:flex items-center gap-1.5 px-3.5 py-2 bg-[#E7E2DE] hover:bg-[#dad5d0] border border-[#dad5d0] text-xs font-bold text-[#101010] rounded-2xl transition-all shadow-xs cursor-pointer whitespace-nowrap"
-            title="Card Studio"
+            onClick={() => setActiveScreen('downloads')}
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 bg-[#E7E2DE] hover:bg-[#dad5d0] border border-[#dad5d0] text-xs font-bold text-[#101010] rounded-2xl transition-all shadow-xs cursor-pointer whitespace-nowrap"
+            title="Downloads"
           >
-            <CreditCard className="w-3.5 h-3.5 text-[#101010]" />
-            <span>Studio</span>
+            <ScrollText className="w-3.5 h-3.5 text-[#101010]" />
+            <span>Downloads</span>
           </button>
 
-          {/* Saved Templates Button */}
-          <button
-            type="button"
-            onClick={() => setActiveScreen('templates')}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#101010] hover:bg-[#222222] text-white rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-md group cursor-pointer whitespace-nowrap"
-            title="Templates"
-          >
-            <FolderOpen className="w-4 h-4 text-[#B5A5FF] group-hover:scale-110 transition-transform" />
-            <span>Templates</span>
-            {savedCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-[#B5A5FF] text-[#101010] text-[10px] font-extrabold">
-                {savedCount}
-              </span>
-            )}
-          </button>
+          {/* Saved Templates Button (Admin Only) */}
+          {authRole === 'admin' && (
+            <button
+              type="button"
+              onClick={() => setActiveScreen('templates')}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#101010] hover:bg-[#222222] text-white rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-md group cursor-pointer whitespace-nowrap"
+              title="Templates"
+            >
+              <FolderOpen className="w-4 h-4 text-[#B5A5FF] group-hover:scale-110 transition-transform" />
+              <span>Templates</span>
+              {savedCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-[#B5A5FF] text-[#101010] text-[10px] font-extrabold">
+                  {savedCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </header>
 
@@ -339,20 +302,20 @@ export const HomeScreen: React.FC = () => {
       />
 
       {/* MAIN CONTAINER */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-10 flex flex-col">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-8 py-4 sm:py-10 flex flex-col pb-20 sm:pb-10">
         {/* 2. WELCOME SECTION */}
-        <div className="mb-8 sm:mb-10 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#E7E2DE]">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#E7E2DE] border border-[#dad5d0] text-[#101010] text-xs font-bold tracking-wide mb-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#101010]" />
+        <div className="mb-4 sm:mb-10 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-[#E7E2DE]">
+          <div className="space-y-1 sm:space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-[#E7E2DE] border border-[#dad5d0] text-[#101010] text-[11px] sm:text-xs font-bold tracking-wide mb-0.5 sm:mb-1">
+              <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#101010]" />
               <span>Official Document Services</span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-[#101010] tracking-tight">
+            <h1 className="text-xl sm:text-4xl font-extrabold text-[#101010] tracking-tight">
               Choose a Service
             </h1>
 
-            <p className="text-[#101010]/80 text-sm sm:text-base max-w-2xl leading-relaxed font-medium">
+            <p className="text-[#101010]/80 text-sm sm:text-base max-w-2xl leading-relaxed font-medium hidden sm:block">
               Select the service you want to continue with. Auto-fill verified credentials, generate compliant ID templates, or customize credentials with precision.
             </p>
           </div>
@@ -418,7 +381,7 @@ export const HomeScreen: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 pb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 pb-8 sm:pb-12">
             {filteredServices.map((service) => {
               const IconComponent = service.icon;
               const isActive = service.status === 'active';
@@ -449,60 +412,62 @@ export const HomeScreen: React.FC = () => {
                       handleCardClick(service);
                     }
                   }}
-                  className={`card ${cardBgClass} transition-all duration-200 hover:-translate-y-1 active:scale-[0.99] cursor-pointer select-none group min-h-[220px]`}
+                  className={`card ${cardBgClass} transition-all duration-200 hover:-translate-y-1 active:scale-[0.99] cursor-pointer select-none group min-h-0 sm:min-h-[220px] w-full max-w-full`}
                 >
                   {/* Top Card Row: Icon & Status Badge */}
                   <div>
-                    <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center sm:items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-4">
                       {/* Icon */}
-                      <div className="w-12 h-12 rounded-2xl bg-[#101010] text-white flex items-center justify-center shrink-0 shadow-xs">
-                        <IconComponent className="w-6 h-6 stroke-[2.2]" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#101010] text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
                       </div>
 
                       {/* Status Badge */}
                       <div className="shrink-0">
                         {isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-[#101010] text-white shadow-xs">
-                            <span className="w-2 h-2 rounded-full bg-[#B5A5FF] animate-pulse" />
-                            <span>{service.badgeText}</span>
+                          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-extrabold bg-[#101010] text-white shadow-xs">
+                            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#B5A5FF] animate-pulse" />
+                            <span className="hidden sm:inline">{service.badgeText}</span>
+                            <span className="sm:hidden">Active</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#101010]/10 text-[#101010]">
-                            <Clock className="w-3 h-3 text-[#101010]" />
-                            <span>Coming Soon</span>
+                          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#101010]/10 text-[#101010]">
+                            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#101010]" />
+                            <span className="hidden sm:inline">Coming Soon</span>
+                            <span className="sm:hidden">Soon</span>
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Service Name & Authority */}
-                    <div className="mb-2">
-                      <h3 className="card-title">
+                    {/* Service Name & Authority (Authority hidden on mobile for Title-Only cards) */}
+                    <div className="mb-1 sm:mb-2">
+                      <h3 className="card-title text-sm sm:text-lg font-bold text-[#101010] truncate sm:whitespace-normal">
                         {service.name}
                       </h3>
-                      <p className="text-xs font-bold text-[#101010]/70">
+                      <p className="text-xs font-bold text-[#101010]/70 hidden sm:block">
                         {service.authority}
                       </p>
                     </div>
 
-                    {/* Short Description */}
-                    <p className="card-description line-clamp-2">
+                    {/* Short Description (Hidden on mobile for Title-Only cards) */}
+                    <p className="card-description line-clamp-2 hidden sm:block">
                       {service.description}
                     </p>
                   </div>
 
                   {/* Circular Action Arrow Button */}
-                  <div className="mt-4 pt-3 border-t border-black/10 flex items-center justify-between">
+                  <div className="mt-2.5 sm:mt-4 pt-2 sm:pt-3 border-t border-black/10 flex items-center justify-between">
                     <span className="text-xs font-extrabold text-[#101010]">
                       {isActive ? (service.primaryActionLabel || 'Open') : 'Info'}
                     </span>
 
                     <button
                       type="button"
-                      className="card-arrow-btn group-hover:scale-110 transition-transform shadow-md"
+                      className="card-arrow-btn w-8 h-8 sm:w-11 sm:h-11 group-hover:scale-110 transition-transform shadow-md shrink-0 flex items-center justify-center"
                       title={isActive ? service.name : 'Coming Soon'}
                     >
-                      <ArrowRight className="w-5 h-5" />
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 </div>
@@ -543,8 +508,14 @@ export const HomeScreen: React.FC = () => {
 
       {/* COMING SOON MODAL */}
       {comingSoonService && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-[#E7E2DE] border-none rounded-[28px] max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-left text-[#101010]">
+        <div
+          onClick={() => setComingSoonService(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#E7E2DE] border-none rounded-[28px] max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-left text-[#101010] cursor-default"
+          >
             <button
               type="button"
               onClick={() => setComingSoonService(null)}

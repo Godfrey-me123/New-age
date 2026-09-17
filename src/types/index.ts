@@ -1,6 +1,6 @@
 export type Unit = 'px' | 'mm' | 'cm' | 'in';
 
-export type CardType = 'National ID' | 'Employee ID' | 'Student ID' | 'Membership Card' | 'Access Badge' | 'Other';
+export type CardType = 'National ID' | 'Employee ID' | 'Student ID' | 'Membership Card' | 'Access Badge' | 'Driving License' | 'Other';
 export type CardSide = 'Front Side' | 'Back Side' | 'Full Card' | 'Single Side';
 
 export type LayerType = 'text' | 'image' | 'placeholder' | 'shape' | 'barcode' | 'qrcode' | 'group';
@@ -96,6 +96,11 @@ export interface TextLayer extends BaseLayer {
 
   // Condensed / Expanded Width Presets (Prompt 8)
   widthPreset?: 'normal' | 'condensed' | 'semi_condensed' | 'expanded' | 'semi_expanded';
+
+  // Driving License Specific Custom Properties
+  licenseCategoryGroup?: string; // A, A1, A2, A3, B, C, C1, C2, C3, D, E, F, G
+  licenseCategoryDateType?: 'issueDate' | 'expiryDate';
+  licenseCategoriesSeparator?: 'spaceSeparated' | 'commaSeparated' | 'slashSeparated';
 }
 
 export interface ImageLayer extends BaseLayer {
@@ -160,6 +165,7 @@ export interface BackgroundConfig {
   aspectRatio?: number;
   originalWidthPx?: number;
   originalHeightPx?: number;
+  opacity?: number; // 0.0 to 1.0 (default 1.0)
 }
 
 export interface GridSettings {
@@ -181,6 +187,9 @@ export interface SnapSettings {
 export interface CardTemplate {
   id: string;
   templateName: string;
+  serviceId?: string;
+  isUniversalFront?: boolean;
+  isUniversalBack?: boolean;
   cardType?: CardType;
   side?: CardSide;
   cardWidth: number; // mm (e.g., 85.60 for standard CR80)

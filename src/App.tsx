@@ -15,17 +15,60 @@ import { MergeCardModal } from './components/MergeCardModal';
 import { MobileNavBar } from './components/MobileNavBar';
 import { MobileBottomSheet } from './components/MobileBottomSheet';
 import { NidaFormScreen } from './components/nida';
+import { DrivingLicenseFormScreen } from './components/nida/DrivingLicenseFormScreen';
 import { NidaSuccessToast } from './components/nida/NidaSuccessToast';
 import { HomeScreen } from './components/HomeScreen';
 import { CardPreviewScreen } from './components/CardPreviewScreen';
+import { PasskeyScreen } from './components/auth/PasskeyScreen';
+import { PasskeyManagerModal } from './components/auth/PasskeyManagerModal';
+import { RechargeModal } from './components/auth/RechargeModal';
+import { UsageExhaustedBanner } from './components/auth/UsageExhaustedBanner';
+import { DownloadsScreen } from './components/DownloadsScreen';
+import { UnsavedChangesModal } from './components/common/UnsavedChangesModal';
 
 export default function App() {
-  const { activeScreen, setActiveScreen } = useTemplateStore();
+  const { activeScreen, setActiveScreen, authRole } = useTemplateStore();
+
+  // PASSKEY GATEWAY SYSTEM: Must enter valid passkey first
+  if (!authRole) {
+    return <PasskeyScreen />;
+  }
+
+  // Strict RBAC Guard: Regular Users (authRole === 'user') are blocked from Studio/Editor/Templates
+  if (authRole === 'user' && (activeScreen === 'editor' || activeScreen === 'templates' || activeScreen === 'upload')) {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <HomeScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'downloads') {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <DownloadsScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
+      </>
+    );
+  }
 
   if (activeScreen === 'home') {
     return (
       <>
+        <UsageExhaustedBanner />
         <HomeScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
         <ExportModal />
         <SaveTemplateModal />
         <MergeCardModal />
@@ -38,7 +81,10 @@ export default function App() {
   if (activeScreen === 'upload') {
     return (
       <>
+        <UsageExhaustedBanner />
         <UploadScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
         <ExportModal />
         <SaveTemplateModal />
         <MergeCardModal />
@@ -51,7 +97,10 @@ export default function App() {
   if (activeScreen === 'templates') {
     return (
       <>
+        <UsageExhaustedBanner />
         <TemplatesScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
         <ExportModal />
         <SaveTemplateModal />
         <MergeCardModal />
@@ -64,12 +113,36 @@ export default function App() {
   if (activeScreen === 'nida') {
     return (
       <>
+        <UsageExhaustedBanner />
         <NidaFormScreen
           onCancel={() => setActiveScreen('home')}
           onSuccess={() => {
             // Handled in workflow -> transitions to preview screen
           }}
         />
+        <PasskeyManagerModal />
+        <RechargeModal />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'driving_license') {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <DrivingLicenseFormScreen
+          onCancel={() => setActiveScreen('home')}
+          onSuccess={() => {
+            // Handled in workflow -> transitions to preview screen
+          }}
+        />
+        <PasskeyManagerModal />
+        <RechargeModal />
         <ExportModal />
         <SaveTemplateModal />
         <MergeCardModal />
@@ -82,7 +155,10 @@ export default function App() {
   if (activeScreen === 'preview') {
     return (
       <>
+        <UsageExhaustedBanner />
         <CardPreviewScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
         <ExportModal />
         <SaveTemplateModal />
         <MergeCardModal />
@@ -94,6 +170,9 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#FFFFFF] text-[#000000] overflow-hidden font-sans">
+      {/* Usage Exhaustion Auto-Logout Banner */}
+      <UsageExhaustedBanner />
+
       {/* NIDA Success Notification Toast */}
       <NidaSuccessToast />
 
@@ -116,7 +195,10 @@ export default function App() {
       {/* Bottom Status Bar (Desktop) */}
       <BottomStatusBar />
 
-      {/* Modals */}
+      {/* Modals & Passkey Manager */}
+      <UnsavedChangesModal />
+      <PasskeyManagerModal />
+      <RechargeModal />
       <TemplateLibraryModal />
       <CardGeneratorModal />
       <ExportModal />

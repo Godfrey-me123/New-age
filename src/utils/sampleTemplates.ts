@@ -102,6 +102,50 @@ function createStudentIdBg(): string {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
+function createDrivingLicenseBg(): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1011" height="638" viewBox="0 0 1011 638">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f0fdf4"/>
+        <stop offset="100%" stop-color="#dcfce7"/>
+      </linearGradient>
+      <linearGradient id="header" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#047857"/>
+        <stop offset="100%" stop-color="#10b981"/>
+      </linearGradient>
+      <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#d97706"/>
+        <stop offset="100%" stop-color="#fbbf24"/>
+      </linearGradient>
+    </defs>
+    <rect width="1011" height="638" fill="url(#bg)"/>
+    <rect width="1011" height="110" fill="url(#header)"/>
+    <rect y="110" width="1011" height="6" fill="url(#gold)"/>
+    <circle cx="900" cy="300" r="180" fill="rgba(16,185,129,0.04)" stroke="rgba(16,185,129,0.1)" stroke-width="2"/>
+    <path d="M 0 550 L 1011 480 L 1011 638 L 0 638 Z" fill="rgba(16,185,129,0.06)"/>
+  </svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+function createDrivingLicenseBackBg(): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1011" height="638" viewBox="0 0 1011 638">
+    <defs>
+      <linearGradient id="bg_back" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f0fdf4"/>
+        <stop offset="100%" stop-color="#e6f4ea"/>
+      </linearGradient>
+      <linearGradient id="header_back" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#047857"/>
+        <stop offset="100%" stop-color="#10b981"/>
+      </linearGradient>
+    </defs>
+    <rect width="1011" height="638" fill="url(#bg_back)"/>
+    <rect width="1011" height="60" fill="url(#header_back)"/>
+    <rect y="580" width="1011" height="58" fill="#1e293b"/>
+  </svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
 export const SAMPLE_TEMPLATES: CardTemplate[] = [
   {
     id: 'sample_national_id',
@@ -787,6 +831,7 @@ export const SAMPLE_TEMPLATES: CardTemplate[] = [
   {
     id: 'sample_tanzania_nida_front',
     templateName: 'Tanzania National ID (NIDA Front Side)',
+    serviceId: 'nida',
     cardType: 'National ID',
     side: 'Front Side',
     cardWidth: CR80_WIDTH_MM,
@@ -1202,6 +1247,7 @@ export const SAMPLE_TEMPLATES: CardTemplate[] = [
   {
     id: 'sample_tanzania_nida_back',
     templateName: 'Tanzania National ID (NIDA Back Side)',
+    serviceId: 'nida',
     cardType: 'National ID',
     side: 'Back Side',
     cardWidth: CR80_WIDTH_MM,
@@ -1422,6 +1468,245 @@ export const SAMPLE_TEMPLATES: CardTemplate[] = [
         letterSpacing: 0.2,
         lineHeight: 1.0,
       },
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_driving_license_front',
+    templateName: 'Tanzania Driving License (Front Side)',
+    serviceId: 'driving_license',
+    cardType: 'Driving License',
+    side: 'Front Side',
+    cardWidth: CR80_WIDTH_MM,
+    cardHeight: CR80_HEIGHT_MM,
+    unit: 'mm',
+    dpi: 300,
+    orientation: 'landscape',
+    background: {
+      type: 'image',
+      src: createDrivingLicenseBg(),
+      originalWidthPx: 1011,
+      originalHeightPx: 638,
+    },
+    guides: [
+      { id: 'dg1', type: 'vertical', position: 8, color: '#10b981', locked: true, hidden: false },
+      { id: 'dg2', type: 'vertical', position: 32, color: '#10b981', locked: true, hidden: false },
+    ],
+        layers: [
+      {
+        id: 'dl_lbl_surname', name: 'Family Name Label', type: 'text',
+        x: 35, y: 7.0, width: 48, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '1    Family name', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_last_name', name: 'Family Name Var', type: 'text',
+        x: 35, y: 9.5, width: 48, height: 3.5, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{family_name}}', fontFamily: 'Helvetica', fontSize: 3.2, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_lbl_first_name', name: 'Given Names Label', type: 'text',
+        x: 35, y: 13.5, width: 48, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '2    Given names', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_first_name', name: 'Given Names Var', type: 'text',
+        x: 35, y: 16.0, width: 48, height: 3.5, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{given_names}}', fontFamily: 'Helvetica', fontSize: 3.2, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_lbl_dob', name: 'DOB Label', type: 'text',
+        x: 35, y: 20.0, width: 48, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '3.   Date of birth', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_dob', name: 'DOB Var', type: 'text',
+        x: 35, y: 22.5, width: 48, height: 3.5, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{dob}}', fontFamily: 'Helvetica', fontSize: 3.2, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_lbl_issue', name: 'Issue Date Label', type: 'text',
+        x: 35, y: 26.5, width: 25, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '4a  Date of issue', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_issue', name: 'Issue Date Var', type: 'text',
+        x: 35, y: 29.0, width: 25, height: 3.5, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{issue_date}}', fontFamily: 'Helvetica', fontSize: 3.2, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_lbl_expiry', name: 'Expiry Date Label', type: 'text',
+        x: 60, y: 26.5, width: 25, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '4b  Date of expiry', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_expiry', name: 'Expiry Date Var', type: 'text',
+        x: 60, y: 29.0, width: 25, height: 3.5, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{expiry_date}}', fontFamily: 'Helvetica', fontSize: 3.2, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_lbl_authority', name: 'Authority Label', type: 'text',
+        x: 35, y: 33.0, width: 48, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '4c  Issuing authority', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_authority', name: 'Authority Var', type: 'text',
+        x: 35, y: 35.5, width: 48, height: 3.5, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{issuing_authority}}', fontFamily: 'Helvetica', fontSize: 2.8, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_lbl_region', name: 'Region Label', type: 'text',
+        x: 35, y: 39.5, width: 48, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '8    Permanent place of residence', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_region', name: 'Region Var', type: 'text',
+        x: 35, y: 42.0, width: 48, height: 3.5, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{region}}', fontFamily: 'Helvetica', fontSize: 3.2, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_lbl_categories', name: 'Categories Label', type: 'text',
+        x: 35, y: 46.0, width: 48, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '9    Categories of Vehicles', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_categories', name: 'Categories Var', type: 'text',
+        x: 35, y: 48.5, width: 30, height: 3.5, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{categories_field9}}', fontFamily: 'Helvetica', fontSize: 3.2, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_lbl_signature', name: 'Signature Label', type: 'text',
+        x: 52, y: 46.0, width: 20, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '7    Signature', fontFamily: 'Helvetica', fontSize: 1.6, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'left', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_sig_holder', name: 'Holder Signature', type: 'placeholder', placeholderKey: 'signature', label: 'Signature', placeholderType: 'signature',
+        x: 52, y: 48.5, width: 20, height: 5, rotation: 0, opacity: 1, locked: false, hidden: false, borderColor: 'transparent', backgroundColor: 'transparent'
+      },
+      {
+        id: 'dl_photo_holder', name: 'Holder Photo', type: 'placeholder', placeholderKey: 'photo', label: 'Photo', placeholderType: 'photo',
+        x: 13, y: 15, width: 20, height: 26, rotation: 0, opacity: 1, locked: false, hidden: false, borderColor: '#000000', backgroundColor: '#f1f5f9'
+      },
+      {
+        id: 'dl_lbl_licence_no', name: 'Licence No Label', type: 'text',
+        x: 13, y: 45.0, width: 20, height: 2.2, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '5    Licence number', fontFamily: 'Helvetica', fontSize: 1.4, fontStyle: 'normal', textDecoration: 'none', color: '#000000', align: 'center', letterSpacing: 0, lineHeight: 1.0
+      },
+      {
+        id: 'dl_var_licence_no', name: 'Licence No Var', type: 'text',
+        x: 10, y: 47.5, width: 26, height: 4.0, rotation: 0, opacity: 1, locked: false, hidden: false,
+        text: '{{licence_number}}', fontFamily: 'Helvetica', fontSize: 3.5, fontStyle: 'bold', textDecoration: 'none', color: '#000000', align: 'center', letterSpacing: 0.1, lineHeight: 1.0
+      }
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_driving_license_back',
+    templateName: 'Tanzania Driving License (Back Side)',
+    serviceId: 'driving_license',
+    cardType: 'Driving License',
+    side: 'Back Side',
+    cardWidth: CR80_WIDTH_MM,
+    cardHeight: CR80_HEIGHT_MM,
+    unit: 'mm',
+    dpi: 300,
+    orientation: 'landscape',
+    background: {
+      type: 'image',
+      src: createDrivingLicenseBackBg(),
+      originalWidthPx: 1011,
+      originalHeightPx: 638,
+    },
+    guides: [
+      { id: 'dgb1', type: 'vertical', position: 10, color: '#10b981', locked: true, hidden: false },
+    ],
+            layers: [
+      {
+        id: 'dl_var_pin_number',
+        name: 'PIN Number Var',
+        type: 'text',
+        x: 60,
+        y: 4.0,
+        width: 25,
+        height: 3.5,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        hidden: false,
+        text: '{{pin_number}}',
+        fontFamily: 'Helvetica',
+        fontSize: 3.5,
+        fontStyle: 'bold',
+        textDecoration: 'none',
+        color: '#000000',
+        align: 'right',
+        letterSpacing: 0,
+        lineHeight: 1.0,
+      },
+      {
+        id: 'dl_var_categories_table',
+        name: 'Categories Table Dates',
+        type: 'text',
+        x: 27,
+        y: 8.5,
+        width: 28,
+        height: 44.0,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        hidden: false,
+        text: '{{driving_licence_categories}}',
+        bindingKey: 'DRIVING_LICENCE_CATEGORIES',
+        fontFamily: 'Courier Prime',
+        fontSize: 2.25,
+        fontStyle: 'normal',
+        textDecoration: 'none',
+        color: '#000000',
+        align: 'left',
+        letterSpacing: -0.2,
+        lineHeight: 1.45,
+      },
+      {
+        id: 'dl_licence_barcode',
+        name: 'Licence Barcode',
+        type: 'placeholder',
+        placeholderKey: 'barcode',
+        label: 'Barcode',
+        placeholderType: 'badge',
+        x: 55,
+        y: 42,
+        width: 26,
+        height: 8,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        hidden: false,
+        borderColor: '#000000',
+        backgroundColor: '#ffffff',
+      },
+      {
+        id: 'dl_barcode_text',
+        name: 'Barcode Text',
+        type: 'text',
+        x: 55,
+        y: 50.5,
+        width: 26,
+        height: 2.0,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        hidden: false,
+        text: '{{licence_number}}',
+        fontFamily: 'Helvetica',
+        fontSize: 2.0,
+        fontStyle: 'bold',
+        textDecoration: 'none',
+        color: '#000000',
+        align: 'center',
+        letterSpacing: 0,
+        lineHeight: 1.0,
+      }
     ],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

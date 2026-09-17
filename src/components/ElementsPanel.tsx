@@ -21,7 +21,7 @@ interface ElementsPanelProps {
 }
 
 export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) => {
-  const { addLayer, currentTemplate } = useTemplateStore();
+  const { addLayer, currentTemplate, activeServiceId } = useTemplateStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddText = (defaultText: string = '{{first_name}}') => {
@@ -58,6 +58,14 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
       layerName = 'Gender / Sex';
       bindingKey = 'GENDER';
       fieldId = 'gender';
+    } else if (defaultText.includes('categories_field9') || defaultText.includes('field_9')) {
+      layerName = '9. Categories (Front)';
+      bindingKey = 'CATEGORIES_FIELD9';
+      fieldId = 'categories';
+    } else if (defaultText.includes('driving_licence_categories') || defaultText.includes('classes_table') || defaultText.includes('classes_list')) {
+      layerName = 'Categories Table (Back)';
+      bindingKey = 'DRIVING_LICENCE_CATEGORIES';
+      fieldId = 'classes';
     } else if (isVar) {
       layerName = defaultText.replace(/[{}]/g, '');
     }
@@ -219,71 +227,265 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
     e.target.value = '';
   };
 
+  const handleAddGroupCategoryDate = () => {
+    const newLayer: Layer = {
+      id: 'dl_gdate_' + Date.now(),
+      name: 'Group Category Date (A)',
+      type: 'text',
+      x: 10,
+      y: 10,
+      width: 25,
+      height: 5,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      hidden: false,
+      text: '12/05/2026',
+      licenseCategoryGroup: 'A',
+      licenseCategoryDateType: 'issueDate',
+      fontFamily: 'Helvetica',
+      fontSize: 3.0,
+      fontWeight: 700,
+      fontStyle: 'bold',
+      textDecoration: 'none',
+      color: '#0f172a',
+      align: 'left',
+      letterSpacing: 0,
+      lineHeight: 1.1,
+    } as any;
+    addLayer(newLayer);
+    onElementAdded?.();
+  };
+
+  const handleAddLicenceCategories = () => {
+    const newLayer: Layer = {
+      id: 'dl_cats_' + Date.now(),
+      name: 'Licence Categories List',
+      type: 'text',
+      x: 10,
+      y: 10,
+      width: 40,
+      height: 5,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      hidden: false,
+      text: 'A B D E G',
+      licenseCategoriesSeparator: 'spaceSeparated',
+      fontFamily: 'Helvetica',
+      fontSize: 3.0,
+      fontWeight: 700,
+      fontStyle: 'bold',
+      textDecoration: 'none',
+      color: '#0f172a',
+      align: 'left',
+      letterSpacing: 0,
+      lineHeight: 1.1,
+    } as any;
+    addLayer(newLayer);
+    onElementAdded?.();
+  };
+
   return (
     <div className="space-y-4 pb-4 bg-[#FFFFFF]">
-      {/* 1. Dynamic Variables */}
+      {/* 1. Service Dynamic Template Fields */}
       <div>
-        <div className="flex items-center gap-1.5 text-xs font-bold text-[#000000] mb-2">
-          <Tag className="w-3.5 h-3.5 text-[#000000]" />
-          <span>ID Template Fields</span>
+        <div className="flex items-center justify-between text-xs font-bold text-[#000000] mb-2">
+          <div className="flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-[#000000]" />
+            <span>Service Template Fields</span>
+          </div>
+          <span className="px-1.5 py-0.5 rounded bg-[#E7E9EB] text-[10px] font-mono uppercase text-[#555555]">
+            {activeServiceId.replace('_', ' ')}
+          </span>
         </div>
+
         <div className="grid grid-cols-2 gap-1.5">
-          <button
-            onClick={() => handleAddText('{{first_name}}')}
-            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
-          >
-            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">First Name</span>
-          </button>
-          <button
-            onClick={() => handleAddText('{{middle_name}}')}
-            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
-          >
-            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">Middle Name</span>
-          </button>
-          <button
-            onClick={() => handleAddText('{{first_middle_name}}')}
-            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
-          >
-            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">First Name + Middle Name (Full Name)</span>
-          </button>
-          <button
-            onClick={() => handleAddText('{{last_name}}')}
-            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
-          >
-            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">Last Name</span>
-          </button>
-          <button
-            onClick={() => handleAddText('{{id_number}}')}
-            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
-          >
-            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">ID Number</span>
-          </button>
-          <button
-            onClick={() => handleAddText('{{dob}}')}
-            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
-          >
-            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">Date of Birth</span>
-          </button>
-          <button
-            onClick={() => handleAddText('{{gender}}')}
-            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
-          >
-            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">Gender / Sex</span>
-          </button>
-          <button
-            onClick={() => handleAddText('{{card_expiry}}')}
-            className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
-          >
-            <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
-            <span className="truncate">Expiry Date</span>
-          </button>
+          {activeServiceId === 'driving_license' && (
+            <>
+              <button
+                onClick={() => handleAddText('{{given_names}}')}
+                className="p-2 rounded-lg bg-[#CEE9E9] hover:bg-[#b8dede] border border-[#a1d3d3] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Given Names (First + Middle)</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{family_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Family Name</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{first_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">First Name</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{middle_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Second Name</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{third_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Third Name</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{dob}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Date of Birth</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{issue_date}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Date of Issue</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{expiry_date}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Date of Expiry</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{licence_number}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Licence Number</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{pin_number}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">PIN Number</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{region}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Region</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{gender}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Sex / Gender</span>
+              </button>
+              {(!currentTemplate.side || !currentTemplate.side.toLowerCase().includes('back')) && (
+                <>
+                  <button
+                    onClick={() => handleAddText('{{categories_field9}}')}
+                    className="p-2 rounded-lg bg-[#FDE68A] hover:bg-[#fcd34d] border border-[#f59e0b] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+                  >
+                    <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                    <span className="truncate">Front Field 9 (Categories of Vehicles)</span>
+                  </button>
+                  <button
+                    onClick={handleAddLicenceCategories}
+                    className="p-2 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+                  >
+                    <Brackets className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+                    <span className="truncate">Licence Categories List (Front Custom)</span>
+                  </button>
+                </>
+              )}
+              {currentTemplate.side && currentTemplate.side.toLowerCase().includes('back') && (
+                <>
+                  <button
+                    onClick={() => handleAddText('{{driving_licence_categories}}')}
+                    className="p-2 rounded-lg bg-[#ECA6FC] hover:bg-[#e48efa] border border-[#dd76f8] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+                  >
+                    <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                    <span className="truncate">Back Table (Driving Licence Categories)</span>
+                  </button>
+                  <button
+                    onClick={handleAddGroupCategoryDate}
+                    className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+                  >
+                    <Brackets className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                    <span className="truncate">Group Category Date (Back Custom)</span>
+                  </button>
+                </>
+              )}
+            </>
+          )}
+
+          {activeServiceId !== 'driving_license' && (
+            <>
+              <button
+                onClick={() => handleAddText('{{first_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">First Name</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{middle_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Middle Name</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{first_middle_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">First Name + Middle Name (Full Name)</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{last_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Last Name</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{id_number}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">ID / Reference No</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{dob}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Date of Birth</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{gender}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Gender / Sex</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{card_expiry}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">Expiry Date</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 

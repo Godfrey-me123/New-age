@@ -27,6 +27,7 @@ import { CardTemplate, CardType, CardSide } from '../types';
 import { downloadJSON, renderTemplateToCanvas } from '../utils/export';
 import { TemplateBadge } from './TemplateBadge';
 import { AppFooter } from './common/AppFooter';
+import { UniversalBackButton } from './common/UniversalBackButton';
 
 export const TemplatesScreen: React.FC = () => {
   const {
@@ -216,6 +217,8 @@ export const TemplatesScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <UniversalBackButton />
+
           <button
             type="button"
             onClick={() => setActiveScreen('home')}

@@ -1,0 +1,173 @@
+import React, { useState } from 'react';
+import { Shield, Key, Eye, EyeOff, ArrowRight, AlertCircle, Sparkles, UserPlus, CheckCircle2 } from 'lucide-react';
+import { useTemplateStore } from '../../store/useTemplateStore';
+import { UserRegistrationModal } from './UserRegistrationModal';
+
+export const PasskeyScreen: React.FC = () => {
+  const { loginWithPasskey } = useTemplateStore();
+  const [passkeyInput, setPasskeyInput] = useState('');
+  const [showPasskey, setShowPasskey] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successNotice, setSuccessNotice] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passkeyInput.trim()) {
+      setErrorMessage('Please enter your passkey to continue');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+    setSuccessNotice('');
+
+    setTimeout(() => {
+      const res = loginWithPasskey(passkeyInput);
+      setIsLoading(false);
+      if (!res.success) {
+        setErrorMessage(res.message || 'Invalid Passkey');
+      }
+    }, 250);
+  };
+
+  const handleRegistrationSuccess = (registeredPasskey: string) => {
+    setPasskeyInput(registeredPasskey);
+    setSuccessNotice('Akaunti yako imesajiliwa kikamilifu! Tumetumia Passkey yako hapa chini. Bonyeza "Endelea / Continue" kuingia.');
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-[#0B132B] text-white flex flex-col items-center justify-center p-4 py-8 sm:py-12 relative overflow-y-auto font-sans">
+      {/* Background Decorative Glow Effect */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#47A5FF]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Main Container */}
+      <div className="w-full max-w-md bg-[#1C2541]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl relative z-10 flex flex-col items-center my-auto">
+        
+        {/* BIGsta Logo & Header */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#47A5FF] to-blue-600 flex items-center justify-center shadow-lg shadow-[#47A5FF]/20 mb-4 border border-white/20">
+            <Shield className="w-9 h-9 text-white stroke-[2.2]" />
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#47A5FF]/10 border border-[#47A5FF]/30 text-[#47A5FF] text-xs font-semibold tracking-wide uppercase mb-2">
+            <Sparkles className="w-3.5 h-3.5" />
+            Passkey Gateway System
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            BIGsta
+          </h1>
+          <p className="text-sm text-slate-300 mt-1 max-w-xs leading-relaxed">
+            Ingiza Passkey yako kuingia kwenye Mfumo wa BIGsta.
+          </p>
+        </div>
+
+        {/* Registration Success Banner */}
+        {successNotice && (
+          <div className="w-full mb-4 p-3.5 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-start gap-2.5 text-emerald-200 text-xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <span className="font-medium leading-relaxed">{successNotice}</span>
+          </div>
+        )}
+
+        {/* Passkey Input Form */}
+        <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Passkey / Nenosiri la Kuingia
+            </label>
+
+            <div className="relative flex items-center">
+              <div className="absolute left-3.5 text-slate-400">
+                <Key className="w-4 h-4" />
+              </div>
+
+              <input
+                type={showPasskey ? 'text' : 'password'}
+                value={passkeyInput}
+                onChange={(e) => {
+                  setPasskeyInput(e.target.value);
+                  if (errorMessage) setErrorMessage('');
+                }}
+                placeholder="Ingiza Passkey hapa / Enter Passkey"
+                className="w-full pl-10 pr-11 py-3 bg-[#0B132B]/80 border border-white/15 rounded-xl text-white placeholder-slate-500 text-sm font-mono tracking-wide focus:outline-none focus:border-[#47A5FF] focus:ring-2 focus:ring-[#47A5FF]/20 transition-all"
+                autoFocus
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPasskey(!showPasskey)}
+                className="absolute right-3.5 text-slate-400 hover:text-white transition-colors cursor-pointer p-1"
+                title={showPasskey ? 'Ficha Passkey' : 'Onyesha Passkey'}
+              >
+                {showPasskey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Error Message Notice */}
+          {errorMessage && (
+            <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-xl flex items-start gap-2.5 text-red-200 text-xs animate-shake">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <span className="font-medium leading-tight">{errorMessage}</span>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3.5 px-4 bg-gradient-to-r from-[#47A5FF] to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/25 border border-white/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            {isLoading ? (
+              <span className="inline-flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Inahakiki Passkey...
+              </span>
+            ) : (
+              <>
+                <span>Endelea / Continue</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Register Now Button (Prompt 21) */}
+        <div className="pt-4 mt-2 flex flex-col items-center gap-2.5 border-t border-white/10 w-full">
+          <p className="text-xs text-slate-300 font-medium">
+            Huna Passkey? / Don't have an account?
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsRegisterOpen(true)}
+            className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 text-[#47A5FF] font-bold text-xs sm:text-sm rounded-xl border border-[#47A5FF]/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <UserPlus className="w-4 h-4 text-[#47A5FF]" />
+            <span>Register Now / Sajili Hapa</span>
+          </button>
+        </div>
+
+        {/* Footer Note */}
+        <div className="mt-6 text-center border-t border-white/10 pt-4 w-full">
+          <span className="text-[11px] text-slate-400">
+            BIGsta Passkey Architecture • Built for Tanzania Official ID Cards
+          </span>
+        </div>
+      </div>
+
+      {/* User Registration Modal */}
+      <UserRegistrationModal
+        isOpen={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
+        onSuccess={handleRegistrationSuccess}
+      />
+    </div>
+  );
+};

@@ -18,6 +18,9 @@ import {
   Shield,
   CreditCard,
   Info,
+  LogOut,
+  Key,
+  ShieldCheck,
 } from 'lucide-react';
 import { useTemplateStore } from '../../store/useTemplateStore';
 
@@ -46,7 +49,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
   onClose,
   onSelectInfoService,
 }) => {
-  const { setActiveScreen, activeScreen } = useTemplateStore();
+  const { setActiveScreen, activeScreen, authRole, logoutPasskey, setPasskeyManagerOpen } = useTemplateStore();
 
   // Close drawer on Escape key
   useEffect(() => {
@@ -102,38 +105,57 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
       description: 'Instant auto-fill, verification & CR80 card generation for Front & Back National IDs.',
       features: ['20-Digit ID Verification', 'Biometric Photo Upload', 'Digital Signature Pad', 'Barcode Sync'],
     },
-    {
-      id: 'custom_studio',
-      name: 'Custom Card Studio',
-      authority: 'ID Template Designer',
-      category: 'core',
-      icon: Layers,
-      iconColor: 'text-blue-400',
-      status: 'active',
-      badgeText: 'Active',
-      action: () => {
-        setActiveScreen('upload');
-        onClose();
-      },
-      description: 'Create custom employee badges, student cards, or upload background artwork.',
-      features: ['CR80 Millimeter Layout', 'Custom Image Backgrounds', 'Smart Magnetic Snap', 'PDF & SVG Export'],
-    },
-    {
-      id: 'templates',
-      name: 'Saved Templates Library',
-      authority: 'Template Storage',
-      category: 'core',
-      icon: FolderOpen,
-      iconColor: 'text-amber-400',
-      status: 'active',
-      badgeText: 'Active',
-      action: () => {
-        setActiveScreen('templates');
-        onClose();
-      },
-      description: 'Manage, duplicate, search, and export saved card templates.',
-      features: ['Local Storage Persistence', 'JSON Import & Export', 'Template Duplication'],
-    },
+    ...(authRole === 'admin'
+      ? [
+          {
+            id: 'custom_studio',
+            name: 'Custom Card Studio',
+            authority: 'ID Template Designer',
+            category: 'core' as const,
+            icon: Layers,
+            iconColor: 'text-blue-400',
+            status: 'active' as const,
+            badgeText: 'Active',
+            action: () => {
+              setActiveScreen('upload');
+              onClose();
+            },
+            description: 'Create custom employee badges, student cards, or upload background artwork.',
+            features: ['CR80 Millimeter Layout', 'Custom Image Backgrounds', 'Smart Magnetic Snap', 'PDF & SVG Export'],
+          },
+          {
+            id: 'templates',
+            name: 'Saved Templates Library',
+            authority: 'Template Storage',
+            category: 'core' as const,
+            icon: FolderOpen,
+            iconColor: 'text-amber-400',
+            status: 'active' as const,
+            badgeText: 'Active',
+            action: () => {
+              setActiveScreen('templates');
+              onClose();
+            },
+            description: 'Manage, duplicate, search, and export saved card templates.',
+            features: ['Local Storage Persistence', 'JSON Import & Export', 'Template Duplication'],
+          },
+          {
+            id: 'passkey_manager',
+            name: 'Passkey Manager',
+            authority: 'Admin Access & Key Security',
+            category: 'core' as const,
+            icon: Key,
+            iconColor: 'text-purple-600',
+            status: 'active' as const,
+            badgeText: 'Admin',
+            action: () => {
+              setPasskeyManagerOpen(true);
+              onClose();
+            },
+            description: 'Manage admin & user passkeys, generate new keys & reset admin access.',
+          },
+        ]
+      : []),
     {
       id: 'birth_certificate',
       name: 'Birth Certificate Services',
@@ -161,18 +183,14 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
       category: 'civil',
       icon: Car,
       iconColor: 'text-amber-400',
-      status: 'coming_soon',
-      badgeText: 'Coming Soon',
+      status: 'active',
+      badgeText: 'Active',
       action: () => {
-        onSelectInfoService?.({
-          id: 'driving_license',
-          name: 'Driving License Services',
-          authority: 'Traffic & Vehicle Inspection Division',
-          description: 'Driver permit issuance, class endorsements & digital driver identification cards.',
-          features: ['Class Endorsements (A, B, C, D, E)', 'Penalty Point Tracking', 'Digital QR Validation'],
-        });
+        setActiveScreen('driving_license');
         onClose();
       },
+      description: 'Driver permit issuance, class endorsements & digital driver identification cards.',
+      features: ['Class Endorsements (A, B, C, D, E)', 'Penalty Point Tracking', 'Digital QR Validation'],
     },
     {
       id: 'passport',
@@ -296,6 +314,16 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
     },
   ];
 
+  // Escape key listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -324,7 +352,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
               <h2 className="text-sm font-extrabold text-[#000000] tracking-wide uppercase">
                 BIGsta
               </h2>
-              <p className="text-[11px] text-[#555555] font-semibold">Government & Identity Services</p>
+              <p className="text-[11px] text-[#555555] font-semibold hidden sm:block">Government & Identity Services</p>
             </div>
           </div>
 
@@ -339,13 +367,13 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
         </div>
 
         {/* Navigation List - Vertically Scrollable */}
-        <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1 divide-y divide-[#E7E9EB]">
+        <div className="flex-1 overflow-y-auto min-h-0 py-3 px-3 space-y-1 divide-y divide-[#E7E9EB]">
           {/* Active Workspaces */}
           <div className="pb-3 space-y-1">
             <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#777777]">
               Workspace Navigation
             </div>
-            {navItems.filter(item => item.category === 'core').map((item) => {
+            {navItems.filter(item => item.category === 'core' && (authRole === 'admin' || item.id === 'home')).map((item) => {
               const Icon = item.icon;
               const isActive = (item.id === 'home' && activeScreen === 'home') ||
                                (item.id === 'custom_studio' && (activeScreen === 'upload' || activeScreen === 'editor')) ||
@@ -365,9 +393,9 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
                     <div className={`p-1.5 rounded-lg shrink-0 ${isActive ? 'bg-white/20 text-white' : 'bg-[#E7E9EB] text-[#000000]'}`}>
                       <Icon className="w-4 h-4" />
                     </div>
-                    <div className="truncate">
+                    <div className="truncate min-w-0">
                       <div className="text-xs font-bold truncate">{item.name}</div>
-                      <div className={`text-[10px] truncate ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>{item.authority}</div>
+                      <div className={`text-[10px] truncate hidden sm:block ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>{item.authority}</div>
                     </div>
                   </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 ${isActive ? 'bg-white text-black' : 'bg-[#E7E9EB] text-[#000000]'}`}>
@@ -401,9 +429,9 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
                     <div className={`p-1.5 rounded-lg shrink-0 ${isNidaActive ? 'bg-white/20 text-white' : 'bg-[#E7E9EB] text-[#000000]'}`}>
                       <Icon className="w-4 h-4" />
                     </div>
-                    <div className="truncate">
+                    <div className="truncate min-w-0">
                       <div className="text-xs font-bold truncate">{item.name}</div>
-                      <div className={`text-[10px] truncate ${isNidaActive ? 'text-slate-300' : 'text-slate-500'}`}>{item.authority}</div>
+                      <div className={`text-[10px] truncate hidden sm:block ${isNidaActive ? 'text-slate-300' : 'text-slate-500'}`}>{item.authority}</div>
                     </div>
                   </div>
 
@@ -420,16 +448,95 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
               );
             })}
           </div>
+
+          {/* Logout Navigation Item at the VERY BOTTOM of menu items */}
+          <div className="pt-3 pb-2">
+            <div className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-red-600 flex items-center gap-1.5 mb-1.5">
+              <LogOut className="w-3.5 h-3.5 text-red-600 shrink-0" />
+              <span>System Session</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                logoutPasskey();
+                onClose();
+              }}
+              className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 transition-all cursor-pointer font-bold shadow-xs group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-xl bg-red-600 text-white shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                  <LogOut className="w-4.5 h-4.5" />
+                </div>
+                <div className="truncate">
+                  <div className="text-xs font-black text-red-950 flex items-center gap-1">
+                    <span>Logout</span>
+                    <span className="text-[10px] text-red-600 font-semibold">(Toka)</span>
+                  </div>
+                  <div className="text-[10px] text-red-600 font-medium truncate">
+                    Return to Passkey Gateway
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white shrink-0 shadow-xs flex items-center gap-1">
+                <span>Logout</span>
+                <span className="text-xs">↩</span>
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Drawer Footer */}
-        <div className="p-4 border-t border-[#E7E9EB] bg-[#FFFFFF] shrink-0 text-center">
-          <p className="text-[11px] text-[#555555] font-semibold">
-            Standard CR80 (85.60 × 53.98 mm)
-          </p>
-          <p className="text-[10px] text-[#777777]">
-            Precision card generation system
-          </p>
+        {/* Drawer Footer with Role Status & Sticky Logout */}
+        <div className="p-4 border-t border-[#E7E9EB] bg-[#F8F9FA] shrink-0 space-y-2.5 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border flex items-center gap-1 ${
+                  authRole === 'admin'
+                    ? 'bg-blue-100 text-blue-900 border-blue-300'
+                    : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                }`}
+              >
+                {authRole === 'admin' ? (
+                  <ShieldCheck className="w-3 h-3 text-blue-600 shrink-0" />
+                ) : (
+                  <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                )}
+                <span>Role: {authRole?.toUpperCase()}</span>
+              </span>
+            </div>
+
+            {authRole === 'admin' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPasskeyManagerOpen(true);
+                  onClose();
+                }}
+                className="text-[11px] text-[#47A5FF] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <Key className="w-3.5 h-3.5" />
+                <span>Passkeys</span>
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              logoutPasskey();
+              onClose();
+            }}
+            className="w-full py-2.5 px-3 bg-red-600 hover:bg-red-700 border border-red-700 text-white font-black text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98"
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            <span>Logout / Toka (Return to Gateway) ↩</span>
+          </button>
+
+          <div className="text-center pt-0.5">
+            <p className="text-[10px] text-[#777777]">
+              BIGsta Gateway System • CR80 Cards
+            </p>
+          </div>
         </div>
       </div>
     </div>

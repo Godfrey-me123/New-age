@@ -29,7 +29,7 @@ export const MergeCardModal: React.FC = () => {
   const [frontTemplateId, setFrontTemplateId] = useState<string>('');
   const [backTemplateId, setBackTemplateId] = useState<string>('');
   
-  const [layoutName, setLayoutName] = useState<string>('National ID Full');
+  const [layoutName, setLayoutName] = useState<string>('Standard 2-in-1 Merge');
   const [savedLayouts, setSavedLayouts] = useState<SavedMergeLayout[]>([]);
   
   const [frontPreview, setFrontPreview] = useState<string>('');
@@ -42,15 +42,28 @@ export const MergeCardModal: React.FC = () => {
     setTemplates(list);
 
     const store = useTemplateStore.getState();
+    const isDL = store.activeServiceId === 'driving_license' ||
+      store.currentTemplate?.cardType === 'Driving License' ||
+      store.currentTemplate?.id?.includes('driving_license') ||
+      !!store.lastDrivingLicenseFormData;
+
     if (store.frontPopulatedTemplate && store.backPopulatedTemplate) {
       setFrontTemplateId(store.frontPopulatedTemplate.id);
       setBackTemplateId(store.backPopulatedTemplate.id);
     } else if (list.length > 0) {
-      // Find default front and back
-      const front = list.find((t) => t.side === 'Front Side') || list[0];
-      const back = list.find((t) => t.side === 'Back Side') || list[1] || list[0];
-      setFrontTemplateId(front.id);
-      setBackTemplateId(back.id);
+      if (isDL) {
+        const dlFront = list.find((t) => t.id === 'sample_driving_license_front' || t.cardType === 'Driving License' || t.templateName.toLowerCase().includes('driving')) || list[0];
+        const dlBack = list.find((t) => t.id === 'sample_driving_license_back' || t.id === 'sample_tz_dl_back' || (t.cardType === 'Driving License' && t.side === 'Back Side')) || list[1] || list[0];
+        setFrontTemplateId(dlFront.id);
+        setBackTemplateId(dlBack.id);
+        setLayoutName('Driving Licence 2-in-1');
+      } else {
+        const front = list.find((t) => t.side === 'Front Side' || t.id === 'sample_tanzania_nida_front') || list[0];
+        const back = list.find((t) => t.side === 'Back Side' || t.id === 'sample_tanzania_nida_back') || list[1] || list[0];
+        setFrontTemplateId(front.id);
+        setBackTemplateId(back.id);
+        setLayoutName('National ID 2-in-1');
+      }
     }
 
     const layouts = await getAllMergeLayoutsDB();
@@ -63,7 +76,28 @@ export const MergeCardModal: React.FC = () => {
     }
   }, [isMergeModalOpen]);
 
+  // Escape key listener
+  useEffect(() => {
+    if (!isMergeModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMergeModalOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMergeModalOpen, setMergeModalOpen]);
+
+  if (!isMergeModalOpen) return null;
+
   const store = useTemplateStore();
+  const isDL = store.activeServiceId === 'driving_license' ||
+    store.currentTemplate?.cardType === 'Driving License' ||
+    store.currentTemplate?.id?.includes('driving_license') ||
+    !!store.lastDrivingLicenseFormData;
+
+  const submittedFormData = isDL
+    ? (store.lastDrivingLicenseFormData || {})
+    : (store.lastNidaFormData || {});
+
   const frontTemplate = (store.frontPopulatedTemplate && store.frontPopulatedTemplate.id === frontTemplateId)
     ? store.frontPopulatedTemplate
     : templates.find((t) => t.id === frontTemplateId);
@@ -76,8 +110,15 @@ export const MergeCardModal: React.FC = () => {
   useEffect(() => {
     let active = true;
     const generatePreviews = async () => {
-      const store = useTemplateStore.getState();
-      const formData = store.lastNidaFormData || {};
+      const storeState = useTemplateStore.getState();
+      const isDrivingLicence = storeState.activeServiceId === 'driving_license' ||
+        storeState.currentTemplate?.cardType === 'Driving License' ||
+        storeState.currentTemplate?.id?.includes('driving_license') ||
+        !!storeState.lastDrivingLicenseFormData;
+
+      const formData = isDrivingLicence
+        ? (storeState.lastDrivingLicenseFormData || {})
+        : (storeState.lastNidaFormData || {});
 
       if (frontTemplate) {
         try {
@@ -101,16 +142,28 @@ export const MergeCardModal: React.FC = () => {
   if (!isMergeModalOpen) return null;
 
   const handleExportPDF = async () => {
-    const store = useTemplateStore.getState();
-    const formData = store.lastNidaFormData || {};
+    const storeState = useTemplateStore.getState();
+    const val = storeState.validateExportAccess('2in1_pdf');
+    if (!val.allowed) return;
 
     if (!frontTemplate) {
       alert('Please select a Front template.');
       return;
     }
+
+    const isDrivingLicence = storeState.activeServiceId === 'driving_license' ||
+      storeState.currentTemplate?.cardType === 'Driving License' ||
+      storeState.currentTemplate?.id?.includes('driving_license') ||
+      !!storeState.lastDrivingLicenseFormData;
+
+    const formData = isDrivingLicence
+      ? (storeState.lastDrivingLicenseFormData || {})
+      : (storeState.lastNidaFormData || {});
+
     setIsExporting(true);
     try {
       await download2In1PDF(frontTemplate, backTemplate || undefined, formData);
+      storeState.consumeUsage('2-in-1 Sheet PDF Export', undefined, 1);
     } catch (e) {
       console.error(e);
       alert('Error generating 2-in-1 PDF.');
@@ -160,8 +213,14 @@ export const MergeCardModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      onClick={() => setMergeModalOpen(false)}
+      className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] cursor-default"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
           <div className="flex items-center gap-3">
@@ -226,60 +285,42 @@ export const MergeCardModal: React.FC = () => {
               </select>
             </div>
 
-            {/* Save Merge Configuration Section */}
-            <div className="p-4 bg-slate-800/60 border border-slate-700/80 rounded-xl space-y-3">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Save Merge Configuration
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={layoutName}
-                  onChange={(e) => setLayoutName(e.target.value)}
-                  placeholder="e.g. National ID Full..."
-                  className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                />
-                <button
-                  onClick={handleSaveMergeLayout}
-                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors"
-                >
-                  <Save className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Save</span>
-                </button>
-              </div>
-              {saveSuccessMsg && (
-                <p className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>{saveSuccessMsg}</span>
-                </p>
-              )}
-
-              {/* Saved Configurations List */}
-              {savedLayouts.length > 0 && (
-                <div className="pt-2 border-t border-slate-700/60 space-y-1.5">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                    Saved Merge Layouts:
+            {/* Submitted Record Information (Read-only, no manual data entry) */}
+            <div className="p-4 bg-slate-800/80 border border-slate-700/80 rounded-xl space-y-2.5">
+              <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                <div className="flex items-center gap-2">
+                  <FileCheck className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                    {isDL ? 'Submitted Licence Record' : 'Submitted NIDA Record'}
                   </span>
-                  <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
-                    {savedLayouts.map((l) => (
-                      <div
-                        key={l.id}
-                        onClick={() => handleLoadLayout(l)}
-                        className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-700/50 rounded-lg text-xs text-slate-200 flex items-center justify-between cursor-pointer border border-slate-800"
-                      >
-                        <span className="truncate font-medium">{l.name}</span>
-                        <button
-                          onClick={(e) => handleDeleteLayout(l.id, e)}
-                          className="p-1 text-slate-500 hover:text-red-400"
-                          title="Delete saved merge layout"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              )}
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Verified Data
+                </span>
+              </div>
+
+              <div className="text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-400 text-[11px]">{isDL ? 'Driver Name:' : 'Name:'}</span>
+                  <span className="font-semibold text-white truncate max-w-[180px]">
+                    {isDL
+                      ? [submittedFormData.firstName, submittedFormData.secondName, submittedFormData.thirdName].filter(Boolean).join(' ') || 'Verified Driver'
+                      : [submittedFormData.firstName, submittedFormData.middleName, submittedFormData.lastName].filter(Boolean).join(' ') || 'Verified Citizen'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 text-[11px]">{isDL ? 'Licence Number:' : 'NIDA Number:'}</span>
+                  <span className="font-mono text-emerald-400 font-bold">
+                    {isDL ? (submittedFormData.licenceNumber || 'Attached') : (submittedFormData.nidaNumber || 'Attached')}
+                  </span>
+                </div>
+                {isDL && submittedFormData.pinNumber && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 text-[11px]">PIN Number:</span>
+                    <span className="font-mono text-slate-300">{submittedFormData.pinNumber}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Export Button */}

@@ -18,7 +18,12 @@ export type SupportedBindingKey =
   | 'PHOTO'
   | 'SIGNATURE'
   | 'CUSTOM'
-  | 'FIRST_MIDDLE_NAME';
+  | 'FIRST_MIDDLE_NAME'
+  | 'CATEGORIES_FIELD9'
+  | 'DRIVING_LICENCE_CATEGORIES'
+  | 'CLASSES_TABLE'
+  | 'ISSUE_DATE'
+  | 'EXPIRY_DATE';
 
 export interface TemplateFieldRequirement {
   bindingKey: SupportedBindingKey;
@@ -482,24 +487,9 @@ export function detectTemplateType(template: CardTemplate | null | undefined): D
     })
     .join(' ');
 
-  // 1. NIDA Detection
+  // 1. Driving License Detection
   if (
-    name.includes('nida') ||
-    name.includes('national id') ||
-    name.includes('tanzania') ||
-    name.includes('citizen') ||
-    name.includes('kitambulisho') ||
-    cardType === 'national id' ||
-    layerText.includes('nida') ||
-    layerText.includes('national identification') ||
-    layerText.includes('republic identity') ||
-    layerText.includes('nida_number')
-  ) {
-    return 'NIDA';
-  }
-
-  // 2. Driving License Detection
-  if (
+    cardType === 'driving license' ||
     name.includes('driving') ||
     name.includes('driver') ||
     name.includes('license') ||
@@ -510,6 +500,22 @@ export function detectTemplateType(template: CardTemplate | null | undefined): D
     layerText.includes('dl_number')
   ) {
     return 'Driving License';
+  }
+
+  // 2. NIDA Detection
+  if (
+    cardType === 'national id' ||
+    name.includes('nida') ||
+    name.includes('national id') ||
+    name.includes('tanzania') ||
+    name.includes('citizen') ||
+    name.includes('kitambulisho') ||
+    layerText.includes('nida') ||
+    layerText.includes('national identification') ||
+    layerText.includes('republic identity') ||
+    layerText.includes('nida_number')
+  ) {
+    return 'NIDA';
   }
 
   // 3. Passport Detection

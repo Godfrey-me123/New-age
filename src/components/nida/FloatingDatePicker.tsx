@@ -1,6 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { Calendar } from 'lucide-react';
-import { convertIsoToDdMmmYyyy, normalizeDateInput, validateDdMmmYyyy } from '../../utils/dateValidation';
+import {
+  convertIsoToDdMmmYyyy,
+  convertIsoToDdMmYyyy,
+  formatToDdMmYyyy,
+  convertAnyDateToIso,
+  normalizeDateInput,
+  validateDdMmmYyyy,
+} from '../../utils/dateValidation';
 
 interface FloatingDatePickerProps {
   label: string;
@@ -12,6 +19,8 @@ interface FloatingDatePickerProps {
   onApplySuggestedDate?: (date: string) => void;
   id?: string;
   disabled?: boolean;
+  noManualTyping?: boolean;
+  dateFormat?: 'DD/MM/YYYY' | 'DD MMM YYYY';
 }
 
 export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
@@ -24,6 +33,8 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
   onApplySuggestedDate,
   id,
   disabled = false,
+  noManualTyping = false,
+  dateFormat = 'DD MMM YYYY',
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const hiddenDateInputRef = useRef<HTMLInputElement>(null);
@@ -32,8 +43,19 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
   const hasValue = value.length > 0;
   const isFloating = isFocused || hasValue;
 
+  const triggerPicker = () => {
+    if (disabled) return;
+    try {
+      hiddenDateInputRef.current?.showPicker?.();
+    } catch (e) {
+      hiddenDateInputRef.current?.focus();
+      hiddenDateInputRef.current?.click();
+    }
+  };
+
   // Handle manual typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (noManualTyping) return;
     const raw = e.target.value.toUpperCase();
     onChange?.({ target: { value: raw } });
   };
@@ -41,8 +63,8 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
   // When blurred, normalize if valid
   const handleBlur = () => {
     setIsFocused(false);
-    if (value) {
-      const normalized = normalizeDateInput(value);
+    if (value && !noManualTyping) {
+      const normalized = dateFormat === 'DD/MM/YYYY' ? formatToDdMmYyyy(value) : normalizeDateInput(value);
       if (normalized !== value) {
         onChange?.({ target: { value: normalized } });
       }
@@ -53,7 +75,7 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
   const handleNativePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isoVal = e.target.value; // YYYY-MM-DD
     if (isoVal) {
-      const formatted = convertIsoToDdMmmYyyy(isoVal);
+      const formatted = dateFormat === 'DD/MM/YYYY' ? convertIsoToDdMmYyyy(isoVal) : convertIsoToDdMmmYyyy(isoVal);
       if (formatted) {
         onChange?.({ target: { value: formatted } });
       }
@@ -75,16 +97,20 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
   return (
     <div className="w-full space-y-1.5 font-sans">
       <div
+        onClick={noManualTyping && !disabled ? triggerPicker : undefined}
         className={`relative flex items-center bg-[#FFFFFF] border rounded-xl transition-all duration-200 ${borderColorClass} ${
           disabled ? 'opacity-50 cursor-not-allowed bg-[#E7E2DE]' : ''
-        }`}
+        } ${noManualTyping && !disabled ? 'cursor-pointer select-none' : ''}`}
       >
         {/* Leading Icon & Calendar trigger button */}
         <button
           type="button"
           tabIndex={-1}
           disabled={disabled}
-          onClick={() => hiddenDateInputRef.current?.showPicker?.()}
+          onClick={(e) => {
+            e.stopPropagation();
+            triggerPicker();
+          }}
           className="pl-3.5 pr-1 flex items-center text-[#101010]/60 hover:text-[#101010] transition-colors cursor-pointer"
           title="Pick date from calendar"
         >
@@ -101,6 +127,7 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
           type="date"
           tabIndex={-1}
           className="sr-only"
+          value={convertAnyDateToIso(value)}
           onChange={handleNativePickerChange}
         />
 
@@ -122,14 +149,30 @@ export const FloatingDatePicker: React.FC<FloatingDatePickerProps> = ({
             id={inputId}
             value={value}
             disabled={disabled}
-            onFocus={() => setIsFocused(true)}
+            readOnly={noManualTyping}
+            onFocus={(e) => {
+              if (noManualTyping) {
+                e.target.blur();
+                triggerPicker();
+              } else {
+                setIsFocused(true);
+              }
+            }}
             onBlur={handleBlur}
             onChange={handleInputChange}
+            onClick={(e) => {
+              if (noManualTyping) {
+                e.stopPropagation();
+                triggerPicker();
+              }
+            }}
             placeholder={!isFloating ? '' : undefined}
-            maxLength={11}
+            maxLength={dateFormat === 'DD/MM/YYYY' ? 10 : 11}
             autoComplete="off"
             spellCheck={false}
-            className="w-full bg-transparent text-[#101010] text-sm pt-4 pb-1 outline-none font-semibold tracking-wider"
+            className={`w-full bg-transparent text-[#101010] text-sm pt-4 pb-1 outline-none font-semibold tracking-wider ${
+              noManualTyping && !disabled ? 'cursor-pointer select-none' : ''
+            }`}
           />
         </div>
 

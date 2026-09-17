@@ -39,6 +39,8 @@ import {
   HelpCircle,
   ShieldAlert,
   CheckCircle2,
+  Sun,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { convertFromMm, convertToMm } from '../utils/units';
@@ -142,7 +144,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
     textStroke: false,
     textShadow: false,
     positionSize: true,
-    appearance: false,
+    appearance: true,
     cardSettings: true,
     alignTools: true,
     multiLayers: true,
@@ -184,9 +186,20 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
     { label: 'Date of Birth', val: '{{dob}}' },
     { label: 'Gender / Sex', val: '{{gender}}' },
     { label: 'Nationality', val: '{{nationality}}' },
-    { label: 'Expiry Date', val: '{{card_expiry}}' },
+    { label: 'Issue Date', val: '{{issue_date}}' },
+    { label: 'Expiry Date', val: '{{expiry_date}}' },
+    { label: 'Issuing Authority', val: '{{issuing_authority}}' },
+    { label: 'Region / Residence', val: '{{region}}' },
+    { label: 'PIN Number', val: '{{pin_number}}' },
     { label: 'Department / Role', val: '{{role}}' },
   ];
+
+  if (!currentTemplate.side || !currentTemplate.side.toLowerCase().includes('back')) {
+    variableOptions.unshift({ label: 'Front Field 9 (Categories)', val: '{{categories_field9}}' });
+  }
+  if (currentTemplate.side && currentTemplate.side.toLowerCase().includes('back')) {
+    variableOptions.unshift({ label: 'Back Categories Table', val: '{{driving_licence_categories}}' });
+  }
 
   // Quick actions header for Save, Generate, and Export
   const quickActionsHeader = (
@@ -805,6 +818,124 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                 className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg text-[#000000] font-mono text-xs focus:outline-none focus:border-[#000000]"
               />
             </div>
+
+            {/* Driving License Properties */}
+            {currentTemplate.cardType === 'Driving License' && (
+              <div className="border-t border-[#dadcdc] pt-3 mt-3 space-y-3">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-[#555] block">
+                  DRIVING LICENCE CUSTOM SETTINGS
+                </span>
+
+                {/* Group Category Date Properties */}
+                <div className="space-y-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      id="is-group-date-checkbox"
+                      checked={(selectedLayer as any).licenseCategoryGroup !== undefined}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          updateLayer(selectedLayer.id, {
+                            licenseCategoryGroup: 'A',
+                            licenseCategoryDateType: 'issueDate',
+                            licenseCategoriesSeparator: undefined,
+                            text: '12/05/2026',
+                          });
+                        } else {
+                          updateLayer(selectedLayer.id, {
+                            licenseCategoryGroup: undefined,
+                            licenseCategoryDateType: undefined,
+                          });
+                        }
+                      }}
+                      className="rounded border-[#dadcdc] text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    />
+                    <label htmlFor="is-group-date-checkbox" className="text-xs font-bold text-[#000000] cursor-pointer">
+                      Is Category Group Date
+                    </label>
+                  </div>
+
+                  {(selectedLayer as any).licenseCategoryGroup !== undefined && (
+                    <div className="grid grid-cols-2 gap-2 pl-5 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#000000] mb-1">
+                          Group
+                        </label>
+                        <select
+                          value={(selectedLayer as any).licenseCategoryGroup || 'A'}
+                          onChange={(e) => updateLayer(selectedLayer.id, { licenseCategoryGroup: e.target.value })}
+                          className="w-full px-2 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded text-xs text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
+                        >
+                          {['A', 'A1', 'A2', 'A3', 'B', 'C', 'C1', 'C2', 'C3', 'D', 'E', 'F', 'G'].map((grp) => (
+                            <option key={grp} value={grp}>{grp}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#000000] mb-1">
+                          Date Type
+                        </label>
+                        <select
+                          value={(selectedLayer as any).licenseCategoryDateType || 'issueDate'}
+                          onChange={(e) => updateLayer(selectedLayer.id, { licenseCategoryDateType: e.target.value as any })}
+                          className="w-full px-2 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded text-xs text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
+                        >
+                          <option value="issueDate">Issue Date</option>
+                          <option value="expiryDate">Expiry Date</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Licence Categories Properties */}
+                <div className="space-y-2 p-2 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      id="is-categories-checkbox"
+                      checked={(selectedLayer as any).licenseCategoriesSeparator !== undefined}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          updateLayer(selectedLayer.id, {
+                            licenseCategoriesSeparator: 'spaceSeparated',
+                            licenseCategoryGroup: undefined,
+                            licenseCategoryDateType: undefined,
+                            text: 'A B D E G',
+                          });
+                        } else {
+                          updateLayer(selectedLayer.id, {
+                            licenseCategoriesSeparator: undefined,
+                          });
+                        }
+                      }}
+                      className="rounded border-[#dadcdc] text-purple-600 focus:ring-purple-500 cursor-pointer"
+                    />
+                    <label htmlFor="is-categories-checkbox" className="text-xs font-bold text-[#000000] cursor-pointer">
+                      Is Licence Categories List
+                    </label>
+                  </div>
+
+                  {(selectedLayer as any).licenseCategoriesSeparator !== undefined && (
+                    <div className="pl-5 pt-1">
+                      <label className="block text-[11px] font-semibold text-[#000000] mb-1">
+                        Separator Style
+                      </label>
+                      <select
+                        value={(selectedLayer as any).licenseCategoriesSeparator || 'spaceSeparated'}
+                        onChange={(e) => updateLayer(selectedLayer.id, { licenseCategoriesSeparator: e.target.value as any })}
+                        className="w-full px-2 py-1 bg-[#E7E9EB] border border-[#dadcdc] rounded text-xs text-[#000000] font-semibold focus:outline-none focus:border-[#000000]"
+                      >
+                        <option value="spaceSeparated">Space Separated (e.g. A B D E G)</option>
+                        <option value="commaSeparated">Comma Separated (e.g. A, B, D, E, G)</option>
+                        <option value="slashSeparated">Slash Separated (e.g. A/B/D/E/G)</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* FONT SUBSECTION */}
             <div className="border-t border-[#dadcdc] pt-3 mt-3">
@@ -1781,7 +1912,102 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
           isOpen={openSections.appearance}
           onToggle={() => toggleSection('appearance')}
         >
-          <div className="grid grid-cols-2 gap-2">
+          {/* Professional Opacity / Transparency Control */}
+          <div className="space-y-2 p-2.5 bg-[#E7E9EB]/70 rounded-xl border border-[#dadcdc]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#000000]">
+                <Sun className="w-3.5 h-3.5 text-[#000000]" />
+                <span>Opacity</span>
+              </div>
+              <span className="text-xs font-mono font-bold text-[#000000] bg-white px-2 py-0.5 rounded-md border border-[#dadcdc]">
+                {Math.round((selectedLayer.opacity ?? 1) * 100)}%
+              </span>
+            </div>
+
+            {/* Slider + Minus/Plus Stepper + Direct Numeric Input */}
+            <div className="flex items-center gap-2 pt-0.5">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={Math.round((selectedLayer.opacity ?? 1) * 100)}
+                onChange={(e) => {
+                  const pct = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
+                  updateLayer(selectedLayer.id, { opacity: pct / 100 });
+                }}
+                className="flex-1 h-6 accent-[#000000] cursor-pointer touch-none"
+              />
+
+              <div className="flex items-center gap-0.5 border border-[#dadcdc] rounded-lg bg-white p-0.5 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentPct = Math.round((selectedLayer.opacity ?? 1) * 100);
+                    const newPct = Math.max(0, currentPct - 5);
+                    updateLayer(selectedLayer.id, { opacity: newPct / 100 });
+                  }}
+                  className="p-1 hover:bg-[#E7E9EB] active:bg-[#dadcdc] rounded text-[#000000] cursor-pointer min-w-[26px] min-h-[26px] flex items-center justify-center transition-colors"
+                  title="Decrease Opacity (-5%)"
+                >
+                  <Minus className="w-3 h-3" />
+                </button>
+
+                <div className="flex items-center justify-center px-0.5">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={Math.round((selectedLayer.opacity ?? 1) * 100)}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      const clamped = isNaN(val) ? 100 : Math.min(100, Math.max(0, val));
+                      updateLayer(selectedLayer.id, { opacity: clamped / 100 });
+                    }}
+                    className="w-9 bg-transparent text-center text-[11px] font-mono font-bold text-[#000000] focus:outline-none"
+                  />
+                  <span className="text-[10px] font-mono text-[#555] -ml-1">%</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentPct = Math.round((selectedLayer.opacity ?? 1) * 100);
+                    const newPct = Math.min(100, currentPct + 5);
+                    updateLayer(selectedLayer.id, { opacity: newPct / 100 });
+                  }}
+                  className="p-1 hover:bg-[#E7E9EB] active:bg-[#dadcdc] rounded text-[#000000] cursor-pointer min-w-[26px] min-h-[26px] flex items-center justify-center transition-colors"
+                  title="Increase Opacity (+5%)"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+
+            {/* Touch-Friendly Quick Opacity Presets */}
+            <div className="flex items-center gap-1 pt-1">
+              {[0, 25, 50, 75, 100].map((preset) => {
+                const currentPct = Math.round((selectedLayer.opacity ?? 1) * 100);
+                const isSelected = currentPct === preset;
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => updateLayer(selectedLayer.id, { opacity: preset / 100 })}
+                    className={`flex-1 py-1 text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer border ${
+                      isSelected
+                        ? 'bg-[#000000] text-white border-[#000000] shadow-sm'
+                        : 'bg-white hover:bg-[#E7E9EB] text-[#000000] border-[#dadcdc]'
+                    }`}
+                  >
+                    {preset}%
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#dadcdc] mt-3">
             <div>
               <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Rotation (°)</label>
               <input
@@ -1791,20 +2017,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                   updateLayer(selectedLayer.id, { rotation: parseFloat(e.target.value) || 0 })
                 }
                 className="w-full px-2.5 py-1.5 bg-[#E7E9EB] border border-[#dadcdc] rounded-lg font-mono text-xs text-[#000000] focus:outline-none focus:border-[#000000]"
-              />
-            </div>
-            <div>
-              <label className="block text-[#000000] font-semibold mb-1 text-[11px]">Opacity</label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={selectedLayer.opacity ?? 1}
-                onChange={(e) =>
-                  updateLayer(selectedLayer.id, { opacity: parseFloat(e.target.value) })
-                }
-                className="w-full accent-[#000000] cursor-pointer mt-1"
               />
             </div>
           </div>

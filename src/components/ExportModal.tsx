@@ -54,12 +54,23 @@ export const ExportModal: React.FC = () => {
   // Generate card preview image
   useEffect(() => {
     if (isExportModalOpen) {
-      const formData = useTemplateStore.getState().lastNidaFormData || {};
+      const isDL = currentTemplate.cardType === 'Driving License' || useTemplateStore.getState().activeServiceId === 'driving_license';
+      const formData = (isDL ? useTemplateStore.getState().lastDrivingLicenseFormData : useTemplateStore.getState().lastNidaFormData) || {};
       renderTemplateToCanvas(currentTemplate, formData, 150).then((canvas) => {
         setPreviewSrc(canvas.toDataURL('image/png'));
       });
     }
   }, [isExportModalOpen, currentTemplate]);
+
+  // Escape key listener
+  useEffect(() => {
+    if (!isExportModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExportModalOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isExportModalOpen, setExportModalOpen]);
 
   if (!isExportModalOpen) return null;
 
@@ -75,8 +86,14 @@ export const ExportModal: React.FC = () => {
   const cropPayload = enableCrop ? crop : undefined;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-[#FFFFFF] border border-[#E7E9EB] rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div
+      onClick={() => setExportModalOpen(false)}
+      className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl bg-[#FFFFFF] border border-[#E7E9EB] rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[92vh] cursor-default"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#E7E9EB] flex items-center justify-between bg-[#FFFFFF]">
           <div className="flex items-center gap-3">
@@ -291,7 +308,17 @@ export const ExportModal: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => downloadJSON(currentTemplate)}
+                onClick={async () => {
+                  const store = useTemplateStore.getState();
+                  const val = store.validateExportAccess('json');
+                  if (!val.allowed) return;
+                  try {
+                    downloadJSON(currentTemplate);
+                    store.consumeUsage('JSON Template Export', undefined, 1);
+                  } catch (e) {
+                    console.error('JSON export failed', e);
+                  }
+                }}
                 className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
               >
                 JSON
@@ -311,9 +338,17 @@ export const ExportModal: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  const formData = useTemplateStore.getState().lastNidaFormData || {};
-                  downloadPDF(currentTemplate, formData, undefined, cropPayload);
+                onClick={async () => {
+                  const store = useTemplateStore.getState();
+                  const val = store.validateExportAccess('pdf');
+                  if (!val.allowed) return;
+                  const formData = store.lastNidaFormData || {};
+                  try {
+                    await downloadPDF(currentTemplate, formData, undefined, cropPayload);
+                    store.consumeUsage(`${currentTemplate.templateName || 'Card'} PDF Export`, undefined, 1);
+                  } catch (e) {
+                    console.error('PDF export failed', e);
+                  }
                 }}
                 className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
               >
@@ -334,9 +369,17 @@ export const ExportModal: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  const formData = useTemplateStore.getState().lastNidaFormData || {};
-                  downloadPNG(currentTemplate, formData, undefined, cropPayload);
+                onClick={async () => {
+                  const store = useTemplateStore.getState();
+                  const val = store.validateExportAccess('png');
+                  if (!val.allowed) return;
+                  const formData = store.lastNidaFormData || {};
+                  try {
+                    await downloadPNG(currentTemplate, formData, undefined, cropPayload);
+                    store.consumeUsage(`${currentTemplate.templateName || 'Card'} PNG Export`, undefined, 1);
+                  } catch (e) {
+                    console.error('PNG export failed', e);
+                  }
                 }}
                 className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
               >
@@ -357,9 +400,17 @@ export const ExportModal: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  const formData = useTemplateStore.getState().lastNidaFormData || {};
-                  downloadJPG(currentTemplate, formData, undefined, cropPayload);
+                onClick={async () => {
+                  const store = useTemplateStore.getState();
+                  const val = store.validateExportAccess('jpg');
+                  if (!val.allowed) return;
+                  const formData = store.lastNidaFormData || {};
+                  try {
+                    await downloadJPG(currentTemplate, formData, undefined, cropPayload);
+                    store.consumeUsage(`${currentTemplate.templateName || 'Card'} JPG Export`, undefined, 1);
+                  } catch (e) {
+                    console.error('JPG export failed', e);
+                  }
                 }}
                 className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
               >
@@ -380,7 +431,17 @@ export const ExportModal: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => downloadSVG(currentTemplate)}
+                onClick={async () => {
+                  const store = useTemplateStore.getState();
+                  const val = store.validateExportAccess('svg');
+                  if (!val.allowed) return;
+                  try {
+                    await downloadSVG(currentTemplate);
+                    store.consumeUsage('SVG Vector Export', undefined, 1);
+                  } catch (e) {
+                    console.error('SVG export failed', e);
+                  }
+                }}
                 className="w-full py-2 bg-[#000000] hover:bg-[#222222] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
               >
                 SVG
