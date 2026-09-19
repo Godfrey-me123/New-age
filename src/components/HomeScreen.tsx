@@ -4,6 +4,7 @@ import {
   CreditCard,
   UserCheck,
   ScrollText,
+  Home,
   Car,
   Globe,
   Receipt,
@@ -22,6 +23,7 @@ import {
   Info,
   CheckCircle2,
   ExternalLink,
+  Phone,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { ServiceMenuDrawer } from './navigation/ServiceMenuDrawer';
@@ -47,12 +49,17 @@ export interface ServiceItem {
 }
 
 export const HomeScreen: React.FC = () => {
-  const { setActiveScreen, navigateSafely, loadSavedTemplates, authRole, logoutPasskey, setPasskeyManagerOpen } = useTemplateStore();
+  const { setActiveScreen, navigateSafely, loadSavedTemplates, authRole, logoutPasskey, setPasskeyManagerOpen, setManualAppModalOpen, submitManualRequest } = useTemplateStore();
 
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ServiceCategory>('all');
   const [comingSoonService, setComingSoonService] = useState<ServiceItem | null>(null);
+  const [manualRequestService, setManualRequestService] = useState<ServiceItem | null>(null);
+  const [manualFullName, setManualFullName] = useState('');
+  const [manualWhatsapp, setManualWhatsapp] = useState('');
+  const [manualNormalPhone, setManualNormalPhone] = useState('');
+  const [manualSubmitSuccess, setManualSubmitSuccess] = useState(false);
   const [savedCount, setSavedCount] = useState<number>(0);
 
   // Load saved count on mount
@@ -165,13 +172,15 @@ export const HomeScreen: React.FC = () => {
         service.category === selectedCategory ||
         service.id === 'custom_studio';
 
+      const isReady = service.status === 'active';
+
       const matchesSearch =
         searchQuery.trim() === '' ||
         service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.authority.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesSearch && isReady;
     });
   }, [services, selectedCategory, searchQuery, authRole]);
 
@@ -230,6 +239,15 @@ export const HomeScreen: React.FC = () => {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+              type="button"
+              onClick={() => setActiveScreen('home')}
+              className="p-2 sm:p-2.5 rounded-xl bg-[#E7E2DE] hover:bg-[#dad5d0] text-[#101010] border border-[#dad5d0] transition-colors flex items-center justify-center cursor-pointer"
+              title="Home"
+            >
+              <Home className="w-5 h-5" />
+            </button>
+          
           {/* Custom Designer Direct Button (Admin Only) */}
           {authRole === 'admin' && (
             <button
@@ -492,6 +510,7 @@ export const HomeScreen: React.FC = () => {
               Upload Card Background
             </button>
             <span>•</span>
+          {authRole === 'admin' && (
             <button
               type="button"
               onClick={() => setActiveScreen('templates')}
@@ -499,6 +518,7 @@ export const HomeScreen: React.FC = () => {
             >
               Preset Templates
             </button>
+          )}
           </div>
         </div>
 
@@ -563,13 +583,14 @@ export const HomeScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  const srv = comingSoonService;
                   setComingSoonService(null);
-                  setActiveScreen('upload');
+                  setManualAppModalOpen(true, srv);
                 }}
                 className="w-full sm:flex-1 py-3 px-5 bg-[#101010] hover:bg-[#222222] text-white rounded-2xl text-xs font-extrabold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
               >
-                <CreditCard className="w-4 h-4" />
-                <span>Open Custom Studio</span>
+                <Phone className="w-4 h-4" />
+                <span>Request Manual Application</span>
               </button>
 
               <button
@@ -580,6 +601,140 @@ export const HomeScreen: React.FC = () => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MANUAL APPLICATION REQUEST FORM MODAL */}
+      {manualRequestService && (
+        <div
+          onClick={() => setManualRequestService(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#E7E2DE] border-none rounded-[28px] max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-left text-[#101010] cursor-default"
+          >
+            <button
+              type="button"
+              onClick={() => setManualRequestService(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-[#101010]/10 text-[#101010] hover:bg-[#101010] hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#101010] text-white shadow-xs">
+                {React.createElement(manualRequestService.icon, {
+                  className: 'w-6 h-6 stroke-[2.2]',
+                })}
+              </div>
+
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#101010]/10 text-[#101010]">
+                  Manual Assistance Form
+                </span>
+                <h3 className="text-lg font-bold text-[#101010] mt-1">
+                  {manualRequestService.name}
+                </h3>
+              </div>
+            </div>
+
+            {manualSubmitSuccess ? (
+              <div className="py-8 text-center space-y-4">
+                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <h4 className="text-base font-extrabold text-[#101010]">Request Submitted Successfully!</h4>
+                <p className="text-xs text-[#101010]/70 max-w-xs mx-auto">
+                  Your manual application has been received. Our administrators will review your details and contact you via WhatsApp or phone call.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setManualRequestService(null)}
+                  className="w-full py-3 bg-[#101010] text-white text-xs font-bold rounded-2xl hover:bg-[#252525] transition-colors cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!manualFullName.trim() || !manualWhatsapp.trim()) {
+                    alert('Please enter your full name and WhatsApp contact number.');
+                    return;
+                  }
+                  submitManualRequest({
+                    serviceId: manualRequestService.id,
+                    serviceName: manualRequestService.name,
+                    fullName: manualFullName,
+                    whatsappNumber: manualWhatsapp,
+                    normalNumber: manualNormalPhone || manualWhatsapp,
+                  });
+                  setManualSubmitSuccess(true);
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-[#101010]/80 mb-1.5">
+                    Applicant Full Names *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={manualFullName}
+                    onChange={(e) => setManualFullName(e.target.value)}
+                    placeholder="e.g. Juma Ally Rashidi"
+                    className="w-full px-4 py-3 bg-white border border-[#C8C2BE] rounded-xl text-xs font-semibold text-[#101010] focus:outline-none focus:border-[#101010]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-[#101010]/80 mb-1.5">
+                    WhatsApp Contact Number *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={manualWhatsapp}
+                    onChange={(e) => setManualWhatsapp(e.target.value)}
+                    placeholder="e.g. +255 712 345 678"
+                    className="w-full px-4 py-3 bg-white border border-[#C8C2BE] rounded-xl text-xs font-semibold text-[#101010] focus:outline-none focus:border-[#101010]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-[#101010]/80 mb-1.5">
+                    Normal Call Contact Number
+                  </label>
+                  <input
+                    type="text"
+                    value={manualNormalPhone}
+                    onChange={(e) => setManualNormalPhone(e.target.value)}
+                    placeholder="e.g. 0712 345 678 (Optional if same as WhatsApp)"
+                    className="w-full px-4 py-3 bg-white border border-[#C8C2BE] rounded-xl text-xs font-semibold text-[#101010] focus:outline-none focus:border-[#101010]"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center gap-3">
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-[#101010] hover:bg-[#222222] text-white rounded-2xl text-xs font-extrabold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <ScrollText className="w-4 h-4" />
+                    <span>Submit Application</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setManualRequestService(null)}
+                    className="py-3 px-5 bg-[#D8D2CE] hover:bg-[#dad5d0] text-[#101010] rounded-2xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

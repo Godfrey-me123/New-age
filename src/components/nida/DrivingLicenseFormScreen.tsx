@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Loader2,
   Info,
-  Car,
   Copy,
   Calendar,
   Globe,
@@ -34,7 +33,6 @@ import { CardTemplate } from '../../types';
 import { applyTemplateMapping, sanitizeTemplateForSaving } from '../../utils/templateMappingEngine';
 import { formatToDdMmYyyy, validateDdMmYyyy } from '../../utils/dateValidation';
 import { renderTemplateToCanvas } from '../../utils/export';
-import { UserUsageBadge } from '../auth/UserUsageBadge';
 
 export interface DrivingLicenseFormData {
   firstName: string;
@@ -459,45 +457,23 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
   };
 
   return (
-    <div className="min-h-screen bg-[#D8D2CE] text-[#101010] flex flex-col items-center justify-start p-3 sm:p-6 lg:p-10 font-sans overflow-y-auto pb-24 sm:pb-12">
-      <div className="relative w-full max-w-3xl bg-[#E7E2DE] border border-[#C8C2BE] rounded-2xl sm:rounded-3xl shadow-xl p-5 sm:p-8 lg:p-9 my-2 sm:my-4 transition-all animate-fade-in">
+    <div className="min-h-screen bg-[#D8D2CE] text-[#101010] flex flex-col items-center justify-start p-2.5 sm:p-6 lg:p-10 font-sans overflow-y-auto overflow-x-hidden w-full max-w-full pb-24 sm:pb-12">
+      <div className="relative w-full max-w-full sm:max-w-3xl min-w-0 bg-[#E7E2DE] border border-[#C8C2BE] rounded-2xl sm:rounded-3xl shadow-xl p-3 sm:p-6 lg:p-8 my-1 sm:my-3 transition-all overflow-hidden">
         
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-[#C8C2BE] pb-5 mb-5 gap-2">
-          <div className="flex items-center gap-3">
+        {/* Compact Service Header */}
+        <div className="flex items-center justify-between border-b border-[#C8C2BE] pb-2.5 mb-3.5 gap-2 w-full min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <UniversalBackButton />
             <button
               type="button"
               onClick={() => setIsMenuDrawerOpen(true)}
-              className="p-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] transition-colors flex items-center justify-center cursor-pointer shrink-0 shadow-xs"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] text-xs font-bold transition-colors cursor-pointer shrink-0 shadow-xs active:scale-95"
               title="Open Services Menu"
               aria-label="Open Services Navigation Menu"
             >
-              <Menu className="w-4 h-4 text-[#101010]" />
+              <Menu className="w-3.5 h-3.5 text-[#101010]" />
+              <span className="text-[11px]">Menu</span>
             </button>
-
-            <UniversalBackButton />
-
-            <div className="w-11 h-11 rounded-2xl bg-[#101010] text-[#FFFFFF] flex items-center justify-center shadow-md shrink-0">
-              <Car className="w-6 h-6 text-amber-400" />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#101010]">
-                  Driving Licence
-                </h1>
-                <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-amber-400 text-[#101010] border border-[#101010]/20">
-                  Universal Permitting
-                </span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-[#101010]/70 mt-0.5 font-medium hidden sm:block">
-                Traffic & Motor Vehicle Permit Application & Vector Generation
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <UserUsageBadge />
           </div>
         </div>
 
@@ -547,13 +523,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
               />
             </div>
 
-            {/* Combining Note */}
-            <div className="p-2.5 rounded-xl bg-[#F8F6F4] border border-[#E7E2DE] text-[11px] text-[#101010]/80 flex items-center gap-2">
-              <Info className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                <strong>Card Combining Rule:</strong> First Name + Second Name will combine to <strong>Given Names</strong> (<code className="bg-amber-100 px-1 rounded">{formData.firstName || 'First'} {formData.secondName || 'Second'}</code>). Third Name maps to <strong>Family Name</strong> (<code className="bg-amber-100 px-1 rounded">{formData.thirdName || 'Third'}</code>).
-              </span>
-            </div>
+
 
             {/* Dates Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -727,8 +697,8 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                       </label>
 
                       {/* Dates Inputs & COPY TO Button */}
-                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-1 justify-end">
-                        <div className="w-36">
+                      <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 flex-1 justify-end w-full sm:w-auto min-w-0">
+                        <div className="flex-1 sm:flex-initial sm:w-32 min-w-0">
                           <FloatingDatePicker
                             id={`cls_issue_${clsItem.classCode}`}
                             label="Issue Date"
@@ -748,7 +718,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                           />
                         </div>
 
-                        <div className="w-36">
+                        <div className="flex-1 sm:flex-initial sm:w-32 min-w-0">
                           <FloatingDatePicker
                             id={`cls_expiry_${clsItem.classCode}`}
                             label="Expiry Date"
@@ -780,14 +750,14 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                             });
                           }}
                           disabled={!clsItem.enabled || !canCopy}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                          className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                             canCopy && clsItem.enabled
                               ? 'bg-[#101010] hover:bg-[#252525] text-amber-400 shadow-xs'
                               : 'bg-[#E7E2DE] text-[#101010]/40 cursor-not-allowed'
                           }`}
                           title="Copy these dates to other vehicle classes"
                         >
-                          <Copy className="w-3.5 h-3.5" />
+                          <Copy className="w-3.5 h-3.5 shrink-0" />
                           <span>COPY TO</span>
                         </button>
                       </div>
@@ -850,11 +820,11 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
           </div>
 
           {/* Form Control Buttons */}
-          <div className="flex items-center justify-between gap-4 pt-4 border-t border-[#C8C2BE]">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-[#C8C2BE]">
             <button
               type="button"
               onClick={onCancel}
-              className="px-5 py-3 rounded-2xl bg-white hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] text-xs font-bold flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+              className="px-5 py-3 rounded-2xl bg-white hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Cancel</span>
@@ -863,7 +833,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
             <button
               type="submit"
               disabled={!canContinue || isProcessing}
-              className={`px-6 py-3.5 rounded-2xl text-white font-bold text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer ${
+              className={`px-6 py-3.5 rounded-2xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-95 ${
                 canContinue && !isProcessing
                   ? 'bg-[#101010] hover:bg-[#252525]'
                   : 'bg-gray-400 cursor-not-allowed opacity-60'

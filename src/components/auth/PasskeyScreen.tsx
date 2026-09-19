@@ -52,17 +52,9 @@ export const PasskeyScreen: React.FC = () => {
             <Shield className="w-9 h-9 text-white stroke-[2.2]" />
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#47A5FF]/10 border border-[#47A5FF]/30 text-[#47A5FF] text-xs font-semibold tracking-wide uppercase mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            Passkey Gateway System
-          </div>
-
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             BIGsta
           </h1>
-          <p className="text-sm text-slate-300 mt-1 max-w-xs leading-relaxed">
-            Ingiza Passkey yako kuingia kwenye Mfumo wa BIGsta.
-          </p>
         </div>
 
         {/* Registration Success Banner */}

@@ -519,11 +519,6 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
 
             <UniversalBackButton />
 
-            {/* Authority Icon */}
-            <div className="w-11 h-11 rounded-2xl bg-[#101010] text-[#FFFFFF] flex items-center justify-center shadow-md shrink-0">
-              <ShieldCheck className="w-6 h-6 text-[#FFFFFF]" />
-            </div>
-
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#101010]">
@@ -533,9 +528,6 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                   NIDA Portal
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-[#101010]/70 mt-0.5 font-medium hidden sm:block">
-                Standardized Identification & Automated Card Population
-              </p>
             </div>
           </div>
 
@@ -566,78 +558,9 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
           </div>
         </div>
 
-        {/* STEP 1: TEMPLATE SELECTION (BEFORE FORM FIELDS) */}
-        {currentNidaStep === 'templates' ? (
-          <div className="space-y-4">
-            <NidaTemplateSelectionStep
-              onContinueToForm={handleContinueFromTemplateSelection}
-              onOpenCreateTemplate={() => setActiveScreen('upload')}
-            />
-          </div>
-        ) : (
-          /* STEP 2: FILLING FORM FIELDS (WITH ACTIVE TEMPLATE BANNER) */
-          <div className="space-y-6">
-            {/* Active Template Pair Status Banner */}
-            <div className="p-3.5 rounded-2xl bg-[#FFFFFF] border border-[#C8C2BE] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex -space-x-2 shrink-0">
-                  {frontThumbMini ? (
-                    <img
-                      src={frontThumbMini}
-                      alt="Front"
-                      className="w-10 h-6 rounded-md object-cover border border-[#101010] bg-[#FFFFFF]"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="w-10 h-6 rounded-md bg-[#B5A5FF] border border-[#101010] flex items-center justify-center text-[9px] font-bold text-[#101010]">
-                      FRONT
-                    </div>
-                  )}
-                  {backThumbMini ? (
-                    <img
-                      src={backThumbMini}
-                      alt="Back"
-                      className="w-10 h-6 rounded-md object-cover border border-[#101010] bg-[#FFFFFF]"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="w-10 h-6 rounded-md bg-[#FF9A5A] border border-[#101010] flex items-center justify-center text-[9px] font-bold text-[#101010]">
-                      BACK
-                    </div>
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#101010]/70">
-                      Selected Card Templates:
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#B5A5FF] text-[#101010] border border-[#101010]/20">
-                      Front: {resolvedFrontTpl?.templateName || 'Default NIDA Front'}
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#FF9A5A] text-[#101010] border border-[#101010]/20">
-                      Back: {resolvedBackTpl?.templateName || 'Default NIDA Back'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#101010]/70 truncate mt-0.5 font-medium">
-                    Data entered below will auto-populate both templates simultaneously upon submission.
-                  </p>
-                </div>
-              </div>
-
-              {/* Change Templates Button */}
-              <button
-                type="button"
-                onClick={() => setCurrentNidaStep('templates')}
-                className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-[#101010] hover:bg-[#252525] text-white border border-[#101010] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
-              >
-                <FolderOpen className="w-3.5 h-3.5 text-white" />
-                <span>Templates</span>
-              </button>
-            </div>
-
-            {/* Form Content */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Form Content */}
+        <div className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
               
               {/* Section 1: NIDA Number (Primary Identifier) */}
               {enabledBindings.has('NIDA_NUMBER') && (
@@ -886,7 +809,6 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
               </div>
             </form>
           </div>
-        )}
       </div>
 
       {/* Available Services Section (Natural vertical scrolling after form) */}
@@ -923,46 +845,6 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                 <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">Active</span>
               </div>
               <p className="text-[10px] text-[#101010]/70 truncate font-medium">Upload & design any ID layout</p>
-            </div>
-          </div>
-
-          {/* Templates Library Service */}
-          <div
-            onClick={() => setActiveScreen('templates')}
-            className="p-3.5 rounded-2xl bg-[#E7E2DE] hover:bg-[#FFFFFF] border border-[#C8C2BE] hover:border-[#101010] transition-all cursor-pointer flex items-center gap-3 group shadow-xs"
-          >
-            <div className="w-9 h-9 rounded-xl bg-[#FF9A5A] border border-[#101010]/20 text-[#101010] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <FolderOpen className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-xs font-bold text-[#101010] truncate">Saved Templates</h3>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#FFFFFF] text-[#101010] font-bold border border-[#C8C2BE]">Library</span>
-              </div>
-              <p className="text-[10px] text-[#101010]/70 truncate font-medium">Manage & load preset templates</p>
-            </div>
-          </div>
-
-          {/* Birth Certificate Service */}
-          <div
-            onClick={() => setInfoService({
-              id: 'birth_certificate',
-              name: 'Birth Certificate Services',
-              authority: 'RITA (Registration Insolvency and Trusteeship Agency)',
-              description: 'Official birth certificate issuance, verification & digital civil registry documentation.',
-              features: ['Civil Registration Archive', 'QR Verification Matrix', 'Official Seal Generator', 'Biographic Data Format'],
-            })}
-            className="p-3.5 rounded-2xl bg-[#E7E2DE] hover:bg-[#FFFFFF] border border-[#C8C2BE] hover:border-[#101010] transition-all cursor-pointer flex items-center gap-3 group shadow-xs"
-          >
-            <div className="w-9 h-9 rounded-xl bg-[#FF6839] border border-[#101010]/20 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <ScrollText className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-xs font-bold text-[#101010] truncate">Birth Certificate</h3>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#FFFFFF] text-[#101010] font-bold border border-[#C8C2BE]">RITA</span>
-              </div>
-              <p className="text-[10px] text-[#101010]/70 truncate font-medium">Civil registry & issuance</p>
             </div>
           </div>
 

@@ -32,8 +32,10 @@ import {
   Wallet,
   CheckSquare,
   XSquare,
+  ScrollText,
 } from 'lucide-react';
-import { useTemplateStore, PasskeyItem, PaymentStatus, RegisteredUser, PaymentRequest } from '../../store/useTemplateStore';
+import { useTemplateStore, PasskeyItem, PaymentStatus, RegisteredUser, PaymentRequest, ManualRequestItem } from '../../store/useTemplateStore';
+import { ManualRequestsAdminTab } from './ManualRequestsAdminTab';
 
 const USAGE_PACKAGES = [
   { id: 'pkg_starter', name: 'Starter Package', usages: 5, priceTzs: 10000 },
@@ -72,10 +74,11 @@ export const PasskeyManagerModal: React.FC = () => {
     editService,
     deleteService,
     toggleService,
+    manualRequests,
   } = useTemplateStore();
 
   // Admin Top Navigation Tab State
-  const [activeAdminTab, setActiveAdminTab] = useState<'passkeys' | 'users' | 'payments' | 'packages' | 'services'>('passkeys');
+  const [activeAdminTab, setActiveAdminTab] = useState<'passkeys' | 'users' | 'payments' | 'packages' | 'services' | 'manual_requests'>('passkeys');
 
   // Search & Filter State for Passkeys Tab
   const [searchQuery, setSearchQuery] = useState('');
@@ -193,6 +196,14 @@ export const PasskeyManagerModal: React.FC = () => {
 
     return list;
   }, [activePasskeys, searchQuery, filterRole, filterStatus]);
+
+  const pendingManualCount = useMemo(() => {
+    return (manualRequests || []).filter((r) => r.status === 'PENDING').length;
+  }, [manualRequests]);
+
+  const renderManualRequestsTab = () => {
+    return <ManualRequestsAdminTab />;
+  };
 
   // Filtered Registered Users
   const filteredRegisteredUsers = useMemo(() => {
@@ -421,6 +432,8 @@ export const PasskeyManagerModal: React.FC = () => {
           </div>
         )}
 
+
+
         {/* Admin Navigation Tabs */}
         <div className="px-4 sm:px-6 bg-[#F8F9FA] border-b border-[#E7E9EB] flex items-center gap-2 overflow-x-auto shrink-0 py-2.5">
           <button
@@ -437,6 +450,28 @@ export const PasskeyManagerModal: React.FC = () => {
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 font-mono">
               {activePasskeys.length}
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveAdminTab('manual_requests')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeAdminTab === 'manual_requests'
+                ? 'bg-[#101010] text-white shadow-sm'
+                : 'bg-white text-[#555555] hover:text-[#000000] border border-[#dadcdc]'
+            }`}
+          >
+            <ScrollText className="w-3.5 h-3.5" />
+            <span>Manual Requests</span>
+            {pendingManualCount > 0 ? (
+              <span className="px-2 py-0.2 rounded-full text-[10px] bg-red-500 text-white font-extrabold animate-pulse">
+                {pendingManualCount} PENDING
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-100 text-gray-700 font-bold">
+                {manualRequests.length}
+              </span>
+            )}
           </button>
 
           <button
@@ -515,6 +550,9 @@ export const PasskeyManagerModal: React.FC = () => {
 
         {/* Modal Body - Scrollable */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1">
+
+          {/* TAB: MANUAL REQUESTS */}
+          {activeAdminTab === 'manual_requests' && renderManualRequestsTab()}
 
           {/* TAB 1: PASSKEYS & USAGES */}
           {activeAdminTab === 'passkeys' && (

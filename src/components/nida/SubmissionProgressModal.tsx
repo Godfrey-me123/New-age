@@ -61,15 +61,8 @@ export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = (
                 id="submission-progress-title"
                 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2"
               >
-                <span>NIDA Form Submission Workflow</span>
+                <span>Driving Form Submission Workflow</span>
               </h2>
-              <p className="text-[11px] text-[#A0A4A8]">
-                {error
-                  ? 'Submission stopped - review required'
-                  : isCompleted
-                  ? 'Card population complete! Opening Card Preview...'
-                  : 'Automated verification, field mapping & card population'}
-              </p>
             </div>
           </div>
 

@@ -21,17 +21,24 @@ import { HomeScreen } from './components/HomeScreen';
 import { CardPreviewScreen } from './components/CardPreviewScreen';
 import { PasskeyScreen } from './components/auth/PasskeyScreen';
 import { PasskeyManagerModal } from './components/auth/PasskeyManagerModal';
+import { ManualApplicationModal } from './components/auth/ManualApplicationModal';
 import { RechargeModal } from './components/auth/RechargeModal';
 import { UsageExhaustedBanner } from './components/auth/UsageExhaustedBanner';
 import { DownloadsScreen } from './components/DownloadsScreen';
 import { UnsavedChangesModal } from './components/common/UnsavedChangesModal';
+import { StartupDisclaimerModal } from './components/common/StartupDisclaimerModal';
 
 export default function App() {
   const { activeScreen, setActiveScreen, authRole } = useTemplateStore();
 
   // PASSKEY GATEWAY SYSTEM: Must enter valid passkey first
   if (!authRole) {
-    return <PasskeyScreen />;
+    return (
+      <>
+        <PasskeyScreen />
+        <StartupDisclaimerModal />
+      </>
+    );
   }
 
   // Strict RBAC Guard: Regular Users (authRole === 'user') are blocked from Studio/Editor/Templates
@@ -68,6 +75,7 @@ export default function App() {
         <UsageExhaustedBanner />
         <HomeScreen />
         <PasskeyManagerModal />
+        <ManualApplicationModal />
         <RechargeModal />
         <ExportModal />
         <SaveTemplateModal />
@@ -198,6 +206,7 @@ export default function App() {
       {/* Modals & Passkey Manager */}
       <UnsavedChangesModal />
       <PasskeyManagerModal />
+      <ManualApplicationModal />
       <RechargeModal />
       <TemplateLibraryModal />
       <CardGeneratorModal />

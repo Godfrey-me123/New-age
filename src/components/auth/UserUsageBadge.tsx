@@ -24,17 +24,6 @@ export const UserUsageBadge: React.FC<{ className?: string }> = ({ className = '
 
   return (
     <div className={`inline-flex items-center gap-1.5 ${className}`}>
-      {/* Wallet / Recharge Button */}
-      <button
-        type="button"
-        onClick={() => setRechargeModalOpen(true)}
-        className="p-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-300 transition-all cursor-pointer shadow-xs"
-        title="Recharge Usage Packages / Wallet"
-        aria-label="Recharge Usage Packages"
-      >
-        <Wallet className="w-4 h-4 text-emerald-400" />
-      </button>
-
       {/* Account Dashboard Pills */}
       <button
         type="button"

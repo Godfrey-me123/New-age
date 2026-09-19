@@ -39,6 +39,17 @@ export interface DynamicElementRegistration {
   defaultHeight: number;
 }
 
+export interface ManualApplicationRequest {
+  id: string;
+  fullName: string;
+  whatsappNumber: string;
+  normalCallNumber: string;
+  serviceName: string;
+  submittedAt: string;
+  status: 'PENDING' | 'PROCESSING' | 'APPROVED' | 'COMPLETED';
+  userPasskey?: string;
+}
+
 export interface ServiceValidationResult {
   allowed: boolean;
   reason?: 'NOT_LOGGED_IN' | 'DISABLED' | 'PAYMENT_REQUIRED' | 'OUT_OF_TOKENS' | 'NO_CARD_DATA';
@@ -152,6 +163,7 @@ export interface ServiceData {
   active: boolean;
   tokenCost: number;
   features: string[];
+  processingMode?: 'auto' | 'manual';
 }
 
 export const NIDA_USAGE_PACKAGES: UsagePackage[] = [
@@ -171,6 +183,7 @@ export const INITIAL_SERVICES: ServiceData[] = [
     active: true,
     tokenCost: 1,
     features: ['20-Digit ID Verification', 'Biometric Photo Cropping', 'Digital Signature Pad', 'Barcode Sync'],
+    processingMode: 'auto',
   },
   {
     id: 'driving_license',
@@ -182,17 +195,19 @@ export const INITIAL_SERVICES: ServiceData[] = [
     active: true,
     tokenCost: 1,
     features: ['Class Endorsements (A, B, C, D, E)', 'Penalty Point Tracking', 'Digital QR Validation'],
+    processingMode: 'auto',
   },
   {
     id: 'birth_certificate',
     name: 'Birth Certificate Services',
     authority: 'RITA Civil Registration',
-    description: 'Official birth certificate issuance, verification & digital civil registry documentation.',
+    description: 'Unofficial birth certificate issuance, verification & digital civil registry documentation.',
     category: 'civil',
     iconName: 'ScrollText',
     active: false,
     tokenCost: 1,
-    features: ['Birth Certificate Archiving', 'Legal Certification', 'Official Watermark Validation'],
+    features: ['Birth Certificate Archiving', 'Legal Certification', 'Unofficial Watermark Validation'],
+    processingMode: 'auto',
   },
   {
     id: 'passport',
@@ -204,6 +219,7 @@ export const INITIAL_SERVICES: ServiceData[] = [
     active: false,
     tokenCost: 1,
     features: ['ICAO 9303 Compliant MRZ', 'Biometric Chip Layout', 'Diplomatic & Ordinary Profiles'],
+    processingMode: 'auto',
   },
   {
     id: 'tin',
@@ -215,6 +231,7 @@ export const INITIAL_SERVICES: ServiceData[] = [
     active: false,
     tokenCost: 1,
     features: ['Taxpayer PIN Sync', 'QR Compliance Stamp', 'Corporate & Individual Formats'],
+    processingMode: 'auto',
   },
   {
     id: 'business_license',
@@ -226,6 +243,7 @@ export const INITIAL_SERVICES: ServiceData[] = [
     active: false,
     tokenCost: 1,
     features: ['BRELA Certificate Layout', 'Annual Renewal Badges', 'Sector Trade Validation'],
+    processingMode: 'auto',
   },
   {
     id: 'heslb',
@@ -237,6 +255,7 @@ export const INITIAL_SERVICES: ServiceData[] = [
     active: false,
     tokenCost: 1,
     features: ['Index Number Verification', 'Institution Allocation Status', 'Beneficiary Smart Badges'],
+    processingMode: 'auto',
   },
   {
     id: 'nhif',
@@ -248,6 +267,7 @@ export const INITIAL_SERVICES: ServiceData[] = [
     active: false,
     tokenCost: 1,
     features: ['Principal & Dependent Mapping', 'Hospital Tier Endorsements', 'Smart Card Chip Specs'],
+    processingMode: 'auto',
   },
   {
     id: 'ajira',
@@ -259,6 +279,7 @@ export const INITIAL_SERVICES: ServiceData[] = [
     active: false,
     tokenCost: 1,
     features: ['Civil Service Application Sync', 'Cadre Certificate Validation', 'Interview Pass Generation'],
+    processingMode: 'auto',
   },
 ];
 
@@ -390,6 +411,40 @@ export interface PaymentRequest {
   reviewedDate?: string;
 }
 
+export interface ManualRequestItem {
+  id: string;
+  timestamp: number;
+  date: string;
+  serviceId: string;
+  serviceName: string;
+  fullName: string;
+  whatsappNumber: string;
+  normalNumber: string;
+  normalCallNumber?: string;
+  accountKey?: string;
+  accountUser?: string;
+  userPasskey?: string;
+  status: 'PENDING' | 'PROCESSING' | 'APPROVED' | 'COMPLETED' | 'REJECTED';
+  adminNotes?: string;
+  submittedAt?: number;
+}
+
+export const DEFAULT_MANUAL_REQUESTS: ManualRequestItem[] = [
+  {
+    id: 'req_1',
+    timestamp: Date.now() - 3600000,
+    date: '2026-09-18 12:30',
+    serviceId: 'ajira',
+    serviceName: 'Ajira Portal Services',
+    fullName: 'Juma Ally Rashidi',
+    whatsappNumber: '+255712345678',
+    normalNumber: '0712345678',
+    accountKey: 'BIGSTA-USER',
+    accountUser: 'Juma Ally',
+    status: 'PENDING',
+  },
+];
+
 export const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [
   {
     id: 'usr_1',
@@ -514,8 +569,12 @@ interface TemplateState {
   // Registered Users & Recharge Management
   registeredUsers: RegisteredUser[];
   paymentRequests: PaymentRequest[];
+  manualRequests: ManualRequestItem[];
   isRechargeModalOpen: boolean;
   rechargeNotice: string | null;
+  isManualAppModalOpen: boolean;
+  selectedManualService: { id: string; name: string } | null;
+  setManualAppModalOpen: (open: boolean, service?: { id: string; name: string } | null) => void;
 
   loginWithPasskey: (inputKey: string) => { success: boolean; role?: AuthRole; message?: string };
   logoutPasskey: () => void;
@@ -526,6 +585,9 @@ interface TemplateState {
   submitPaymentRequest: (packageId: string, packageName: string, amount: string, requestedUsages: number) => { success: boolean; message: string; request?: PaymentRequest };
   approvePaymentRequest: (requestId: string) => { success: boolean; message: string };
   rejectPaymentRequest: (requestId: string) => { success: boolean; message: string };
+  submitManualRequest: (data: { serviceId: string; serviceName: string; fullName: string; whatsappNumber: string; normalNumber?: string; normalCallNumber?: string }) => { success: boolean; message: string; request?: ManualRequestItem };
+  updateManualRequestStatus: (requestId: string, status: ManualRequestItem['status'], adminNotes?: string) => { success: boolean; message: string };
+  deleteManualRequest: (requestId: string) => { success: boolean; message: string };
   toggleUserStatus: (userId: string) => void;
   deleteRegisteredUser: (userId: string) => void;
   refreshUserStatus: () => void;
@@ -715,7 +777,11 @@ const normalizePasskeyItem = (raw: any): PasskeyItem => {
   const remainingUsages = typeof raw.remainingUsages === 'number' ? raw.remainingUsages : Math.max(0, totalUsages - usedUsages);
 
   let paymentStatus: PaymentStatus = raw.paymentStatus;
-  if (!paymentStatus) {
+  if (remainingUsages <= 0) {
+    paymentStatus = 'EXHAUSTED';
+  } else if (paymentStatus === 'EXHAUSTED' && remainingUsages > 0) {
+    paymentStatus = 'ACTIVE';
+  } else if (!paymentStatus) {
     if (raw.active === false) paymentStatus = 'DISABLED';
     else if (remainingUsages <= 0) paymentStatus = 'EXHAUSTED';
     else paymentStatus = 'ACTIVE';
@@ -869,6 +935,18 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
     } catch (e) {}
     return DEFAULT_PAYMENT_REQUESTS;
+  })();
+
+  const initialManualRequests: ManualRequestItem[] = (() => {
+    if (typeof window === 'undefined') return DEFAULT_MANUAL_REQUESTS;
+    try {
+      const raw = localStorage.getItem('bigsta_manual_requests');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_MANUAL_REQUESTS;
   })();
 
   const initialTokenPackages: UsagePackage[] = (() => {
@@ -1218,12 +1296,17 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
     registeredUsers: initialRegisteredUsers,
     paymentRequests: initialPaymentRequests,
+    manualRequests: initialManualRequests,
     isRechargeModalOpen: false,
     rechargeNotice: null,
+    isManualAppModalOpen: false,
+    selectedManualService: null,
 
     setPasskeyManagerOpen: (open) => set({ isPasskeyManagerOpen: open }),
     setRechargeModalOpen: (open, notice = null) =>
       set({ isRechargeModalOpen: open, rechargeNotice: notice }),
+    setManualAppModalOpen: (open, service = null) =>
+      set({ isManualAppModalOpen: open, selectedManualService: service }),
 
     registerUserAccount: (data) => {
       const fullName = data.fullName.trim();
@@ -1494,6 +1577,70 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       set({ paymentRequests: updatedRequests, activePasskeys: updatedPasskeys });
 
       return { success: true, message: 'Payment request rejected.' };
+    },
+
+    submitManualRequest: (data) => {
+      const currentAuthKey = get().currentAuthKey;
+      const passkeys = get().activePasskeys;
+      const users = get().registeredUsers;
+
+      const userPasskeyItem = passkeys.find(
+        (p) => p.key.toLowerCase() === (currentAuthKey || '').toLowerCase()
+      );
+      const userRecord = users.find(
+        (u) => u.passkey.toLowerCase() === (currentAuthKey || '').toLowerCase()
+      );
+
+      const now = new Date();
+      const nowTs = now.getTime();
+      const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
+
+      const normalNum = data.normalNumber || data.normalCallNumber || '';
+
+      const newRequest: ManualRequestItem = {
+        id: `req_${nowTs}`,
+        timestamp: nowTs,
+        submittedAt: nowTs,
+        date: dateStr,
+        serviceId: data.serviceId,
+        serviceName: data.serviceName,
+        fullName: data.fullName.trim(),
+        whatsappNumber: data.whatsappNumber.trim(),
+        normalNumber: normalNum.trim(),
+        normalCallNumber: normalNum.trim(),
+        accountKey: userPasskeyItem?.key || currentAuthKey || 'Guest',
+        accountUser: userRecord?.fullName || userPasskeyItem?.createdBy || 'System User',
+        userPasskey: userPasskeyItem?.key || currentAuthKey || 'Guest',
+        status: 'PENDING',
+      };
+
+      const updatedRequests = [newRequest, ...get().manualRequests];
+      try {
+        localStorage.setItem('bigsta_manual_requests', JSON.stringify(updatedRequests));
+      } catch (e) {}
+
+      set({ manualRequests: updatedRequests });
+      return { success: true, message: 'Manual application request submitted successfully!', request: newRequest };
+    },
+
+    updateManualRequestStatus: (requestId, status, adminNotes) => {
+      const updated = get().manualRequests.map((r) =>
+        r.id === requestId ? { ...r, status, ...(adminNotes !== undefined ? { adminNotes } : {}) } : r
+      );
+      try {
+        localStorage.setItem('bigsta_manual_requests', JSON.stringify(updated));
+      } catch (e) {}
+      set({ manualRequests: updated });
+      return { success: true, message: `Request status updated to ${status}` };
+    },
+
+    deleteManualRequest: (requestId) => {
+      const updated = get().manualRequests.filter((r) => r.id !== requestId);
+      try {
+        localStorage.setItem('bigsta_manual_requests', JSON.stringify(updated));
+      } catch (e) {}
+      set({ manualRequests: updated });
+      return { success: true, message: 'Request deleted successfully' };
     },
 
     toggleUserStatus: (userId) => {
@@ -1930,7 +2077,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       // 5. Available Tokens / Usages Check
-      if (remaining < cost || pStatus === 'EXHAUSTED') {
+      if (remaining < cost || (pStatus === 'EXHAUSTED' && remaining <= 0) || remaining <= 0) {
         const msg = `Out Of Tokens: You have ${remaining} remaining usages (required: ${cost}). Please recharge now.`;
         get().setRechargeModalOpen(true, msg);
         return {

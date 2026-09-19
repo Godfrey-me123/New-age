@@ -296,17 +296,6 @@ export const CardPreviewScreen: React.FC = () => {
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <UniversalBackButton />
-
-            <div className="h-4 w-px bg-[#4C5055]/60 hidden sm:block" />
-
-            <div className="flex items-center gap-1.5 sm:gap-2 truncate">
-              <h1 className="text-xs sm:text-base font-bold text-white tracking-tight truncate">
-                Card Preview
-              </h1>
-              <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
-                Ready
-              </span>
-            </div>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
