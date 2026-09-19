@@ -307,7 +307,7 @@ export interface PasskeyItem {
 export const DEFAULT_PASSKEYS: PasskeyItem[] = [
   {
     id: 'pk_admin_1',
-    key: 'admin123',
+    key: '123451',
     role: 'admin',
     active: true,
     createdDate: '2026-01-01 09:00',
@@ -502,7 +502,7 @@ export const DEFAULT_PAYMENT_REQUESTS: PaymentRequest[] = [
 ];
 
 interface TemplateState {
-  activeScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license';
+  activeScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments';
   currentTemplate: CardTemplate;
   frontPopulatedTemplate: CardTemplate | null;
   backPopulatedTemplate: CardTemplate | null;
@@ -523,7 +523,7 @@ interface TemplateState {
   // Studio Working Mode & Universal Navigation
   studioMode: boolean;
   navigationHistory: Array<{
-    screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license';
+    screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments';
     serviceId?: string;
     templateId?: string;
   }>;
@@ -538,7 +538,7 @@ interface TemplateState {
   clearStudioDraft: (serviceId?: string) => void;
 
   navigateSafely: (
-    targetScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license',
+    targetScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments',
     serviceId?: string,
     bypassDraftRestore?: boolean
   ) => void;
@@ -671,7 +671,7 @@ interface TemplateState {
   historyIndex: number;
 
   // Actions
-  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license') => void;
+  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments') => void;
   setPopulatedCardPair: (front: CardTemplate | null, back: CardTemplate | null, formData?: any) => void;
   createNewTemplate: (background: BackgroundConfig, name?: string) => void;
   loadTemplate: (template: CardTemplate) => void;
@@ -900,17 +900,32 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   })();
 
   const initialPasskeys: PasskeyItem[] = (() => {
-    if (typeof window === 'undefined') return DEFAULT_PASSKEYS.map(normalizePasskeyItem);
+    const defaults = DEFAULT_PASSKEYS.map(normalizePasskeyItem);
+    if (typeof window === 'undefined') return defaults;
     try {
       const raw = localStorage.getItem('bigsta_passkeys');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(normalizePasskeyItem);
+        if (Array.isArray(parsed)) {
+          const stored = parsed.map(normalizePasskeyItem);
+          // Merge defaults: keep stored items, but add any defaults that aren't in stored (by ID)
+          const merged = [...stored];
+          defaults.forEach(def => {
+            if (!merged.some(m => m.id === def.id)) {
+              merged.push(def);
+            } else {
+              // Update existing default keys if they've changed in code (like pk_admin_1)
+              const index = merged.findIndex(m => m.id === def.id);
+              if (index !== -1 && merged[index].key !== def.key && def.id === 'pk_admin_1') {
+                merged[index] = { ...merged[index], key: def.key };
+              }
+            }
+          });
+          return merged;
         }
       }
     } catch (e) {}
-    return DEFAULT_PASSKEYS.map(normalizePasskeyItem);
+    return defaults;
   })();
 
   const initialRegisteredUsers: RegisteredUser[] = (() => {
@@ -2283,7 +2298,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   history: [DEFAULT_TEMPLATE],
   historyIndex: 0,
 
-  setActiveScreen: (screen) => {
+  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments') => {
     get().navigateSafely(screen);
   },
 

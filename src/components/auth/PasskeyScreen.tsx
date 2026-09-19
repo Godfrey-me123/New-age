@@ -34,7 +34,17 @@ export const PasskeyScreen: React.FC = () => {
 
   const handleRegistrationSuccess = (registeredPasskey: string) => {
     setPasskeyInput(registeredPasskey);
-    setSuccessNotice('Akaunti yako imesajiliwa kikamilifu! Tumetumia Passkey yako hapa chini. Bonyeza "Endelea / Continue" kuingia.');
+    setIsLoading(true);
+    setErrorMessage('');
+    
+    // Auto-login after registration
+    setTimeout(() => {
+      const res = loginWithPasskey(registeredPasskey);
+      setIsLoading(false);
+      if (!res.success) {
+        setErrorMessage(res.message || 'Auto-login failed. Please enter your passkey manually.');
+      }
+    }, 600);
   };
 
   return (

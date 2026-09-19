@@ -235,3 +235,66 @@ export interface NidaSubmissionRecord {
   signature?: string | null;
   submittedAt: string;
 }
+
+export type PaymentStatus = 'pending' | 'verified' | 'rejected' | 'used' | 'suspended';
+export type VerificationType = 'auto' | 'manual' | 'ocr';
+
+export interface PaymentRecord {
+  id: string;
+  rawSms: string;
+  sender: string;
+  receivedAt: string;
+  deviceName: string;
+  status: PaymentStatus;
+  used: boolean;
+  verificationType?: VerificationType;
+  transactionReference?: string;
+  senderName?: string;
+  senderPhone?: string;
+  amount?: number;
+  network?: string;
+  transactionTime?: string;
+  newBalance?: number;
+  previousBalance?: number;
+  verificationLog?: string[];
+  tokensGranted?: number;
+  unlockedServices?: string[];
+  verifiedAt?: string;
+  verifiedBy?: string; // admin ID or 'auto'
+}
+
+export interface VerificationLog {
+  id: string;
+  paymentId: string;
+  timestamp: string;
+  action: string;
+  details: string;
+  adminId?: string;
+  adminName?: string;
+}
+
+export interface ServiceUnlock {
+  id: string;
+  paymentId: string;
+  serviceId: string;
+  userId: string;
+  unlockedAt: string;
+  expiresAt?: string;
+}
+
+export interface TokenTransaction {
+  id: string;
+  paymentId?: string;
+  userId: string;
+  amount: number; // positive for credit, negative for debit
+  reason: string;
+  timestamp: string;
+}
+
+export interface PaymentSettings {
+  webhookUrl: string;
+  deviceName: string;
+  forwardingStatus: 'active' | 'inactive';
+  lastSmsReceived?: string;
+  lastVerification?: string;
+}

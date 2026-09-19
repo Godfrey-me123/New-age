@@ -111,10 +111,14 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     saveNidaSubmissionRecord,
     loadSavedTemplates,
     setLastNidaFormData,
+    authRole,
   } = useTemplateStore();
 
   // Step state: 'templates' (Template Selection) | 'form' (Filling Form)
   const [currentNidaStep, setCurrentNidaStep] = useState<'templates' | 'form'>(() => {
+    // If standard user, always skip template selection and use defaults
+    if (authRole === 'user') return 'form';
+    
     const frontId = typeof window !== 'undefined' ? localStorage.getItem('nida_default_front_template_id') : null;
     const backId = typeof window !== 'undefined' ? localStorage.getItem('nida_default_back_template_id') : null;
     return (frontId && backId) ? 'form' : 'templates';
@@ -504,57 +508,35 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
       <div className="relative w-full max-w-2xl bg-[#E7E2DE] border border-[#C8C2BE] rounded-2xl sm:rounded-3xl shadow-xl p-5 sm:p-8 lg:p-9 my-2 sm:my-4 transition-all">
         
         {/* Header with Authority Aesthetic & Navigation */}
-        <div className="flex items-start justify-between border-b border-[#C8C2BE] pb-5 mb-5 gap-2">
-          <div className="flex items-center gap-3">
-            {/* Top-Left Services Menu Button */}
-            <button
-              type="button"
-              onClick={() => setIsMenuDrawerOpen(true)}
-              className="p-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] transition-colors flex items-center justify-center cursor-pointer shrink-0 shadow-xs"
-              title="Open Services Menu"
-              aria-label="Open Services Navigation Menu"
-            >
-              <Menu className="w-4 h-4 text-[#101010]" />
-            </button>
-
-            <UniversalBackButton />
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#101010]">
-                  National ID Auto-Fill
-                </h1>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#B5A5FF] text-[#101010] border border-[#101010]/20">
-                  NIDA Portal
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <UserUsageBadge />
-
-            {/* Direct Home Navigation Button */}
-            <button
-              type="button"
-              onClick={() => setActiveScreen('home')}
-              className="text-xs text-[#101010] hover:bg-[#FFFFFF] transition-colors px-3 py-1.5 rounded-xl border border-[#C8C2BE] bg-[#FFFFFF]/60 flex items-center gap-1.5 cursor-pointer font-semibold shadow-xs"
-              title="Return to Services Home"
-            >
-              <Home className="w-3.5 h-3.5 text-[#101010]" />
-              <span className="hidden sm:inline">Home</span>
-            </button>
-
+        <div className="flex items-center justify-between border-b border-[#C8C2BE] pb-5 mb-5">
+          <div className="flex items-center gap-2">
             {onCancel && (
               <button
                 type="button"
                 onClick={onCancel}
-                className="text-xs text-[#101010] hover:bg-[#FFFFFF] transition-colors px-3 py-1.5 rounded-xl border border-[#C8C2BE] flex items-center gap-1 cursor-pointer font-semibold"
+                className="p-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                title="Go Back"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
+                <ArrowLeft className="w-5 h-5 text-[#101010]" />
               </button>
             )}
+            
+            <div className="hidden sm:block">
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#101010]">
+                National ID Auto-Fill
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveScreen('home')}
+              className="p-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+              title="Home"
+            >
+              <Home className="w-5 h-5 text-[#101010]" />
+            </button>
           </div>
         </div>
 

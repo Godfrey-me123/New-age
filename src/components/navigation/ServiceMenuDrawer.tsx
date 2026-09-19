@@ -154,6 +154,21 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
             },
             description: 'Manage admin & user passkeys, generate new keys & reset admin access.',
           },
+          {
+            id: 'sms_payments',
+            name: 'Payments',
+            authority: 'SMS Forwarder & Auto-Verification',
+            category: 'core' as const,
+            icon: Receipt,
+            iconColor: 'text-emerald-600',
+            status: 'active' as const,
+            badgeText: 'Admin',
+            action: () => {
+              setActiveScreen('admin-payments');
+              onClose();
+            },
+            description: 'Verify SMS transactions, manage payment settings, and monitor incoming payments.',
+          },
         ]
       : []),
     {
@@ -377,6 +392,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
               const Icon = item.icon;
               const isActive = (item.id === 'home' && activeScreen === 'home') ||
                                (item.id === 'custom_studio' && (activeScreen === 'upload' || activeScreen === 'editor')) ||
+                               (item.id === 'sms_payments' && activeScreen === 'admin-payments') ||
                                (item.id === 'templates' && activeScreen === 'templates');
               return (
                 <button

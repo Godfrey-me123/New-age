@@ -25,6 +25,7 @@ import { ManualApplicationModal } from './components/auth/ManualApplicationModal
 import { RechargeModal } from './components/auth/RechargeModal';
 import { UsageExhaustedBanner } from './components/auth/UsageExhaustedBanner';
 import { DownloadsScreen } from './components/DownloadsScreen';
+import { PaymentDashboard } from './components/admin/PaymentDashboard';
 import { UnsavedChangesModal } from './components/common/UnsavedChangesModal';
 import { StartupDisclaimerModal } from './components/common/StartupDisclaimerModal';
 
@@ -172,6 +173,28 @@ export default function App() {
         <MergeCardModal />
         <TemplateLibraryModal />
         <CardGeneratorModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'admin-payments' && authRole === 'admin') {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <PaymentDashboard />
+        <PasskeyManagerModal />
+        <RechargeModal />
+      </>
+    );
+  }
+
+  // Final Guard for Users: If they reach this point (unknown screen or editor), send back to home
+  if (authRole === 'user') {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <HomeScreen />
+        <RechargeModal />
       </>
     );
   }

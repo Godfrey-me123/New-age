@@ -137,36 +137,50 @@ export const HomeScreen: React.FC = () => {
         };
       });
 
-      // Append Custom Card Studio
-      list.push({
-        id: 'custom_studio',
-        name: 'Custom Card Studio',
-        authority: 'ID Template Designer',
-        description: 'Create custom employee badges, student cards, event passes or upload existing card backgrounds.',
-        category: 'all',
-        icon: Layers,
-        iconBg: 'bg-blue-600/20 border-blue-500/40',
-        iconColor: 'text-blue-400',
-        status: 'active',
-        badgeText: 'Active • Millimeter Canvas',
-        action: () => setActiveScreen('upload'),
-        primaryActionLabel: 'Open Card Studio',
-        features: ['Millimeter Precision (CR80)', 'Custom Image Backgrounds', 'Smart Magnetic Snap', 'PDF & SVG Export'],
-      });
+      // Append Custom Card Studio or Request Manual Application for standard users
+      if (authRole === 'admin') {
+        list.push({
+          id: 'custom_studio',
+          name: 'Custom Card Studio',
+          authority: 'ID Template Designer',
+          description: 'Create custom employee badges, student cards, event passes or upload existing card backgrounds.',
+          category: 'all',
+          icon: Layers,
+          iconBg: 'bg-blue-600/20 border-blue-500/40',
+          iconColor: 'text-blue-400',
+          status: 'active',
+          badgeText: 'Active • Millimeter Canvas',
+          action: () => setActiveScreen('upload'),
+          primaryActionLabel: 'Open Card Studio',
+          features: ['Millimeter Precision (CR80)', 'Custom Image Backgrounds', 'Smart Magnetic Snap', 'PDF & SVG Export'],
+        });
+      } else {
+        const manualService: ServiceItem = {
+          id: 'custom_studio',
+          name: 'Request Manual Application',
+          authority: 'Support & Assistance',
+          description: 'Request help from our staff for complex applications or custom card designs not available in the automated portal.',
+          category: 'all',
+          icon: Phone,
+          iconBg: 'bg-blue-600/20 border-blue-500/40',
+          iconColor: 'text-blue-400',
+          status: 'active',
+          badgeText: 'Active • Manual Support',
+          action: () => setManualRequestService(manualService),
+          primaryActionLabel: 'Request Assistance',
+          features: ['Direct Staff Support', 'Custom Document Design', 'Application Review', 'WhatsApp Support'],
+        };
+        list.push(manualService);
+      }
 
       return list;
     },
-    [storeServices, setActiveScreen, colorMap, iconMap]
+    [storeServices, setActiveScreen, colorMap, iconMap, authRole]
   );
 
   // Filtered services
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
-      // Hide studio tools for standard users
-      if (authRole === 'user' && service.id === 'custom_studio') {
-        return false;
-      }
-
       const matchesCategory =
         selectedCategory === 'all' ||
         service.category === selectedCategory ||
@@ -182,7 +196,7 @@ export const HomeScreen: React.FC = () => {
 
       return matchesCategory && matchesSearch && isReady;
     });
-  }, [services, selectedCategory, searchQuery, authRole]);
+  }, [services, selectedCategory, searchQuery]);
 
   const categories: { key: ServiceCategory; label: string }[] = [
     { key: 'all', label: 'All Services' },

@@ -33,6 +33,7 @@ import {
   CheckSquare,
   XSquare,
   ScrollText,
+  Smartphone,
 } from 'lucide-react';
 import { useTemplateStore, PasskeyItem, PaymentStatus, RegisteredUser, PaymentRequest, ManualRequestItem } from '../../store/useTemplateStore';
 import { ManualRequestsAdminTab } from './ManualRequestsAdminTab';
@@ -373,6 +374,16 @@ export const PasskeyManagerModal: React.FC = () => {
   };
 
   // Escape key listener
+  useEffect(() => {
+    const handleOpenTab = (e: any) => {
+      if (e.detail) {
+        setActiveAdminTab(e.detail);
+      }
+    };
+    window.addEventListener('open-admin-tab', handleOpenTab);
+    return () => window.removeEventListener('open-admin-tab', handleOpenTab);
+  }, []);
+
   useEffect(() => {
     if (!isPasskeyManagerOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, CreditCard, Check, AlertCircle, RefreshCw, X, ShieldCheck, ArrowRight, Clock, Copy } from 'lucide-react';
+import { Wallet, CreditCard, Check, AlertCircle, RefreshCw, X, ShieldCheck, ArrowRight, Clock, Copy, Hash, Zap } from 'lucide-react';
 import { useTemplateStore, NIDA_USAGE_PACKAGES } from '../../store/useTemplateStore';
+import { paymentService } from '../../services/paymentService';
 
 export const RechargeModal: React.FC = () => {
   const {
@@ -31,6 +32,9 @@ export const RechargeModal: React.FC = () => {
   const [copiedLipa, setCopiedLipa] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedMessage, setSubmittedMessage] = useState('');
+  const [reference, setReference] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState('');
 
   // Escape key listener
   useEffect(() => {
@@ -42,28 +46,54 @@ export const RechargeModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isRechargeModalOpen, setRechargeModalOpen]);
 
-  if (!isRechargeModalOpen) return null;
-
-  const currentPasskey = activePasskeys.find(
+  const currentPasskey = useMemo(() => activePasskeys.find(
     (p) => p.role === 'user' && p.key.toLowerCase() === (currentAuthKey || '').toLowerCase()
-  );
+  ), [activePasskeys, currentAuthKey]);
 
   const remainingUsages = currentPasskey?.remainingUsages ?? 0;
   const paymentStatus = currentPasskey?.paymentStatus || 'ACTIVE';
 
   // Find latest user payment request if any
-  const userRequests = paymentRequests.filter(
+  const userRequests = useMemo(() => paymentRequests.filter(
     (r) => r.userPasskey.toLowerCase() === (currentAuthKey || '').toLowerCase()
-  );
+  ), [paymentRequests, currentAuthKey]);
+  
   const latestRequest = userRequests.length > 0 ? userRequests[userRequests.length - 1] : null;
   const pendingRequest = userRequests.find((r) => r.status === 'PENDING') || latestRequest;
 
-  const selectedPkg = activePkgs.find((p) => p.id === selectedPkgId) || activePkgs[0] || { id: '', name: 'Standard', price: 'TSh 15,000', usages: 5 };
+  const selectedPkg = useMemo(() => activePkgs.find((p) => p.id === selectedPkgId) || activePkgs[0] || { id: '', name: 'Standard', price: 'TSh 15,000', usages: 5 }, [activePkgs, selectedPkgId]);
+
+  if (!isRechargeModalOpen) return null;
 
   const handleCopyLipa = () => {
     navigator.clipboard.writeText('1234678');
     setCopiedLipa(true);
     setTimeout(() => setCopiedLipa(false), 2000);
+  };
+
+  const handleAutoVerify = async () => {
+    if (!reference.trim()) {
+      setVerificationError('Please enter your transaction reference.');
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerificationError('');
+    
+    try {
+      const res = await paymentService.autoConfirmWithReference(reference.trim(), currentPasskey?.id || '');
+      if (res.success) {
+        setSubmittedMessage(res.message);
+        refreshUserStatus();
+        setReference('');
+      } else {
+        setVerificationError(res.message);
+      }
+    } catch (error) {
+      setVerificationError('Verification failed. Please check your reference and try again.');
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const handlePaymentSubmit = () => {
@@ -81,7 +111,7 @@ export const RechargeModal: React.FC = () => {
       setIsSubmitting(false);
 
       if (res.success) {
-        setSubmittedMessage('Payment submitted. Please wait for Admin approval. Refresh the page to check your payment status and available usages.');
+        setSubmittedMessage('Payment request submitted. You can wait for manual approval OR enter your Transaction Reference below for instant auto-verification.');
       }
     }, 300);
   };
@@ -226,6 +256,55 @@ export const RechargeModal: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Auto-Verification Section */}
+          <div className="p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/20 text-white space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-white/20 rounded-lg">
+                <Zap className="w-4 h-4 text-yellow-300" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider">Instant Auto-Verify</h4>
+                <p className="text-[10px] text-blue-100">Enter transaction reference for instant tokens</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="relative">
+                <Hash className="w-4 h-4 text-blue-300 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value.toUpperCase())}
+                  placeholder="E.g. QRC7W8X9Z2"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-9 pr-3 py-2.5 text-sm font-bold placeholder:text-blue-300/50 focus:outline-none focus:ring-2 focus:ring-white/30 uppercase"
+                />
+              </div>
+              
+              {verificationError && (
+                <p className="text-[10px] font-bold text-red-200 bg-red-900/30 px-2 py-1 rounded flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {verificationError}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAutoVerify}
+                disabled={isVerifying || !reference.trim()}
+                className="w-full py-2.5 bg-white text-blue-600 font-black text-xs rounded-xl shadow-sm hover:bg-blue-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isVerifying ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    Verify Reference
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* Package Selection */}
           <div className="space-y-2">
