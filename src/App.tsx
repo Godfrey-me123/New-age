@@ -34,6 +34,11 @@ export default function App() {
 
   // PASSKEY GATEWAY SYSTEM: Must enter valid passkey first
   if (!authRole) {
+    // Redirect all restricted paths to login
+    const path = window.location.pathname;
+    if (path !== '/' && path !== '/login') {
+      window.history.replaceState({}, '', '/login');
+    }
     return (
       <>
         <PasskeyScreen />

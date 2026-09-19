@@ -28,7 +28,8 @@ import {
   Zap,
   Activity,
   ShieldCheck as ShieldCheckIcon,
-  Bug
+  Bug,
+  Edit,
 } from 'lucide-react';
 import { paymentService } from '../../services/paymentService';
 import { PaymentRecord, PaymentStatus, VerificationLog } from '../../types';
@@ -79,6 +80,8 @@ export const PaymentDashboard: React.FC = () => {
   });
 
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<PaymentRecord>>({});
 
   // SMS Monitor State
   const [monitorData, setMonitorData] = useState<{
@@ -251,6 +254,64 @@ export const PaymentDashboard: React.FC = () => {
       setTestStatus('failed');
       setTestLogs(prev => prev.map(l => l.id === newLog.id ? { ...l, status: 'ERROR' } : l));
     }
+  };
+
+  const handleApprove = async (paymentId: string) => {
+    if (!confirm('Manually approve this payment?')) return;
+    try {
+      if (!selectedPayment) throw new Error('No payment selected');
+      await paymentService.verifyPaymentManually(paymentId, 'admin', selectedPayment.tokensGranted || 0, selectedPayment.passkeyId);
+      alert('Payment verified and tokens granted!');
+      loadData();
+    } catch (e) {
+      alert('Failed to verify: ' + (e instanceof Error ? e.message : 'Unknown error'));
+    }
+  };
+
+  const handleReject = async (paymentId: string) => {
+    if (!confirm('Reject this payment?')) return;
+    try {
+      await paymentService.rejectPayment(paymentId, 'admin');
+      alert('Payment rejected');
+      loadData();
+    } catch (e) {
+      alert('Failed to reject');
+    }
+  };
+
+  const handleReactivate = async (paymentId: string) => {
+    if (!confirm('Reactivate this payment to ACTIVE/VERIFIED status?')) return;
+    try {
+      await paymentService.reactivatePayment(paymentId, 'admin');
+      alert('Payment reactivated!');
+      loadData();
+    } catch (e) {
+      alert('Failed to reactivate');
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPayment) return;
+    try {
+      await paymentService.updatePaymentRecord(selectedPayment.id, editForm, 'admin');
+      setIsEditModalOpen(false);
+      setSelectedPayment(prev => prev ? { ...prev, ...editForm } : null);
+      loadData();
+    } catch (e) {
+      alert('Update failed');
+    }
+  };
+
+  const openEditModal = () => {
+    if (!selectedPayment) return;
+    setEditForm({
+      transactionReference: selectedPayment.transactionReference,
+      senderName: selectedPayment.senderName,
+      senderPhone: selectedPayment.senderPhone,
+      amount: selectedPayment.amount,
+    });
+    setIsEditModalOpen(true);
   };
 
   const renderPaymentList = () => (
@@ -485,15 +546,36 @@ export const PaymentDashboard: React.FC = () => {
               <div className="space-y-3">
                 {selectedPayment.status === 'pending' && (
                   <>
-                    <button className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
+                    <button 
+                      onClick={() => handleApprove(selectedPayment.id)}
+                      className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer"
+                    >
                       Manual Verify
                     </button>
-                    <button className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-red-500/20 active:scale-95">
+                    <button 
+                      onClick={() => handleReject(selectedPayment.id)}
+                      className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-red-500/20 active:scale-95 cursor-pointer"
+                    >
                       Reject Payment
                     </button>
                   </>
                 )}
-                <button className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2">
+                {selectedPayment.status === 'rejected' && (
+                  <button 
+                    onClick={() => handleReactivate(selectedPayment.id)}
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer"
+                  >
+                    Reactivate Payment
+                  </button>
+                )}
+                <button 
+                  onClick={openEditModal}
+                  className="w-full py-4 bg-gray-700 hover:bg-gray-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit Details
+                </button>
+                <button className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer">
                   <Download className="w-4 h-4" />
                   Export Receipt
                 </button>
@@ -1193,6 +1275,77 @@ export const PaymentDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">Edit Transaction</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all cursor-pointer">
+                <XCircle className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="p-8 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reference ID</label>
+                  <input 
+                    type="text" 
+                    value={editForm.transactionReference || ''} 
+                    onChange={e => setEditForm(prev => ({ ...prev, transactionReference: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sender Name</label>
+                  <input 
+                    type="text" 
+                    value={editForm.senderName || ''} 
+                    onChange={e => setEditForm(prev => ({ ...prev, senderName: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Phone Number</label>
+                  <input 
+                    type="text" 
+                    value={editForm.senderPhone || ''} 
+                    onChange={e => setEditForm(prev => ({ ...prev, senderPhone: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Amount (TSh)</label>
+                  <input 
+                    type="number" 
+                    value={editForm.amount || 0} 
+                    onChange={e => setEditForm(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+              
+              <div className="pt-6 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-4 bg-gray-100 text-gray-600 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-4 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95 cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

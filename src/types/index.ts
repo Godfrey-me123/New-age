@@ -188,8 +188,9 @@ export interface CardTemplate {
   id: string;
   templateName: string;
   serviceId?: string;
-  isUniversalFront?: boolean;
-  isUniversalBack?: boolean;
+  isUniversal?: boolean;
+  isUniversalFront?: boolean; // Keep for backward compatibility
+  isUniversalBack?: boolean; // Keep for backward compatibility
   cardType?: CardType;
   side?: CardSide;
   cardWidth: number; // mm (e.g., 85.60 for standard CR80)
@@ -259,6 +260,7 @@ export interface PaymentRecord {
   verificationLog?: string[];
   tokensGranted?: number;
   unlockedServices?: string[];
+  passkeyId?: string; // Add this
   verifiedAt?: string;
   verifiedBy?: string; // admin ID or 'auto'
 }

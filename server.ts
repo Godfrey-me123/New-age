@@ -7,6 +7,7 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   // --- SMS INGESTION PIPELINE CORE ---
   enum SmsProcessingStatus {
@@ -82,6 +83,8 @@ async function startServer() {
 
   // --- PUBLIC WEBHOOK ENDPOINT ---
   app.post(["/api/payment-sms", "/api/payment-sms/"], async (req, res) => {
+    console.log(`[DEBUG] Incoming SMS POST request. Headers:`, JSON.stringify(req.headers));
+    console.log(`[DEBUG] Incoming SMS POST request. Body:`, JSON.stringify(req.body));
     const timestamp = new Date().toISOString();
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     const payload = req.body || {};

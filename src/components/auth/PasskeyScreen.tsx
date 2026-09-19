@@ -12,6 +12,8 @@ export const PasskeyScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
+  console.log('[Auth Debug] PasskeyScreen Render:', { authRole: useTemplateStore.getState().authRole, isRegisterOpen });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!passkeyInput.trim()) {

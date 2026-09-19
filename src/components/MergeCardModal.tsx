@@ -36,8 +36,12 @@ export const MergeCardModal: React.FC = () => {
   const [backPreview, setBackPreview] = useState<string>('');
   const [isExporting, setIsExporting] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+  const initializationRef = React.useRef(false);
 
   const fetchInitialData = async () => {
+    if (initializationRef.current) return;
+    initializationRef.current = true;
+    
     const list = await loadSavedTemplates();
     setTemplates(list);
 
@@ -73,6 +77,8 @@ export const MergeCardModal: React.FC = () => {
   useEffect(() => {
     if (isMergeModalOpen) {
       fetchInitialData();
+    } else {
+      initializationRef.current = false;
     }
   }, [isMergeModalOpen]);
 

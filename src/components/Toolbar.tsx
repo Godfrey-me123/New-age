@@ -28,6 +28,7 @@ import {
   Key,
   Eye,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { Unit } from '../types';
@@ -76,6 +77,7 @@ export const Toolbar: React.FC = () => {
     setActiveServiceId,
     saveUniversalFrontTemplate,
     saveUniversalBackTemplate,
+    importTemplateJSON,
   } = useTemplateStore();
 
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
@@ -116,6 +118,28 @@ export const Toolbar: React.FC = () => {
   const handleFitScreen = () => {
     setZoom(1.0);
     setPanOffset({ x: 0, y: 0 });
+  };
+
+  const handleImportClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const json = event.target?.result as string;
+        const result = await importTemplateJSON(json);
+        if (result.success) {
+          alert(result.message);
+        } else {
+          alert('Error: ' + result.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   };
 
   const unitOptions: { value: Unit; label: string }[] = [
@@ -525,6 +549,16 @@ export const Toolbar: React.FC = () => {
           >
             <FolderOpen className="w-3.5 h-3.5 text-[#000000] shrink-0" />
             <span className="text-xs whitespace-nowrap">Templates</span>
+          </button>
+
+          {/* Import JSON Button */}
+          <button
+            onClick={handleImportClick}
+            className="hidden sm:flex px-2 py-1.5 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-[#000000] text-xs font-bold rounded-lg transition-colors items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+            title="Import Template JSON"
+          >
+            <Upload className="w-3.5 h-3.5 text-[#000000] shrink-0" />
+            <span className="text-xs whitespace-nowrap">Import JSON</span>
           </button>
 
           {/* Save Button */}

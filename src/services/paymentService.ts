@@ -81,7 +81,7 @@ export class PaymentService {
     return { success: true, message: `Successfully verified! ${tokens} tokens have been added to your account.` };
   }
 
-  async verifyPaymentManually(paymentId: string, adminId: string, tokens?: number): Promise<void> {
+  async verifyPaymentManually(paymentId: string, adminId: string, tokens?: number, passkeyId?: string): Promise<void> {
     const payment = await paymentDb.getPayment(paymentId);
     if (!payment) throw new Error('Payment not found');
     if (payment.used) throw new Error('Payment already used');
@@ -91,14 +91,16 @@ export class PaymentService {
     payment.verifiedAt = new Date().toISOString();
     payment.verifiedBy = adminId;
     
-    if (tokens && tokens > 0) {
+    // Grant tokens if passkeyId is linked
+    const targetPasskeyId = passkeyId || payment.passkeyId;
+    if (targetPasskeyId && tokens && tokens > 0) {
       payment.tokensGranted = tokens;
-      // Note: Admin still needs to specify which passkey to grant to if not linked
-      // For now, we just mark it as verified. The actual grant might happen in the UI.
+      const store = useTemplateStore.getState();
+      store.addUsagesToPasskey(targetPasskeyId, tokens, `Manual Admin Activation: ${tokens} tokens`);
     }
 
     await paymentDb.updatePayment(payment);
-    await this.logAction(paymentId, 'verified_manual', `Payment verified manually by ${adminId}`, adminId);
+    await this.logAction(paymentId, 'verified_manual', `Payment verified manually by ${adminId}${targetPasskeyId ? ` for passkey ${targetPasskeyId}` : ''}`, adminId);
   }
 
   async rejectPayment(paymentId: string, adminId: string, reason: string): Promise<void> {
@@ -129,6 +131,25 @@ export class PaymentService {
     payment.verificationType = undefined;
     await paymentDb.updatePayment(payment);
     await this.logAction(paymentId, 'reset', `Payment status reset to pending by ${adminId}`, adminId);
+  }
+
+  async updatePaymentRecord(paymentId: string, updates: Partial<PaymentRecord>, adminId: string): Promise<void> {
+    const payment = await paymentDb.getPayment(paymentId);
+    if (!payment) throw new Error('Payment not found');
+
+    const updatedPayment = { ...payment, ...updates };
+    await paymentDb.updatePayment(updatedPayment);
+    await this.logAction(paymentId, 'admin_edit', `Payment record edited by ${adminId}. Changes: ${Object.keys(updates).join(', ')}`, adminId);
+  }
+
+  async reactivatePayment(paymentId: string, adminId: string): Promise<void> {
+    const payment = await paymentDb.getPayment(paymentId);
+    if (!payment) throw new Error('Payment not found');
+
+    payment.status = 'verified';
+    payment.used = false; // Allow it to be used again if it was exhausted or restricted
+    await paymentDb.updatePayment(payment);
+    await this.logAction(paymentId, 'reactivated', `Payment reactivated by ${adminId}`, adminId);
   }
 
   async logAction(paymentId: string, action: string, details: string, adminId?: string): Promise<void> {

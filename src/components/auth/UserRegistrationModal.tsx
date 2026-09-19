@@ -13,6 +13,7 @@ export const UserRegistrationModal: React.FC<UserRegistrationModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  console.log('[Auth Debug] UserRegistrationModal Render:', { isOpen });
   const { registerUserAccount } = useTemplateStore();
 
   const [fullName, setFullName] = useState('');
@@ -26,6 +27,15 @@ export const UserRegistrationModal: React.FC<UserRegistrationModalProps> = ({
 
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Escape key listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   if (!isOpen) return null;
 
@@ -93,15 +103,6 @@ export const UserRegistrationModal: React.FC<UserRegistrationModalProps> = ({
       onClose();
     }, 300);
   };
-
-  // Escape key listener
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
 
   return (
     <div

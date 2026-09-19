@@ -536,6 +536,7 @@ interface TemplateState {
   saveStudioDraft: () => void;
   restoreStudioDraft: (serviceId?: string) => void;
   clearStudioDraft: (serviceId?: string) => void;
+  importTemplateJSON: (json: string, asNew?: boolean) => Promise<{ success: boolean; message: string }>;
 
   navigateSafely: (
     targetScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments',
@@ -585,6 +586,8 @@ interface TemplateState {
   submitPaymentRequest: (packageId: string, packageName: string, amount: string, requestedUsages: number) => { success: boolean; message: string; request?: PaymentRequest };
   approvePaymentRequest: (requestId: string) => { success: boolean; message: string };
   rejectPaymentRequest: (requestId: string) => { success: boolean; message: string };
+  updatePaymentRequest: (requestId: string, updates: Partial<PaymentRequest>) => { success: boolean; message: string };
+  reactivatePaymentRequest: (requestId: string) => { success: boolean; message: string };
   submitManualRequest: (data: { serviceId: string; serviceName: string; fullName: string; whatsappNumber: string; normalNumber?: string; normalCallNumber?: string }) => { success: boolean; message: string; request?: ManualRequestItem };
   updateManualRequestStatus: (requestId: string, status: ManualRequestItem['status'], adminNotes?: string) => { success: boolean; message: string };
   deleteManualRequest: (requestId: string) => { success: boolean; message: string };
@@ -1045,6 +1048,30 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem(`bigsta_studio_draft_${targetService}`);
         deleteStudioDraftDB(targetService).catch(() => {});
+      }
+    },
+
+    importTemplateJSON: async (jsonString, asNew = false) => {
+      try {
+        const data = JSON.parse(jsonString);
+        if (!data.layers) throw new Error('Invalid template data');
+        
+        const template: CardTemplate = {
+          ...data,
+          id: asNew ? `tpl_${Date.now()}` : (data.id || `tpl_${Date.now()}`),
+          updatedAt: new Date().toISOString()
+        };
+
+        if (asNew) {
+          await saveTemplateDB(template);
+          const all = await getAllTemplatesDB();
+          set({ customTemplates: all });
+        } else {
+          set({ currentTemplate: template });
+        }
+        return { success: true, message: 'Template imported successfully' };
+      } catch (e: any) {
+        return { success: false, message: e.message || 'Import failed' };
       }
     },
 
@@ -1592,6 +1619,33 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       set({ paymentRequests: updatedRequests, activePasskeys: updatedPasskeys });
 
       return { success: true, message: 'Payment request rejected.' };
+    },
+
+    updatePaymentRequest: (requestId, updates) => {
+      const { paymentRequests } = get();
+      const updated = paymentRequests.map(r => 
+        r.id === requestId ? { ...r, ...updates } : r
+      );
+      try {
+        localStorage.setItem('bigsta_payment_requests', JSON.stringify(updated));
+      } catch (e) {}
+      set({ paymentRequests: updated });
+      return { success: true, message: 'Payment record updated successfully' };
+    },
+
+    reactivatePaymentRequest: (requestId) => {
+      const { paymentRequests } = get();
+      const target = paymentRequests.find(r => r.id === requestId);
+      if (!target) return { success: false, message: 'Request not found' };
+
+      const updated = paymentRequests.map(r => 
+        r.id === requestId ? { ...r, status: 'PENDING' as const } : r
+      );
+      try {
+        localStorage.setItem('bigsta_payment_requests', JSON.stringify(updated));
+      } catch (e) {}
+      set({ paymentRequests: updated });
+      return { success: true, message: 'Payment reactivated to PENDING' };
     },
 
     submitManualRequest: (data) => {
