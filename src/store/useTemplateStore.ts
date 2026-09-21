@@ -10,6 +10,12 @@ import {
   BackgroundConfig,
   UploadedBackground,
   NidaSubmissionRecord,
+  ConfigurablePaymentMethod,
+  UserProfileSettings,
+  UserPreferences,
+  AdminSystemSettings,
+  UserPaymentSubmission,
+  TokenTransaction,
 } from '../types';
 import { CR80_WIDTH_MM, CR80_HEIGHT_MM } from '../utils/units';
 import { SAMPLE_TEMPLATES } from '../utils/sampleTemplates';
@@ -18,6 +24,7 @@ import { getClosestValidWeight } from '../utils/fonts';
 import {
   saveTemplateDB,
   getAllTemplatesDB,
+  getTemplateByIdDB,
   deleteTemplateDB,
   saveBackgroundDB,
   getAllBackgroundsDB,
@@ -259,12 +266,12 @@ export const INITIAL_SERVICES: ServiceData[] = [
   },
   {
     id: 'nhif',
-    name: 'NHIF Services',
+    name: 'NHIF Membership Card',
     authority: 'National Health Insurance Fund',
     description: 'Healthcare membership smart cards, dependent coverage validation & biometric health passes.',
     category: 'health',
     iconName: 'HeartPulse',
-    active: false,
+    active: true,
     tokenCost: 1,
     features: ['Principal & Dependent Mapping', 'Hospital Tier Endorsements', 'Smart Card Chip Specs'],
     processingMode: 'auto',
@@ -304,76 +311,7 @@ export interface PasskeyItem {
   usageHistory?: PasskeyUsageHistoryItem[];
 }
 
-export const DEFAULT_PASSKEYS: PasskeyItem[] = [
-  {
-    id: 'pk_admin_1',
-    key: '123451',
-    role: 'admin',
-    active: true,
-    createdDate: '2026-01-01 09:00',
-    createdAtTimestamp: 1767258000000,
-    createdBy: 'System',
-    description: 'Admin Passkey',
-    totalUsages: 99999,
-    usedUsages: 0,
-    remainingUsages: 99999,
-    paymentStatus: 'ACTIVE',
-    packageName: 'Unlimited Admin',
-    packagePrice: 'Free',
-    usageHistory: [],
-  },
-  {
-    id: 'pk_admin_2',
-    key: 'BIGSTA-ADMIN',
-    role: 'admin',
-    active: true,
-    createdDate: '2026-01-01 09:00',
-    createdAtTimestamp: 1767258000001,
-    createdBy: 'System',
-    description: 'Master Admin Key',
-    totalUsages: 99999,
-    usedUsages: 0,
-    remainingUsages: 99999,
-    paymentStatus: 'ACTIVE',
-    packageName: 'Unlimited Admin',
-    packagePrice: 'Free',
-    usageHistory: [],
-  },
-  {
-    id: 'pk_user_1',
-    key: 'user123',
-    role: 'user',
-    active: true,
-    createdDate: '2026-01-01 09:00',
-    createdAtTimestamp: 1767258000002,
-    createdBy: 'System',
-    description: 'User Portal Passkey (5 Usages)',
-    totalUsages: 5,
-    usedUsages: 0,
-    remainingUsages: 5,
-    paymentStatus: 'ACTIVE',
-    packageName: '5 Usages Package',
-    packagePrice: 'TSh 25,000',
-    usageHistory: [],
-  },
-  {
-    id: 'pk_user_2',
-    key: 'BIGSTA-USER',
-    role: 'user',
-    active: true,
-    createdDate: '2026-01-01 09:00',
-    createdAtTimestamp: 1767258000003,
-    createdBy: 'System',
-    description: 'BIGsta User Key (3 Usages)',
-    totalUsages: 3,
-    usedUsages: 0,
-    remainingUsages: 3,
-    paymentStatus: 'ACTIVE',
-    packageName: '2 Usages Package',
-    packagePrice: 'TSh 15,000',
-    usageHistory: [],
-  },
-];
+export const DEFAULT_PASSKEYS: PasskeyItem[] = [];
 
 export interface RegisteredUser {
   id: string;
@@ -429,88 +367,43 @@ export interface ManualRequestItem {
   submittedAt?: number;
 }
 
-export const DEFAULT_MANUAL_REQUESTS: ManualRequestItem[] = [
-  {
-    id: 'req_1',
-    timestamp: Date.now() - 3600000,
-    date: '2026-09-18 12:30',
-    serviceId: 'ajira',
-    serviceName: 'Ajira Portal Services',
-    fullName: 'Juma Ally Rashidi',
-    whatsappNumber: '+255712345678',
-    normalNumber: '0712345678',
-    accountKey: 'BIGSTA-USER',
-    accountUser: 'Juma Ally',
-    status: 'PENDING',
-  },
-];
+export const DEFAULT_MANUAL_REQUESTS: ManualRequestItem[] = [];
 
-export const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [
-  {
-    id: 'usr_1',
-    fullName: 'Juma Ally Rashidi',
-    phone: '0712345678',
-    passkey: 'user123',
-    passkeyId: 'pk_user_1',
-    role: 'user',
-    status: 'ACTIVE',
-    registeredDate: '2026-01-01 10:00',
-    createdAtTimestamp: 1767261600000,
-    lastActive: 'Just now',
-    lastActiveTimestamp: Date.now(),
-    isOnline: true,
-    currentService: 'NIDA Services',
-    currentActivity: 'Viewing Card Preview',
-    servicesUsed: ['NIDA Verification', 'CR80 Card Generation'],
-  },
-  {
-    id: 'usr_2',
-    fullName: 'Aisha Said Mkwawa',
-    phone: '0654987654',
-    passkey: 'BIGSTA-USER',
-    passkeyId: 'pk_user_2',
-    role: 'user',
-    status: 'ACTIVE',
-    registeredDate: '2026-01-02 14:30',
-    createdAtTimestamp: 1767364200000,
-    lastActive: '25 mins ago',
-    lastActiveTimestamp: Date.now() - 1500000,
-    isOnline: false,
-    currentService: 'Card Studio',
-    currentActivity: 'Offline',
-    servicesUsed: ['Custom Card Studio'],
-  },
-];
+export const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [];
 
-export const DEFAULT_PAYMENT_REQUESTS: PaymentRequest[] = [
-  {
-    id: 'pay_1',
-    userId: 'usr_1',
-    userName: 'Juma Ally Rashidi',
-    userPhone: '0712345678',
-    passkeyId: 'pk_user_1',
-    userPasskey: 'user123',
-    packageId: 'pkg_5',
-    packageName: '5 Usages Package',
-    amount: 'TSh 25,000',
-    requestedUsages: 5,
-    lipaNumber: '1234678',
-    date: '2026-01-05 11:20',
-    timestamp: 1767612000000,
-    status: 'PENDING',
-  },
-];
+export const DEFAULT_PAYMENT_REQUESTS: PaymentRequest[] = [];
 
 interface TemplateState {
-  activeScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments';
+  activeScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings';
   currentTemplate: CardTemplate;
   frontPopulatedTemplate: CardTemplate | null;
   backPopulatedTemplate: CardTemplate | null;
   lastNidaFormData: any | null;
   lastDrivingLicenseFormData: any | null;
+  lastNhifFormData: any | null;
   setLastNidaFormData: (data: any) => void;
   setLastDrivingLicenseFormData: (data: any) => void;
+  setLastNhifFormData: (data: any) => void;
   customTemplates: CardTemplate[];
+
+  // PROMPT 40: Payment Methods, Settings & User Profile
+  paymentMethods: ConfigurablePaymentMethod[];
+  userProfile: UserProfileSettings;
+  userPreferences: UserPreferences;
+  adminSettings: AdminSystemSettings;
+  userPaymentSubmissions: UserPaymentSubmission[];
+  tokenHistory: TokenTransaction[];
+
+  updatePaymentMethod: (id: string, updates: Partial<ConfigurablePaymentMethod>) => void;
+  addPaymentMethod: (method: Omit<ConfigurablePaymentMethod, 'id'>) => void;
+  deletePaymentMethod: (id: string) => void;
+  updateUserProfile: (updates: Partial<UserProfileSettings>) => void;
+  updateUserPreferences: (updates: Partial<UserPreferences>) => void;
+  updateAdminSettings: (updates: Partial<AdminSystemSettings>) => void;
+  submitUserPayment: (data: { amount: number; sender: string; receiver: string; reference: string; date: string }) => { success: boolean; message: string; submission?: UserPaymentSubmission };
+  approveUserPayment: (submissionId: string, tokensToGrant?: number) => { success: boolean; message: string };
+  rejectUserPayment: (submissionId: string, reason?: string) => { success: boolean; message: string };
+  addTokenHistoryItem: (amount: number, reason: string) => void;
 
   // Multi-Service Studio Context
   activeServiceId: string;
@@ -523,7 +416,7 @@ interface TemplateState {
   // Studio Working Mode & Universal Navigation
   studioMode: boolean;
   navigationHistory: Array<{
-    screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments';
+    screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings';
     serviceId?: string;
     templateId?: string;
   }>;
@@ -539,7 +432,7 @@ interface TemplateState {
   importTemplateJSON: (json: string, asNew?: boolean) => Promise<{ success: boolean; message: string }>;
 
   navigateSafely: (
-    targetScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments',
+    targetScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings',
     serviceId?: string,
     bypassDraftRestore?: boolean
   ) => void;
@@ -577,7 +470,8 @@ interface TemplateState {
   selectedManualService: { id: string; name: string } | null;
   setManualAppModalOpen: (open: boolean, service?: { id: string; name: string } | null) => void;
 
-  loginWithPasskey: (inputKey: string) => { success: boolean; role?: AuthRole; message?: string };
+  loginWithPasskey: (inputKey: string) => Promise<{ success: boolean; role?: AuthRole; message?: string }>;
+  fetchPasskeysFromSupabase: () => Promise<void>;
   logoutPasskey: () => void;
   setPasskeyManagerOpen: (open: boolean) => void;
   setRechargeModalOpen: (open: boolean, notice?: string | null) => void;
@@ -674,7 +568,7 @@ interface TemplateState {
   historyIndex: number;
 
   // Actions
-  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments') => void;
+  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments' | 'billing' | 'settings') => void;
   setPopulatedCardPair: (front: CardTemplate | null, back: CardTemplate | null, formData?: any) => void;
   createNewTemplate: (background: BackgroundConfig, name?: string) => void;
   loadTemplate: (template: CardTemplate) => void;
@@ -903,32 +797,28 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   })();
 
   const initialPasskeys: PasskeyItem[] = (() => {
-    const defaults = DEFAULT_PASSKEYS.map(normalizePasskeyItem);
-    if (typeof window === 'undefined') return defaults;
+    if (typeof window === 'undefined') return [];
     try {
       const raw = localStorage.getItem('bigsta_passkeys');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          const stored = parsed.map(normalizePasskeyItem);
-          // Merge defaults: keep stored items, but add any defaults that aren't in stored (by ID)
-          const merged = [...stored];
-          defaults.forEach(def => {
-            if (!merged.some(m => m.id === def.id)) {
-              merged.push(def);
-            } else {
-              // Update existing default keys if they've changed in code (like pk_admin_1)
-              const index = merged.findIndex(m => m.id === def.id);
-              if (index !== -1 && merged[index].key !== def.key && def.id === 'pk_admin_1') {
-                merged[index] = { ...merged[index], key: def.key };
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          import('../services/supabase').then(({ syncPasskeySupabase }) => {
+            parsed.forEach((p) => {
+              if (p && p.key) {
+                syncPasskeySupabase(normalizePasskeyItem(p));
               }
-            }
-          });
-          return merged;
+            });
+          }).catch(() => {});
         }
+        localStorage.removeItem('bigsta_passkeys');
       }
-    } catch (e) {}
-    return defaults;
+    } catch (e) {
+      try {
+        localStorage.removeItem('bigsta_passkeys');
+      } catch (err) {}
+    }
+    return [];
   })();
 
   const initialRegisteredUsers: RegisteredUser[] = (() => {
@@ -991,6 +881,135 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     return INITIAL_SERVICES;
   })();
 
+  const initialPaymentMethods: ConfigurablePaymentMethod[] = (() => {
+    if (typeof window === 'undefined') return [
+      { id: 'pm_mpesa', name: 'M-Pesa', number: '0754 000 111', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*00# -> Pay Merchant or Send Money to 0754 000 111', status: 'active' },
+      { id: 'pm_tigopesa', name: 'Tigo Pesa', number: '0655 000 222', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*01# -> Pay Merchant or Send Money to 0655 000 222', status: 'active' },
+      { id: 'pm_airtel', name: 'Airtel Money', number: '0784 000 333', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*60# -> Pay Merchant or Send Money to 0784 000 333', status: 'active' },
+      { id: 'pm_halopesa', name: 'HaloPesa', number: '0622 000 444', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*88# -> Send Money to 0622 000 444', status: 'active' }
+    ];
+    try {
+      const raw = localStorage.getItem('bigsta_payment_methods');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [
+      { id: 'pm_mpesa', name: 'M-Pesa', number: '0754 000 111', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*00# -> Pay Merchant or Send Money to 0754 000 111', status: 'active' },
+      { id: 'pm_tigopesa', name: 'Tigo Pesa', number: '0655 000 222', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*01# -> Pay Merchant or Send Money to 0655 000 222', status: 'active' },
+      { id: 'pm_airtel', name: 'Airtel Money', number: '0784 000 333', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*60# -> Pay Merchant or Send Money to 0784 000 333', status: 'active' },
+      { id: 'pm_halopesa', name: 'HaloPesa', number: '0622 000 444', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*88# -> Send Money to 0622 000 444', status: 'active' }
+    ];
+  })();
+
+  const initialUserProfile: UserProfileSettings = (() => {
+    if (typeof window === 'undefined') return { name: 'Alex M.', phone: '+255 754 123 456', email: 'user@bigsta.tz', region: 'Dar es Salaam' };
+    try {
+      const raw = localStorage.getItem('bigsta_user_profile');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { name: 'Alex M.', phone: '+255 754 123 456', email: 'user@bigsta.tz', region: 'Dar es Salaam' };
+  })();
+
+  const initialUserPreferences: UserPreferences = (() => {
+    if (typeof window === 'undefined') return {
+      theme: 'light',
+      language: 'en',
+      fontSize: 'standard',
+      paymentAlerts: true,
+      downloadAlerts: true,
+      systemAlerts: true,
+      downloadFolder: 'Downloads/BIGsta',
+      autoSave: true,
+      openAfterDownload: false,
+      keepHistoryDays: 30
+    };
+    try {
+      const raw = localStorage.getItem('bigsta_user_preferences');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {
+      theme: 'light',
+      language: 'en',
+      fontSize: 'standard',
+      paymentAlerts: true,
+      downloadAlerts: true,
+      systemAlerts: true,
+      downloadFolder: 'Downloads/BIGsta',
+      autoSave: true,
+      openAfterDownload: false,
+      keepHistoryDays: 30
+    };
+  })();
+
+  const initialAdminSettings: AdminSystemSettings = (() => {
+    if (typeof window === 'undefined') return {
+      ocrProvider: 'Local AI / Tesseract Engine',
+      ocrConfidenceThreshold: 85,
+      autoApprovalEnabled: true,
+      tokenPriceTsh: 2000,
+      tokenRewardBonus: 10,
+      maxDailyTokenLimit: 1000,
+      autoApprovalRules: 'Auto approve reference matches with confidence > 85%'
+    };
+    try {
+      const raw = localStorage.getItem('bigsta_admin_settings');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {
+      ocrProvider: 'Local AI / Tesseract Engine',
+      ocrConfidenceThreshold: 85,
+      autoApprovalEnabled: true,
+      tokenPriceTsh: 2000,
+      tokenRewardBonus: 10,
+      maxDailyTokenLimit: 1000,
+      autoApprovalRules: 'Auto approve reference matches with confidence > 85%'
+    };
+  })();
+
+  const initialUserPayments: UserPaymentSubmission[] = (() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem('bigsta_user_payment_submissions');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return [
+      {
+        id: 'sub_sample_1',
+        userId: 'pk_user_1',
+        amount: 6000,
+        sender: 'Alex M. (0754123456)',
+        receiver: 'BIGsta Services',
+        reference: 'DIHEQ2MO5T',
+        date: '2026-09-17',
+        submittedAt: new Date(Date.now() - 86400000).toISOString(),
+        status: 'verified',
+        extractedData: {
+          amount: 6000,
+          sender: 'Alex M.',
+          receiver: 'BIGsta',
+          reference: 'DIHEQ2MO5T',
+          date: '2026-09-17'
+        },
+        tokensGranted: 3
+      }
+    ];
+  })();
+
+  const initialTokenHistory: TokenTransaction[] = (() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem('bigsta_token_history');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return [
+      { id: 'th_1', userId: 'pk_user_1', amount: 5, reason: 'Welcome Token Package Granted', timestamp: new Date(Date.now() - 172800000).toISOString() },
+      { id: 'th_2', userId: 'pk_user_1', amount: 3, reason: 'Payment Top-Up Verified (Ref: DIHEQ2MO5T)', timestamp: new Date(Date.now() - 86400000).toISOString() },
+      { id: 'th_3', userId: 'pk_user_1', amount: -1, reason: 'Generated NIDA Card Export', timestamp: new Date(Date.now() - 36000000).toISOString() }
+    ];
+  })();
+
   return {
     activeScreen: 'home',
     currentTemplate: DEFAULT_TEMPLATE,
@@ -998,9 +1017,125 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     backPopulatedTemplate: null,
     lastNidaFormData: null,
     lastDrivingLicenseFormData: null,
+    lastNhifFormData: null,
     setLastNidaFormData: (data: any) => set({ lastNidaFormData: data }),
     setLastDrivingLicenseFormData: (data: any) => set({ lastDrivingLicenseFormData: data }),
+    setLastNhifFormData: (data: any) => set({ lastNhifFormData: data }),
     customTemplates: [],
+
+    paymentMethods: initialPaymentMethods,
+    userProfile: initialUserProfile,
+    userPreferences: initialUserPreferences,
+    adminSettings: initialAdminSettings,
+    userPaymentSubmissions: initialUserPayments,
+    tokenHistory: initialTokenHistory,
+
+    updatePaymentMethod: (id, updates) => {
+      const updated = get().paymentMethods.map(pm => pm.id === id ? { ...pm, ...updates } : pm);
+      safeLocalStorageSetItem('bigsta_payment_methods', JSON.stringify(updated));
+      set({ paymentMethods: updated });
+    },
+
+    addPaymentMethod: (method) => {
+      const newMethod: ConfigurablePaymentMethod = { ...method, id: `pm_${Date.now()}` };
+      const updated = [...get().paymentMethods, newMethod];
+      safeLocalStorageSetItem('bigsta_payment_methods', JSON.stringify(updated));
+      set({ paymentMethods: updated });
+    },
+
+    deletePaymentMethod: (id) => {
+      const updated = get().paymentMethods.filter(pm => pm.id !== id);
+      safeLocalStorageSetItem('bigsta_payment_methods', JSON.stringify(updated));
+      set({ paymentMethods: updated });
+    },
+
+    updateUserProfile: (updates) => {
+      const updated = { ...get().userProfile, ...updates };
+      safeLocalStorageSetItem('bigsta_user_profile', JSON.stringify(updated));
+      set({ userProfile: updated });
+    },
+
+    updateUserPreferences: (updates) => {
+      const updated = { ...get().userPreferences, ...updates };
+      safeLocalStorageSetItem('bigsta_user_preferences', JSON.stringify(updated));
+      set({ userPreferences: updated });
+    },
+
+    updateAdminSettings: (updates) => {
+      const updated = { ...get().adminSettings, ...updates };
+      safeLocalStorageSetItem('bigsta_admin_settings', JSON.stringify(updated));
+      set({ adminSettings: updated });
+    },
+
+    submitUserPayment: (data) => {
+      const tokensCalculated = Math.max(1, Math.floor(data.amount / (get().adminSettings.tokenPriceTsh || 2000)));
+      const newSub: UserPaymentSubmission = {
+        id: `sub_${Date.now()}`,
+        userId: get().currentAuthKey || 'user_default',
+        passkeyId: get().currentAuthKey || 'user_default',
+        amount: data.amount,
+        sender: data.sender,
+        receiver: data.receiver || 'BIGsta',
+        reference: data.reference,
+        date: data.date,
+        submittedAt: new Date().toISOString(),
+        status: 'pending',
+        extractedData: {
+          amount: data.amount,
+          sender: data.sender,
+          receiver: data.receiver || 'BIGsta',
+          reference: data.reference,
+          date: data.date
+        }
+      };
+      const updated = [newSub, ...get().userPaymentSubmissions];
+      safeLocalStorageSetItem('bigsta_user_payment_submissions', JSON.stringify(updated));
+      set({ userPaymentSubmissions: updated });
+      return { success: true, message: 'Payment screenshot & extracted data submitted for verification', submission: newSub };
+    },
+
+    approveUserPayment: (submissionId, tokensToGrant) => {
+      const sub = get().userPaymentSubmissions.find(s => s.id === submissionId);
+      if (!sub) return { success: false, message: 'Submission not found' };
+
+      const granted = tokensToGrant || Math.max(1, Math.floor(sub.amount / (get().adminSettings.tokenPriceTsh || 2000)));
+      const updatedSubs = get().userPaymentSubmissions.map(s =>
+        s.id === submissionId ? { ...s, status: 'verified' as const, tokensGranted: granted } : s
+      );
+      safeLocalStorageSetItem('bigsta_user_payment_submissions', JSON.stringify(updatedSubs));
+
+      // Grant usages to user
+      const targetPasskey = sub.passkeyId || get().currentAuthKey || 'pk_user_1';
+      get().addUsagesToPasskey(targetPasskey, granted, `Approved Payment: Ref ${sub.reference}`);
+
+      // Log token history
+      get().addTokenHistoryItem(granted, `Top-Up Approved (Ref: ${sub.reference})`);
+
+      set({ userPaymentSubmissions: updatedSubs });
+      return { success: true, message: `Payment approved! Granted ${granted} tokens.` };
+    },
+
+    rejectUserPayment: (submissionId, reason) => {
+      const updatedSubs = get().userPaymentSubmissions.map(s =>
+        s.id === submissionId ? { ...s, status: 'rejected' as const, rejectionReason: reason || 'Invalid payment receipt details' } : s
+      );
+      safeLocalStorageSetItem('bigsta_user_payment_submissions', JSON.stringify(updatedSubs));
+      set({ userPaymentSubmissions: updatedSubs });
+      return { success: true, message: 'Payment submission rejected.' };
+    },
+
+    addTokenHistoryItem: (amount, reason) => {
+      const newItem: TokenTransaction = {
+        id: `th_${Date.now()}`,
+        userId: get().currentAuthKey || 'user_default',
+        amount,
+        reason,
+        timestamp: new Date().toISOString()
+      };
+      const updated = [newItem, ...get().tokenHistory];
+      safeLocalStorageSetItem('bigsta_token_history', JSON.stringify(updated));
+      set({ tokenHistory: updated });
+    },
 
     activeServiceId: typeof window !== 'undefined' ? (localStorage.getItem('bigsta_active_service') || 'nida') : 'nida',
     studioMode: false,
@@ -1208,45 +1343,93 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
     getUniversalFrontTemplate: (serviceId: string) => {
       const customTemplates = get().customTemplates;
-      const savedId = typeof window !== 'undefined' ? localStorage.getItem(`universal_front_${serviceId}`) : null;
       
-      if (savedId) {
-        const foundCustom = customTemplates.find((t) => t.id === savedId);
-        if (foundCustom) return foundCustom;
-        const foundSample = SAMPLE_TEMPLATES.find((t) => t.id === savedId);
-        if (foundSample) return foundSample;
+      // 1. First check localStorage for explicit JSON object override
+      if (typeof window !== 'undefined') {
+        const rawObj = localStorage.getItem(`universal_front_obj_${serviceId}`);
+        if (rawObj) {
+          try {
+            const parsed = JSON.parse(rawObj);
+            if (parsed && parsed.layers) {
+              return ensureTemplateFieldIds(parsed);
+            }
+          } catch (e) {
+            console.warn('Error parsing universal front object from localStorage:', e);
+          }
+        }
       }
 
-      const universalCustom = customTemplates.find((t) => t.serviceId === serviceId && t.isUniversalFront && !isBackSideTemplate(t));
-      if (universalCustom) return universalCustom;
+      // 2. Check for saved ID in localStorage
+      const savedId = typeof window !== 'undefined' ? localStorage.getItem(`universal_front_${serviceId}`) : null;
+      if (savedId) {
+        const foundCustom = customTemplates.find((t) => t.id === savedId);
+        if (foundCustom) return ensureTemplateFieldIds(foundCustom);
+        const foundSample = SAMPLE_TEMPLATES.find((t) => t.id === savedId);
+        if (foundSample) return ensureTemplateFieldIds(foundSample);
+      }
 
+      // 3. Check custom templates for universal front matching serviceId
+      const universalCustom = customTemplates.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && t.isUniversalFront && !isBackSideTemplate(t));
+      if (universalCustom) return ensureTemplateFieldIds(universalCustom);
+
+      // 4. Check sample templates specifically matching serviceId
       const sampleMatch = SAMPLE_TEMPLATES.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && !isBackSideTemplate(t));
-      if (sampleMatch) return sampleMatch;
+      if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
-      return SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_front') || SAMPLE_TEMPLATES[0];
+      // 5. Fallback ONLY to default front template if serviceId match is not found
+      const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && !isBackSideTemplate(t)) || SAMPLE_TEMPLATES[0];
+      return ensureTemplateFieldIds(fallbackSample);
     },
 
     getUniversalBackTemplate: (serviceId: string) => {
       const customTemplates = get().customTemplates;
-      const savedId = typeof window !== 'undefined' ? localStorage.getItem(`universal_back_${serviceId}`) : null;
       
-      if (savedId) {
-        const foundCustom = customTemplates.find((t) => t.id === savedId);
-        if (foundCustom) return foundCustom;
-        const foundSample = SAMPLE_TEMPLATES.find((t) => t.id === savedId);
-        if (foundSample) return foundSample;
+      // 1. First check localStorage for explicit JSON object override
+      if (typeof window !== 'undefined') {
+        const rawObj = localStorage.getItem(`universal_back_obj_${serviceId}`);
+        if (rawObj) {
+          try {
+            const parsed = JSON.parse(rawObj);
+            if (parsed && parsed.layers) {
+              return ensureTemplateFieldIds(parsed);
+            }
+          } catch (e) {
+            console.warn('Error parsing universal back object from localStorage:', e);
+          }
+        }
       }
 
-      const universalCustom = customTemplates.find((t) => t.serviceId === serviceId && t.isUniversalBack && isBackSideTemplate(t));
-      if (universalCustom) return universalCustom;
+      // 2. Check for saved ID in localStorage
+      const savedId = typeof window !== 'undefined' ? localStorage.getItem(`universal_back_${serviceId}`) : null;
+      if (savedId) {
+        const foundCustom = customTemplates.find((t) => t.id === savedId);
+        if (foundCustom) return ensureTemplateFieldIds(foundCustom);
+        const foundSample = SAMPLE_TEMPLATES.find((t) => t.id === savedId);
+        if (foundSample) return ensureTemplateFieldIds(foundSample);
+      }
 
+      // 3. Check custom templates for universal back matching serviceId
+      const universalCustom = customTemplates.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && t.isUniversalBack && isBackSideTemplate(t));
+      if (universalCustom) return ensureTemplateFieldIds(universalCustom);
+
+      // 4. Check sample templates specifically matching serviceId
       const sampleMatch = SAMPLE_TEMPLATES.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && isBackSideTemplate(t));
-      if (sampleMatch) return sampleMatch;
+      if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
-      return SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1];
+      // 5. Fallback ONLY to default back template if serviceId match is not found
+      const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && isBackSideTemplate(t)) || SAMPLE_TEMPLATES[1];
+      return ensureTemplateFieldIds(fallbackSample);
     },
 
     saveUniversalFrontTemplate: async (serviceId: string, template: CardTemplate) => {
+      // Pre-save integrity check
+      if (!template || !template.background) {
+        throw new Error('Pre-save validation error: Template background or layer state is missing.');
+      }
+      if (template.background.type === 'image' && !template.background.src) {
+        throw new Error('Pre-save validation error: Background image source URL is missing or empty.');
+      }
+
       const updatedTpl: CardTemplate = {
         ...template,
         serviceId,
@@ -1256,15 +1439,40 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       };
       const sanitized = sanitizeTemplateForSaving(updatedTpl);
       await saveTemplateDB(sanitized);
+
       if (typeof window !== 'undefined') {
         safeLocalStorageSetItem(`universal_front_${serviceId}`, updatedTpl.id);
+        safeLocalStorageSetItem(`universal_front_obj_${serviceId}`, JSON.stringify(sanitized));
       }
+
+      // Supabase Universal Template Sync (PROMPT 50.4)
+      try {
+        const { saveUniversalTemplateSupabase } = await import('../services/supabase');
+        await saveUniversalTemplateSupabase(serviceId, sanitized, true, false);
+      } catch (e) {
+        console.warn('Supabase sync for universal front template skipped:', e);
+      }
+
       await get().loadSavedTemplates();
       set({ currentTemplate: updatedTpl, hasUnsavedChanges: false });
       get().saveStudioDraft();
+
+      // Post-save verification check
+      const retrieved = await getTemplateByIdDB(updatedTpl.id);
+      if (!retrieved || retrieved.background?.type !== sanitized.background?.type) {
+        console.error('Post-save verification failed for universal front template:', { expected: sanitized, got: retrieved });
+      }
     },
 
     saveUniversalBackTemplate: async (serviceId: string, template: CardTemplate) => {
+      // Pre-save integrity check
+      if (!template || !template.background) {
+        throw new Error('Pre-save validation error: Template background or layer state is missing.');
+      }
+      if (template.background.type === 'image' && !template.background.src) {
+        throw new Error('Pre-save validation error: Background image source URL is missing or empty.');
+      }
+
       const updatedTpl: CardTemplate = {
         ...template,
         serviceId,
@@ -1274,12 +1482,29 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       };
       const sanitized = sanitizeTemplateForSaving(updatedTpl);
       await saveTemplateDB(sanitized);
+
       if (typeof window !== 'undefined') {
         safeLocalStorageSetItem(`universal_back_${serviceId}`, updatedTpl.id);
+        safeLocalStorageSetItem(`universal_back_obj_${serviceId}`, JSON.stringify(sanitized));
       }
+
+      // Supabase Universal Template Sync (PROMPT 50.4)
+      try {
+        const { saveUniversalTemplateSupabase } = await import('../services/supabase');
+        await saveUniversalTemplateSupabase(serviceId, sanitized, false, true);
+      } catch (e) {
+        console.warn('Supabase sync for universal back template skipped:', e);
+      }
+
       await get().loadSavedTemplates();
       set({ currentTemplate: updatedTpl, hasUnsavedChanges: false });
       get().saveStudioDraft();
+
+      // Post-save verification check
+      const retrieved = await getTemplateByIdDB(updatedTpl.id);
+      if (!retrieved || retrieved.background?.type !== sanitized.background?.type) {
+        console.error('Post-save verification failed for universal back template:', { expected: sanitized, got: retrieved });
+      }
     },
 
     tokenPackages: initialTokenPackages,
@@ -1419,8 +1644,24 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const updatedUsers = [newUser, ...users];
 
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updatedPasskeys));
+        localStorage.removeItem('bigsta_passkeys');
         localStorage.setItem('bigsta_registered_users', JSON.stringify(updatedUsers));
+      } catch (e) {}
+
+      // Supabase Profile & Auth Sync
+      try {
+        import('../services/supabase').then(({ syncProfileSupabase, syncPasskeySupabase }) => {
+          syncProfileSupabase({
+            id: newUser.id,
+            name: newUser.fullName,
+            phone: newUser.phone,
+            email: `${newUser.phone.replace(/[^0-9]/g, '')}@bigsta.tz`,
+            role: newUser.role,
+            tokens: 1,
+            passkey: newUser.passkey,
+          });
+          syncPasskeySupabase(newPasskeyItem);
+        }).catch(() => {});
       } catch (e) {}
 
       set({ activePasskeys: updatedPasskeys, registeredUsers: updatedUsers });
@@ -1518,8 +1759,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       try {
         localStorage.setItem('bigsta_payment_requests', JSON.stringify(updatedRequests));
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updatedPasskeys));
       } catch (e) {}
+
+      // Sync passkey status to Supabase
+      const updatedUserPk = updatedPasskeys.find((p) => p.id === userPasskeyItem?.id);
+      if (updatedUserPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(updatedUserPk);
+        }).catch(() => {});
+      }
 
       set({ paymentRequests: updatedRequests, activePasskeys: updatedPasskeys });
 
@@ -1572,9 +1820,16 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       try {
         localStorage.setItem('bigsta_payment_requests', JSON.stringify(updatedRequests));
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updatedPasskeys));
         localStorage.setItem('bigsta_registered_users', JSON.stringify(updatedUsers));
       } catch (e) {}
+
+      // Sync approved passkey to Supabase
+      const approvedPk = updatedPasskeys.find((p) => p.id === targetReq.passkeyId || p.key.toLowerCase() === targetReq.userPasskey.toLowerCase());
+      if (approvedPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(approvedPk);
+        }).catch(() => {});
+      }
 
       set({
         paymentRequests: updatedRequests,
@@ -1613,8 +1868,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       try {
         localStorage.setItem('bigsta_payment_requests', JSON.stringify(updatedRequests));
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updatedPasskeys));
       } catch (e) {}
+
+      // Sync rejected passkey to Supabase
+      const rejectedPk = updatedPasskeys.find((p) => p.id === targetReq.passkeyId || p.key.toLowerCase() === targetReq.userPasskey.toLowerCase());
+      if (rejectedPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(rejectedPk);
+        }).catch(() => {});
+      }
 
       set({ paymentRequests: updatedRequests, activePasskeys: updatedPasskeys });
 
@@ -1735,8 +1997,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       try {
         localStorage.setItem('bigsta_registered_users', JSON.stringify(updatedUsers));
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updatedPasskeys));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
+
+      const targetPk = updatedPasskeys.find((p) => p.id === targetUser.passkeyId || p.key.toLowerCase() === targetUser.passkey.toLowerCase());
+      if (targetPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(targetPk);
+        }).catch(() => {});
+      }
 
       set({ registeredUsers: updatedUsers, activePasskeys: updatedPasskeys });
     },
@@ -1754,38 +2023,85 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       try {
         localStorage.setItem('bigsta_registered_users', JSON.stringify(updatedUsers));
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updatedPasskeys));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
+
+      if (targetUser) {
+        import('../services/supabase').then(({ deletePasskeySupabase }) => {
+          deletePasskeySupabase(targetUser.passkeyId, targetUser.passkey);
+        }).catch(() => {});
+      }
 
       set({ registeredUsers: updatedUsers, activePasskeys: updatedPasskeys });
     },
 
     refreshUserStatus: () => {
       try {
-        const rawPass = localStorage.getItem('bigsta_passkeys');
         const rawReqs = localStorage.getItem('bigsta_payment_requests');
         const rawUsers = localStorage.getItem('bigsta_registered_users');
 
-        let updatedPass = get().activePasskeys;
         let updatedReqs = get().paymentRequests;
         let updatedUsers = get().registeredUsers;
 
-        if (rawPass) updatedPass = JSON.parse(rawPass);
         if (rawReqs) updatedReqs = JSON.parse(rawReqs);
         if (rawUsers) updatedUsers = JSON.parse(rawUsers);
 
+        // Ensure passkeys are never cached in phone storage
+        localStorage.removeItem('bigsta_passkeys');
+
         set({
-          activePasskeys: updatedPass,
           paymentRequests: updatedReqs,
           registeredUsers: updatedUsers,
         });
       } catch (e) {}
     },
 
-    loginWithPasskey: (inputKey) => {
+    fetchPasskeysFromSupabase: async () => {
+      try {
+        const { fetchPasskeysSupabase } = await import('../services/supabase');
+        const supabasePasskeys = await fetchPasskeysSupabase();
+        if (supabasePasskeys && supabasePasskeys.length > 0) {
+          const currentLocal = get().activePasskeys;
+          const merged = [...currentLocal];
+          supabasePasskeys.forEach((sp) => {
+            if (!merged.some((m) => m.key.toLowerCase() === sp.key.toLowerCase())) {
+              merged.push(sp);
+            }
+          });
+          set({ activePasskeys: merged });
+        }
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('bigsta_passkeys');
+        }
+      } catch (e) {
+        console.warn('Failed to fetch passkeys from Supabase:', e);
+      }
+    },
+
+    loginWithPasskey: async (inputKey) => {
       const trimmed = inputKey.trim();
-      const list = get().activePasskeys;
-      const match = list.find((p) => p.key.toLowerCase() === trimmed.toLowerCase());
+      if (!trimmed) {
+        return { success: false, message: 'Please enter a valid passkey.' };
+      }
+
+      let match: PasskeyItem | null = null;
+
+      // 1. Always query Supabase backend directly for authentication
+      try {
+        const { fetchPasskeyByKeySupabase } = await import('../services/supabase');
+        const supabaseMatch = await fetchPasskeyByKeySupabase(trimmed);
+        if (supabaseMatch) {
+          match = supabaseMatch;
+        }
+      } catch (e) {
+        console.warn('Supabase passkey lookup error:', e);
+      }
+
+      // 2. Fallback to in-memory activePasskeys state if backend call returned null
+      if (!match) {
+        const list = get().activePasskeys;
+        match = list.find((p) => p.key.toLowerCase() === trimmed.toLowerCase()) || null;
+      }
 
       if (!match) {
         return { success: false, message: 'Invalid Passkey' };
@@ -1795,30 +2111,38 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         return { success: false, message: 'Passkey is Disabled. Please contact Administrator.' };
       }
 
-      if (match.role === 'user') {
-        // We no longer block login based on usages or pending payments here.
-        // The central authorization gate (executeProtectedAction) and 
-        // UsageExhaustedBanner will handle restricting service access.
-      }
-
       const now = new Date();
       const lastUsedStr = now.toISOString().replace('T', ' ').substring(0, 16);
-      const updated = list.map((p) =>
-        p.id === match.id ? { ...p, lastUsed: lastUsedStr } : p
-      );
 
+      // Store auth session token only (never store passkeys database in user phone/local storage)
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
         localStorage.setItem('bigsta_auth_role', match.role);
         localStorage.setItem('bigsta_auth_key', match.key);
       } catch (e) {}
+
+      const currentList = get().activePasskeys;
+      const exists = currentList.some((p) => p.id === match!.id || p.key.toLowerCase() === match!.key.toLowerCase());
+      const updatedList = exists
+        ? currentList.map((p) =>
+            p.id === match!.id || p.key.toLowerCase() === match!.key.toLowerCase()
+              ? { ...p, ...match, lastUsed: lastUsedStr }
+              : p
+          )
+        : [{ ...match, lastUsed: lastUsedStr }, ...currentList];
 
       set({
         authRole: match.role,
         currentAuthKey: match.key,
         activeScreen: match.role === 'admin' ? 'home' : 'nida',
-        activePasskeys: updated,
+        activePasskeys: updatedList,
       });
+
+      // Sync lastUsed to Supabase backend
+      try {
+        const { syncPasskeySupabase } = await import('../services/supabase');
+        await syncPasskeySupabase({ ...match, lastUsed: lastUsedStr });
+      } catch (e) {}
 
       return { success: true, role: match.role };
     },
@@ -1858,9 +2182,16 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       };
       const updated = [newItem, ...get().activePasskeys];
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
       set({ activePasskeys: updated });
+
+      try {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(newItem);
+        });
+      } catch (e) {}
+
       return newItem;
     },
 
@@ -1898,9 +2229,16 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       };
       const updated = [newItem, ...get().activePasskeys];
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
       set({ activePasskeys: updated });
+
+      try {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(newItem);
+        });
+      } catch (e) {}
+
       return newItem;
     },
 
@@ -1927,9 +2265,16 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       };
       const updated = [newItem, ...get().activePasskeys];
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
       set({ activePasskeys: updated });
+
+      try {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(newItem);
+        });
+      } catch (e) {}
+
       return newItem;
     },
 
@@ -2012,41 +2357,56 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const updatedList = list.map((p) => (p.id === match.id ? updatedItem : p));
 
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updatedList));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
 
       set({ activePasskeys: updatedList });
+
+      try {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(updatedItem);
+        });
+      } catch (e) {}
 
       return { success: true, remainingUsages: newRemaining };
     },
 
     confirmPaymentAndActivatePasskey: (id: string) => {
       const list = get().activePasskeys;
+      let targetPk: PasskeyItem | null = null;
       const updated = list.map((p) => {
         if (p.id === id) {
           const remaining = Math.max(0, (p.totalUsages ?? 1) - (p.usedUsages ?? 0));
-          return {
+          targetPk = {
             ...p,
             active: true,
             paymentStatus: remaining > 0 ? ('ACTIVE' as PaymentStatus) : ('EXHAUSTED' as PaymentStatus),
           };
+          return targetPk;
         }
         return p;
       });
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
       set({ activePasskeys: updated });
+
+      if (targetPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(targetPk!);
+        });
+      }
     },
 
     addUsagesToPasskey: (id: string, additionalUsages: number, newPackageName?: string) => {
       const list = get().activePasskeys;
+      let targetPk: PasskeyItem | null = null;
       const updated = list.map((p) => {
         if (p.id === id) {
           const newTotal = (p.totalUsages ?? 0) + additionalUsages;
           const newRemaining = Math.max(0, newTotal - (p.usedUsages ?? 0));
           const newPaymentStatus: PaymentStatus = newRemaining > 0 ? 'ACTIVE' : 'EXHAUSTED';
-          return {
+          targetPk = {
             ...p,
             totalUsages: newTotal,
             remainingUsages: newRemaining,
@@ -2054,13 +2414,20 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
             paymentStatus: newPaymentStatus,
             active: true,
           };
+          return targetPk;
         }
         return p;
       });
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
       set({ activePasskeys: updated });
+
+      if (targetPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(targetPk!);
+        });
+      }
     },
 
     // =========================================================================
@@ -2277,30 +2644,55 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
         localStorage.setItem('bigsta_auth_key', trimmedNew);
       } catch (e) {}
+
+      const adminPk = updated.find((p) => p.key === trimmedNew);
+      if (adminPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(adminPk);
+        }).catch(() => {});
+      }
 
       set({ activePasskeys: updated });
       return { success: true, message: 'Admin Passkey Updated Successfully' };
     },
 
     togglePasskeyStatus: (id) => {
-      const updated = get().activePasskeys.map((p) =>
-        p.id === id ? { ...p, active: !p.active } : p
-      );
+      let toggledPk: PasskeyItem | null = null;
+      const updated = get().activePasskeys.map((p) => {
+        if (p.id === id) {
+          toggledPk = { ...p, active: !p.active, paymentStatus: !p.active ? ('ACTIVE' as PaymentStatus) : ('DISABLED' as PaymentStatus) };
+          return toggledPk;
+        }
+        return p;
+      });
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
       set({ activePasskeys: updated });
+
+      if (toggledPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(toggledPk!);
+        });
+      }
     },
 
     deletePasskey: (id) => {
+      const targetPk = get().activePasskeys.find((p) => p.id === id);
       const updated = get().activePasskeys.filter((p) => p.id !== id);
       try {
-        localStorage.setItem('bigsta_passkeys', JSON.stringify(updated));
+        localStorage.removeItem('bigsta_passkeys');
       } catch (e) {}
       set({ activePasskeys: updated });
+
+      if (targetPk) {
+        import('../services/supabase').then(({ deletePasskeySupabase }) => {
+          deletePasskeySupabase(targetPk.id, targetPk.key);
+        });
+      }
     },
 
     // NIDA Template Selections & Universal Defaults
@@ -2901,8 +3293,38 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   },
 
   addUploadedBackground: async (bgData) => {
+    let finalSrc = bgData.src;
+
+    // Supabase Storage Background Asset Sync (PROMPT 50.5)
+    try {
+      if (bgData.src && bgData.src.startsWith('data:')) {
+        const { uploadBackgroundToSupabase, supabase } = await import('../services/supabase');
+        if (supabase) {
+          // Convert base64 data URL to blob and upload
+          const res = await fetch(bgData.src);
+          const blob = await res.blob();
+          const filename = bgData.name ? `${bgData.name}.png` : 'background.png';
+          const supabaseUrl = await uploadBackgroundToSupabase(blob, filename);
+          if (supabaseUrl) {
+            finalSrc = supabaseUrl;
+            // Also store asset reference in background_assets table
+            await supabase.from('background_assets').upsert({
+              id: 'bg_' + Date.now(),
+              name: bgData.name || 'Background Asset',
+              url: supabaseUrl,
+              service_type: (bgData as any).category || 'general',
+              created_at: new Date().toISOString()
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase storage background upload skipped:', e);
+    }
+
     const newBg: UploadedBackground = {
       ...bgData,
+      src: finalSrc,
       id: 'bg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       createdAt: new Date().toISOString(),
     };

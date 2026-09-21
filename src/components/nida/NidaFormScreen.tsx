@@ -510,15 +510,10 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
         {/* Header with Authority Aesthetic & Navigation */}
         <div className="flex items-center justify-between border-b border-[#C8C2BE] pb-5 mb-5">
           <div className="flex items-center gap-2">
-            {onCancel && (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="p-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] transition-colors flex items-center justify-center cursor-pointer shadow-xs"
-                title="Go Back"
-              >
-                <ArrowLeft className="w-5 h-5 text-[#101010]" />
-              </button>
+            {onCancel ? (
+              <UniversalBackButton onClickCustom={onCancel} />
+            ) : (
+              <UniversalBackButton />
             )}
             
             <div className="hidden sm:block">
@@ -529,14 +524,6 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveScreen('home')}
-              className="p-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F5F2EF] text-[#101010] border border-[#C8C2BE] transition-colors flex items-center justify-center cursor-pointer shadow-xs"
-              title="Home"
-            >
-              <Home className="w-5 h-5 text-[#101010]" />
-            </button>
           </div>
         </div>
 

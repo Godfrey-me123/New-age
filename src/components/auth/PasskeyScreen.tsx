@@ -14,7 +14,7 @@ export const PasskeyScreen: React.FC = () => {
 
   console.log('[Auth Debug] PasskeyScreen Render:', { authRole: useTemplateStore.getState().authRole, isRegisterOpen });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passkeyInput.trim()) {
       setErrorMessage('Please enter your passkey to continue');
@@ -25,28 +25,34 @@ export const PasskeyScreen: React.FC = () => {
     setErrorMessage('');
     setSuccessNotice('');
 
-    setTimeout(() => {
-      const res = loginWithPasskey(passkeyInput);
+    try {
+      const res = await loginWithPasskey(passkeyInput);
       setIsLoading(false);
       if (!res.success) {
         setErrorMessage(res.message || 'Invalid Passkey');
       }
-    }, 250);
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrorMessage(err?.message || 'Error verifying passkey');
+    }
   };
 
-  const handleRegistrationSuccess = (registeredPasskey: string) => {
+  const handleRegistrationSuccess = async (registeredPasskey: string) => {
     setPasskeyInput(registeredPasskey);
     setIsLoading(true);
     setErrorMessage('');
     
     // Auto-login after registration
-    setTimeout(() => {
-      const res = loginWithPasskey(registeredPasskey);
+    try {
+      const res = await loginWithPasskey(registeredPasskey);
       setIsLoading(false);
       if (!res.success) {
         setErrorMessage(res.message || 'Auto-login failed. Please enter your passkey manually.');
       }
-    }, 600);
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrorMessage('Auto-login failed. Please enter your passkey manually.');
+    }
   };
 
   return (

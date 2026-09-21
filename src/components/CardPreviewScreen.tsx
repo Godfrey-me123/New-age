@@ -46,7 +46,7 @@ export const CardPreviewScreen: React.FC = () => {
     activeServiceId,
   } = useTemplateStore();
 
-  const targetFormScreen = activeServiceId === 'driving_license' ? 'driving_license' : 'nida';
+  const targetFormScreen = activeServiceId === 'driving_license' ? 'driving_license' : activeServiceId === 'nhif' ? 'nhif' : 'nida';
 
   // Output selection: Single Card vs Front + Back (Merge 2-in-1)
   const [outputMode, setOutputMode] = useState<'single' | 'merge'>('single');
@@ -317,7 +317,7 @@ export const CardPreviewScreen: React.FC = () => {
             <button
               id="header-edit-studio-btn"
               type="button"
-              onClick={() => setActiveScreen(targetFormScreen)}
+              onClick={() => setActiveScreen(targetFormScreen as any)}
               className="hidden sm:flex px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-[#4C5055]/60 text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
               title="Edit Form"
             >
@@ -330,15 +330,11 @@ export const CardPreviewScreen: React.FC = () => {
                 id="header-studio-btn"
                 type="button"
                 onClick={() => {
-                  const { customTemplates, activeServiceId, setCurrentTemplate } = useTemplateStore.getState();
-                  const serviceTemplates = activeServiceId === 'driving_license' ? 
-                    { 
-                      front: customTemplates.find(t => t.cardType === 'Driving License' && (t.side === 'Front Side' || !t.side?.toLowerCase().includes('back'))) || SAMPLE_TEMPLATES.find(t => t.id === 'sample_driving_license_front'),
-                      back: customTemplates.find(t => t.cardType === 'Driving License' && (t.side === 'Back Side' || t.side?.toLowerCase().includes('back'))) || SAMPLE_TEMPLATES.find(t => t.id === 'sample_driving_license_back')
-                    } : {
-                      front: customTemplates.find(t => t.cardType === 'National ID' && (t.side === 'Front Side' || !t.side?.toLowerCase().includes('back'))) || SAMPLE_TEMPLATES.find(t => t.id === 'sample_tanzania_nida_front'),
-                      back: customTemplates.find(t => t.cardType === 'National ID' && (t.side === 'Back Side' || t.side?.toLowerCase().includes('back'))) || SAMPLE_TEMPLATES.find(t => t.id === 'sample_tanzania_nida_back')
-                    };
+                  const { activeServiceId, setCurrentTemplate, getUniversalFrontTemplate, getUniversalBackTemplate } = useTemplateStore.getState();
+                  const serviceTemplates = {
+                    front: getUniversalFrontTemplate(activeServiceId),
+                    back: getUniversalBackTemplate(activeServiceId)
+                  };
                   
                   const rawTemplate = activeSide === 'front' ? serviceTemplates.front : serviceTemplates.back;
                   if (rawTemplate) {
@@ -353,16 +349,6 @@ export const CardPreviewScreen: React.FC = () => {
                 <span>Studio</span>
               </button>
             )}
-
-            <button
-              id="header-home-btn"
-              type="button"
-              onClick={() => setActiveScreen('home')}
-              className="hidden sm:flex p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-[#4C5055]/50 text-xs transition-colors cursor-pointer"
-              title="Home"
-            >
-              <Home className="w-4 h-4 text-[#47A5FF]" />
-            </button>
           </div>
         </div>
       </header>
@@ -639,7 +625,7 @@ export const CardPreviewScreen: React.FC = () => {
             <button
               id="action-edit-form-btn"
               type="button"
-              onClick={() => setActiveScreen(targetFormScreen)}
+              onClick={() => setActiveScreen(targetFormScreen as any)}
               className="px-4 py-2.5 rounded-xl bg-[#14171E] hover:bg-[#1E222A] text-slate-200 hover:text-white border border-[#4C5055]/70 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
             >
               <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
@@ -672,15 +658,11 @@ export const CardPreviewScreen: React.FC = () => {
                 id="action-edit-studio-btn"
                 type="button"
                 onClick={() => {
-                  const { customTemplates, activeServiceId, setCurrentTemplate } = useTemplateStore.getState();
-                  const serviceTemplates = activeServiceId === 'driving_license' ? 
-                    { 
-                      front: customTemplates.find(t => t.cardType === 'Driving License' && (t.side === 'Front Side' || !t.side?.toLowerCase().includes('back'))) || SAMPLE_TEMPLATES.find(t => t.id === 'sample_driving_license_front'),
-                      back: customTemplates.find(t => t.cardType === 'Driving License' && (t.side === 'Back Side' || t.side?.toLowerCase().includes('back'))) || SAMPLE_TEMPLATES.find(t => t.id === 'sample_driving_license_back')
-                    } : {
-                      front: customTemplates.find(t => t.cardType === 'National ID' && (t.side === 'Front Side' || !t.side?.toLowerCase().includes('back'))) || SAMPLE_TEMPLATES.find(t => t.id === 'sample_tanzania_nida_front'),
-                      back: customTemplates.find(t => t.cardType === 'National ID' && (t.side === 'Back Side' || t.side?.toLowerCase().includes('back'))) || SAMPLE_TEMPLATES.find(t => t.id === 'sample_tanzania_nida_back')
-                    };
+                  const { activeServiceId, setCurrentTemplate, getUniversalFrontTemplate, getUniversalBackTemplate } = useTemplateStore.getState();
+                  const serviceTemplates = {
+                    front: getUniversalFrontTemplate(activeServiceId),
+                    back: getUniversalBackTemplate(activeServiceId)
+                  };
                   
                   const rawTemplate = activeSide === 'front' ? serviceTemplates.front : serviceTemplates.back;
                   if (rawTemplate) {
@@ -694,16 +676,6 @@ export const CardPreviewScreen: React.FC = () => {
                 <span>Studio Editor</span>
               </button>
             )}
-
-            <button
-              id="action-all-services-btn"
-              type="button"
-              onClick={() => setActiveScreen('home')}
-              className="px-4 py-2.5 rounded-xl bg-[#14171E] hover:bg-[#1E222A] text-slate-200 hover:text-white border border-[#4C5055]/70 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
-            >
-              <Home className="w-3.5 h-3.5 text-purple-400" />
-              <span>Home</span>
-            </button>
           </HorizontalActionRow>
         </div>
 

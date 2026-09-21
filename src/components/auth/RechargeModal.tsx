@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, CreditCard, Check, AlertCircle, RefreshCw, X, ShieldCheck, ArrowRight, Clock, Copy, Hash, Zap } from 'lucide-react';
+import { Wallet, CreditCard, Check, AlertCircle, RefreshCw, X, ShieldCheck, ArrowRight, Clock, Copy, Hash, Zap, Sparkles } from 'lucide-react';
 import { useTemplateStore, NIDA_USAGE_PACKAGES } from '../../store/useTemplateStore';
 import { paymentService } from '../../services/paymentService';
 
@@ -35,6 +35,52 @@ export const RechargeModal: React.FC = () => {
   const [reference, setReference] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
+
+  // OCR state (Prompt 22)
+  const [ocrImage, setOcrImage] = useState<string>('');
+  const [ocrText, setOcrText] = useState<string>('');
+  const [isScanning, setIsScanning] = useState(false);
+  const [extractedData, setExtractedData] = useState<any>(null);
+  const [scanError, setScanError] = useState('');
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setOcrImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleScanOCR = async () => {
+    if (!ocrImage && !ocrText.trim()) {
+      setScanError('Please upload a screenshot or paste SMS text/receipt.');
+      return;
+    }
+    setIsScanning(true);
+    setScanError('');
+    try {
+      const res = await fetch('/api/payment/extract-ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: ocrImage, text: ocrText }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setExtractedData(data.data);
+        if (data.data.transactionId) {
+          setReference(data.data.transactionId);
+        }
+      } else {
+        setScanError(data.error || 'Extraction failed');
+      }
+    } catch (err: any) {
+      setScanError('Network or extraction error: ' + err.message);
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   // Escape key listener
   useEffect(() => {
@@ -256,6 +302,90 @@ export const RechargeModal: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Smart AI Payment Scanner (Prompt 22) */}
+          <div className="p-4 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl shadow-lg text-white space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-indigo-500/20 rounded-lg border border-indigo-500/40 text-indigo-300">
+                <Sparkles className="w-4 h-4 text-indigo-400" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-indigo-200">Smart AI Payment Scanner</h4>
+                <p className="text-[10px] text-indigo-300">Upload screenshot, PDF or paste SMS text for instant OCR extraction</p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <div className="flex gap-2">
+                <label className="flex-1 py-2 px-3 bg-white/10 hover:bg-white/15 border border-white/20 rounded-xl text-xs font-bold text-center cursor-pointer transition-all flex items-center justify-center gap-2">
+                  <span>📷 Upload Screenshot/PDF</span>
+                  <input type="file" accept="image/*,application/pdf" onChange={handleFileUpload} className="hidden" />
+                </label>
+              </div>
+
+              {ocrImage && (
+                <div className="flex items-center justify-between bg-white/5 p-2 rounded-lg text-xs">
+                  <span className="truncate max-w-[200px] text-indigo-200">Screenshot attached</span>
+                  <button type="button" onClick={() => setOcrImage('')} className="text-red-400 hover:text-red-300 text-[10px]">Remove</button>
+                </div>
+              )}
+
+              <textarea
+                value={ocrText}
+                onChange={(e) => setOcrText(e.target.value)}
+                placeholder="Or paste SMS / receipt text here (M-Pesa, Tigo Pesa, Airtel Money, HaloPesa, Mixx, Bank)..."
+                rows={2}
+                className="w-full bg-white/10 border border-white/20 rounded-xl p-2.5 text-xs text-white placeholder:text-indigo-300/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+              />
+
+              {scanError && (
+                <p className="text-[10px] font-bold text-red-300 bg-red-950/50 px-2 py-1 rounded flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {scanError}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleScanOCR}
+                disabled={isScanning || (!ocrImage && !ocrText.trim())}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {isScanning ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Extracting Details with AI OCR...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Scan & Extract Details</span>
+                  </>
+                )}
+              </button>
+
+              {extractedData && (
+                <div className="p-3 bg-white/10 rounded-xl border border-white/20 space-y-2 text-xs">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-1.5 font-bold text-emerald-300">
+                    <span>✨ Extracted Transaction Record</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-200">
+                      {extractedData.status || 'Pending'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[11px] font-mono">
+                    <div><span className="text-indigo-300 font-sans">Provider:</span> {extractedData.paymentProvider || 'N/A'}</div>
+                    <div><span className="text-indigo-300 font-sans">Tx ID:</span> {extractedData.transactionId || 'N/A'}</div>
+                    <div><span className="text-indigo-300 font-sans">Amount:</span> {extractedData.currency || 'TSh'} {extractedData.amount || '0'}</div>
+                    <div><span className="text-indigo-300 font-sans">Sender:</span> {extractedData.sender || 'N/A'}</div>
+                    <div className="col-span-2 truncate"><span className="text-indigo-300 font-sans">Receiver:</span> {extractedData.receiver || 'N/A'} ({extractedData.receiverAccount || ''})</div>
+                  </div>
+                  <p className="text-[10px] text-indigo-200 italic pt-1 border-t border-white/10">
+                    Data parsed successfully. Reference filled automatically below for verification.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Auto-Verification Section */}
           <div className="p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/20 text-white space-y-3">

@@ -185,39 +185,31 @@ export const UploadScreen: React.FC = () => {
       {/* Container */}
       <div className="w-full max-w-4xl bg-[#FFFFFF] border border-[#E7E9EB] rounded-2xl shadow-xs p-6 sm:p-10 text-center relative">
         {/* Brand Header & Top Actions */}
-        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-[#E7E9EB]">
-          <div className="flex items-center gap-2">
-            <UniversalBackButton />
-
-            <button
-              type="button"
-              onClick={() => setActiveScreen('home')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold transition-all cursor-pointer"
-              title="Return to Services Home"
-            >
-              <Home className="w-3.5 h-3.5 text-[#000000]" />
-              <span>Services</span>
-            </button>
-
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#000000] text-white text-xs sm:text-sm font-bold tracking-wide">
-              <CreditCard className="w-4 h-4" />
-              <span>BIGSTA</span>
-            </div>
+        <div className="mb-6 pb-4 border-b border-[#E7E9EB]">
+          {/* BIGSTA badge on top */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#000000] text-white text-xs sm:text-sm font-bold tracking-wide mb-4">
+            <CreditCard className="w-4 h-4" />
+            <span>BIGSTA</span>
           </div>
 
-          {/* Saved Templates Section Button on First Screen */}
-          <button
-            onClick={() => setActiveScreen('templates')}
-            className="flex items-center gap-2 px-4 py-2 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
-          >
-            <FolderOpen className="w-4 h-4 text-[#000000]" />
-            <span>Saved Templates</span>
-            {savedTemplates.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-[#CEE9B9] text-[#000000] text-[11px] font-extrabold border border-[#b8df9d]">
-                {savedTemplates.length}
-              </span>
-            )}
-          </button>
+          {/* Back + Saved Templates row */}
+          <div className="flex items-center justify-between gap-4">
+            <UniversalBackButton />
+
+            {/* Saved Templates Section Button on First Screen */}
+            <button
+              onClick={() => setActiveScreen('templates')}
+              className="flex items-center gap-2 px-4 py-2 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+            >
+              <FolderOpen className="w-4 h-4 text-[#000000]" />
+              <span>Saved Templates</span>
+              {savedTemplates.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-[#CEE9B9] text-[#000000] text-[11px] font-extrabold border border-[#b8df9d]">
+                  {savedTemplates.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#000000] tracking-tight mb-2">
@@ -327,9 +319,9 @@ export const UploadScreen: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savedTemplates.slice(0, 6).map((tpl) => (
+              {savedTemplates.slice(0, 6).map((tpl, idx) => (
                 <div
-                  key={tpl.id}
+                  key={`${tpl.id}-${idx}`}
                   onClick={() => handleOpenEdit(tpl)}
                   className="group relative bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] rounded-xl p-4 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between"
                 >
@@ -412,9 +404,9 @@ export const UploadScreen: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-            {SAMPLE_TEMPLATES.map((sample) => (
+            {SAMPLE_TEMPLATES.map((sample, idx) => (
               <div
-                key={sample.id}
+                key={`${sample.id}-${idx}`}
                 onClick={() => loadTemplate(sample)}
                 className="group p-3.5 rounded-xl bg-[#FFFFFF] border border-[#E7E9EB] hover:border-[#000000] hover:bg-[#F8FAFC] transition-all cursor-pointer flex flex-col justify-between shadow-xs"
               >

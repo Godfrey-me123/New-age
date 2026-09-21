@@ -264,8 +264,8 @@ export const MergeCardModal: React.FC = () => {
                 onChange={(e) => setFrontTemplateId(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
               >
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
+                {templates.map((t, idx) => (
+                  <option key={`${t.id}-front-${idx}`} value={t.id}>
                     {t.templateName} ({t.cardType || 'ID Card'} - {t.orientation})
                   </option>
                 ))}
@@ -283,8 +283,8 @@ export const MergeCardModal: React.FC = () => {
                 onChange={(e) => setBackTemplateId(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
               >
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
+                {templates.map((t, idx) => (
+                  <option key={`${t.id}-back-${idx}`} value={t.id}>
                     {t.templateName} ({t.cardType || 'ID Card'} - {t.orientation})
                   </option>
                 ))}

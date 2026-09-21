@@ -358,3 +358,89 @@ export function convertDateToIso(val: string): string {
 
   return '';
 }
+
+/**
+ * Converts any string to Title Case (e.g. "JOHN MICHAEL SAMPLE" -> "John Michael Sample")
+ */
+export function toTitleCase(val: string | null | undefined): string {
+  if (!val || typeof val !== 'string') return '';
+  const trimmed = val.trim();
+  if (!trimmed) return '';
+
+  return trimmed
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
+ * Standardizes any date string (ISO, DD/MM/YYYY, DD-MM-YYYY, YYYYMMDD, DD MMM YYYY)
+ * to NHIF format: MMM DD, YYYY (e.g. Jun 16, 1981, Jan 01, 2000)
+ */
+export function formatToMmmDdYyyy(val: string | null | undefined): string {
+  if (!val || typeof val !== 'string') return '';
+  const trimmed = val.trim();
+  if (!trimmed) return '';
+
+  const MONTH_TITLES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Already MMM DD, YYYY (e.g., Jun 16, 1981)
+  const mmmDdYyyyMatch = /^([A-Za-z]{3})\s+(\d{1,2}),?\s+(\d{4})$/.exec(trimmed);
+  if (mmmDdYyyyMatch) {
+    const mStr = mmmDdYyyyMatch[1].toLowerCase();
+    const mIdx = MONTH_TITLES.findIndex((m) => m.toLowerCase() === mStr);
+    if (mIdx !== -1) {
+      const monthTitle = MONTH_TITLES[mIdx];
+      const day = parseInt(mmmDdYyyyMatch[2], 10).toString().padStart(2, '0');
+      const year = mmmDdYyyyMatch[3];
+      return `${monthTitle} ${day}, ${year}`;
+    }
+  }
+
+  // DD MMM YYYY (e.g. 16 JUN 1981 or 16 Jun 1981)
+  const ddMmmYyyyMatch = /^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/.exec(trimmed);
+  if (ddMmmYyyyMatch) {
+    const day = parseInt(ddMmmYyyyMatch[1], 10).toString().padStart(2, '0');
+    const mStr = ddMmmYyyyMatch[2].toLowerCase();
+    const mIdx = MONTH_TITLES.findIndex((m) => m.toLowerCase() === mStr);
+    const year = ddMmmYyyyMatch[3];
+    if (mIdx !== -1) {
+      return `${MONTH_TITLES[mIdx]} ${day}, ${year}`;
+    }
+  }
+
+  // ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const parts = trimmed.split('-');
+    const year = parts[0];
+    const mIdx = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10).toString().padStart(2, '0');
+    if (mIdx >= 0 && mIdx < 12) {
+      return `${MONTH_TITLES[mIdx]} ${day}, ${year}`;
+    }
+  }
+
+  // DD/MM/YYYY or DD-MM-YYYY
+  if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(trimmed)) {
+    const parts = trimmed.split(/[\/\-]/);
+    const day = parseInt(parts[0], 10).toString().padStart(2, '0');
+    const mIdx = parseInt(parts[1], 10) - 1;
+    const year = parts[2];
+    if (mIdx >= 0 && mIdx < 12) {
+      return `${MONTH_TITLES[mIdx]} ${day}, ${year}`;
+    }
+  }
+
+  // YYYYMMDD
+  if (/^\d{8}$/.test(trimmed)) {
+    const year = trimmed.slice(0, 4);
+    const mIdx = parseInt(trimmed.slice(4, 6), 10) - 1;
+    const day = parseInt(trimmed.slice(6, 8), 10).toString().padStart(2, '0');
+    if (mIdx >= 0 && mIdx < 12) {
+      return `${MONTH_TITLES[mIdx]} ${day}, ${year}`;
+    }
+  }
+
+  return trimmed;
+}

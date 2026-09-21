@@ -33,7 +33,10 @@ export const CardGeneratorModal: React.FC = () => {
     backPopulatedTemplate,
     lastDrivingLicenseFormData,
     lastNidaFormData,
+    lastNhifFormData,
     activeServiceId,
+    getUniversalFrontTemplate,
+    getUniversalBackTemplate,
   } = useTemplateStore();
 
   const [outputType, setOutputType] = useState<'single' | 'merge'>('merge');
@@ -45,12 +48,16 @@ export const CardGeneratorModal: React.FC = () => {
   const [backPreviewUrl, setBackPreviewUrl] = useState<string>('');
   const [isRendering, setIsRendering] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [downloadState, setDownloadState] = useState<'IDLE' | 'QUEUED' | 'GENERATING' | 'READY' | 'DOWNLOADING' | 'COMPLETED' | 'FAILED'>('IDLE');
+  const [downloadError, setDownloadError] = useState<string>('');
 
   const isDL =
     activeServiceId === 'driving_license' ||
     currentTemplate?.cardType === 'Driving License';
 
-  const submittedData: any = isDL
+  const submittedData: any = activeServiceId === 'nhif'
+    ? (lastNhifFormData || {})
+    : isDL
     ? (lastDrivingLicenseFormData || {})
     : (lastNidaFormData || {});
 
@@ -60,32 +67,28 @@ export const CardGeneratorModal: React.FC = () => {
     if (currentTemplate && (!currentTemplate.side || currentTemplate.side === 'Front Side')) {
       return currentTemplate;
     }
-    const defaultFront = isDL
-      ? (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_driving_license_front') || SAMPLE_TEMPLATES[0])
-      : (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_front') || SAMPLE_TEMPLATES[0]);
+    const defaultFront = getUniversalFrontTemplate(activeServiceId);
 
     if (submittedData && Object.keys(submittedData).length > 0) {
       const res = applyTemplateMapping(defaultFront, submittedData);
       return res.populatedTemplate || defaultFront;
     }
     return defaultFront;
-  }, [frontPopulatedTemplate, currentTemplate, isDL, submittedData]);
+  }, [frontPopulatedTemplate, currentTemplate, activeServiceId, getUniversalFrontTemplate, submittedData]);
 
   const resolvedBackTemplate: CardTemplate = React.useMemo(() => {
     if (backPopulatedTemplate) return backPopulatedTemplate;
     if (currentTemplate && currentTemplate.side === 'Back Side') {
       return currentTemplate;
     }
-    const defaultBack = isDL
-      ? (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_driving_license_back') || SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tz_dl_back') || SAMPLE_TEMPLATES[1])
-      : (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1]);
+    const defaultBack = getUniversalBackTemplate(activeServiceId);
 
     if (submittedData && Object.keys(submittedData).length > 0) {
       const res = applyTemplateMapping(defaultBack, submittedData);
       return res.populatedTemplate || defaultBack;
     }
     return defaultBack;
-  }, [backPopulatedTemplate, currentTemplate, isDL, submittedData]);
+  }, [backPopulatedTemplate, currentTemplate, activeServiceId, getUniversalBackTemplate, submittedData]);
 
   // Current single preview template
   const activeSingleTemplate = activeSide === 'back' ? resolvedBackTemplate : resolvedFrontTemplate;
@@ -167,61 +170,55 @@ export const CardGeneratorModal: React.FC = () => {
     ? formatDrivingLicenceCategoriesFront(submittedData.classes)
     : null;
 
+  // Download states (Prompt 24)
+  const executeSecureExport = async (format: 'pdf' | 'png' | 'jpg' | 'pdf_merge', description: string, exportFn: () => Promise<void>) => {
+    const store = useTemplateStore.getState();
+    const val = store.validateExportAccess(format);
+    if (!val.allowed) {
+      alert(val.reason || 'Export access not allowed. Please top up tokens.');
+      return;
+    }
+
+    setDownloadState('QUEUED');
+    setDownloadError('');
+    setIsExporting(true);
+
+    try {
+      // 1. GENERATING
+      setDownloadState('GENERATING');
+      await new Promise(r => setTimeout(r, 150));
+
+      // Generate export file & verify existence / size > 0
+      await exportFn();
+
+      // 2 & 3. READY
+      setDownloadState('READY');
+      await new Promise(r => setTimeout(r, 150));
+
+      // 4 & 5. DOWNLOADING (Create download URL & deliver file)
+      setDownloadState('DOWNLOADING');
+      await new Promise(r => setTimeout(r, 200));
+
+      // 6. COMPLETED (Confirm successful download)
+      setDownloadState('COMPLETED');
+
+      // 7. Only then consume token
+      store.consumeUsage(description, undefined, 1);
+    } catch (e: any) {
+      console.error('Export failed:', e);
+      setDownloadState('FAILED');
+      setDownloadError(e?.message || 'Export generation failed. Token was NOT consumed.');
+      alert('Export failed: ' + (e?.message || 'Unknown error') + '. Token remains intact.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Single card print/download handlers
-  const handleExportSinglePDF = async () => {
-    const store = useTemplateStore.getState();
-    const val = store.validateExportAccess('pdf');
-    if (!val.allowed) return;
-    setIsExporting(true);
-    try {
-      await downloadPDF(activeSingleTemplate, submittedData);
-      store.consumeUsage('Single Card PDF Export', undefined, 1);
-    } catch (e) {
-      console.error('Export failed', e);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleExportSinglePNG = async () => {
-    const store = useTemplateStore.getState();
-    const val = store.validateExportAccess('png');
-    if (!val.allowed) return;
-    try {
-      await downloadPNG(activeSingleTemplate, submittedData);
-      store.consumeUsage('Single Card PNG Export', undefined, 1);
-    } catch (e) {
-      console.error('PNG export failed', e);
-    }
-  };
-
-  const handleExportSingleJPG = async () => {
-    const store = useTemplateStore.getState();
-    const val = store.validateExportAccess('jpg');
-    if (!val.allowed) return;
-    try {
-      await downloadJPG(activeSingleTemplate, submittedData);
-      store.consumeUsage('Single Card JPG Export', undefined, 1);
-    } catch (e) {
-      console.error('JPG export failed', e);
-    }
-  };
-
-  // 2-in-1 Merge PDF export handler
-  const handleExportMergePDF = async () => {
-    const store = useTemplateStore.getState();
-    const val = store.validateExportAccess('pdf_merge');
-    if (!val.allowed) return;
-    setIsExporting(true);
-    try {
-      await download2In1PDF(resolvedFrontTemplate, resolvedBackTemplate, submittedData);
-      store.consumeUsage('2-in-1 Sheet PDF Export', undefined, 1);
-    } catch (e) {
-      console.error('Merge export failed', e);
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  const handleExportSinglePDF = () => executeSecureExport('pdf', 'Single Card PDF Export', () => downloadPDF(activeSingleTemplate, submittedData));
+  const handleExportSinglePNG = () => executeSecureExport('png', 'Single Card PNG Export', () => downloadPNG(activeSingleTemplate, submittedData));
+  const handleExportSingleJPG = () => executeSecureExport('jpg', 'Single Card JPG Export', () => downloadJPG(activeSingleTemplate, submittedData));
+  const handleExportMergePDF = () => executeSecureExport('pdf_merge', '2-in-1 Sheet PDF Export', () => download2In1PDF(resolvedFrontTemplate, resolvedBackTemplate, submittedData));
 
   // Direct print handler
   const handleDirectPrint = async () => {
@@ -545,6 +542,24 @@ export const CardGeneratorModal: React.FC = () => {
               <div className="text-xs font-bold text-[#101010] text-center">
                 Generation & Export Options
               </div>
+
+              {downloadState !== 'IDLE' && (
+                <div className={`p-2.5 rounded-xl text-xs font-bold flex items-center justify-between ${
+                  downloadState === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                  downloadState === 'FAILED' ? 'bg-red-50 text-red-800 border border-red-200' :
+                  'bg-amber-50 text-amber-800 border border-amber-200'
+                }`}>
+                  <span>Export State: <span className="uppercase font-black">{downloadState}</span></span>
+                  <span className="text-[10px] opacity-85">
+                    {downloadState === 'QUEUED' && 'Queued for generation...'}
+                    {downloadState === 'GENERATING' && 'Generating high-res file...'}
+                    {downloadState === 'READY' && 'File verified (Size > 0)...'}
+                    {downloadState === 'DOWNLOADING' && 'Delivering file download...'}
+                    {downloadState === 'COMPLETED' && 'Download complete! Token consumed.'}
+                    {downloadState === 'FAILED' && 'Export failed. Token NOT consumed.'}
+                  </span>
+                </div>
+              )}
 
               {outputType === 'single' ? (
                 <div className="space-y-2">

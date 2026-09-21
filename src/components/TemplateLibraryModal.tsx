@@ -186,9 +186,9 @@ export const TemplateLibraryModal: React.FC = () => {
               No templates found. Create or import a new template to get started!
             </div>
           ) : (
-            filtered.map((tpl) => (
+            filtered.map((tpl, idx) => (
               <div
-                key={tpl.id}
+                key={`${tpl.id}-${idx}`}
                 onClick={() => {
                   loadTemplate(tpl);
                   setTemplateLibraryOpen(false);

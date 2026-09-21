@@ -15,12 +15,15 @@ import {
   Layers,
   FolderOpen,
   ChevronRight,
+  ChevronDown,
   Shield,
   CreditCard,
   Info,
   LogOut,
   Key,
   ShieldCheck,
+  DownloadCloud,
+  Settings,
 } from 'lucide-react';
 import { useTemplateStore } from '../../store/useTemplateStore';
 
@@ -74,36 +77,44 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
     };
   }, [isOpen]);
 
+  const [readyCount, setReadyCount] = React.useState<number>(0);
+  const [isServicesExpanded, setIsServicesExpanded] = React.useState<boolean>(true);
+  React.useEffect(() => {
+    if (isOpen) {
+      import('../../utils/idb').then(async (m) => {
+        const records = await m.getAllDownloadRecordsDB();
+        const ready = records.filter(r => r.status === 'READY').length;
+        setReadyCount(ready);
+      });
+    }
+  }, [isOpen]);
+
   const navItems: NavItem[] = [
     {
-      id: 'home',
-      name: 'Services Overview',
-      authority: 'Portal Home',
+      id: 'dashboard',
+      name: 'Dashboard',
+      authority: 'Portal Overview',
       category: 'core',
       icon: Home,
-      iconColor: 'text-[#47A5FF]',
+      iconColor: 'text-blue-500',
       status: 'active',
-      badgeText: 'Home',
       action: () => {
         setActiveScreen('home');
         onClose();
       },
     },
     {
-      id: 'nida',
-      name: 'NIDA Services',
-      authority: 'National Identification Authority',
-      category: 'identity',
+      id: 'services',
+      name: 'Services',
+      authority: 'ID & Verification Services',
+      category: 'core',
       icon: UserCheck,
-      iconColor: 'text-[#47A5FF]',
+      iconColor: 'text-blue-500',
       status: 'active',
-      badgeText: 'Active',
       action: () => {
-        setActiveScreen('nida');
+        setActiveScreen('home');
         onClose();
       },
-      description: 'Instant auto-fill, verification & CR80 card generation for Front & Back National IDs.',
-      features: ['20-Digit ID Verification', 'Biometric Photo Upload', 'Digital Signature Pad', 'Barcode Sync'],
     },
     ...(authRole === 'admin'
       ? [
@@ -115,7 +126,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
             icon: Layers,
             iconColor: 'text-blue-400',
             status: 'active' as const,
-            badgeText: 'Active',
+            badgeText: 'Admin',
             action: () => {
               setActiveScreen('upload');
               onClose();
@@ -124,14 +135,14 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
             features: ['CR80 Millimeter Layout', 'Custom Image Backgrounds', 'Smart Magnetic Snap', 'PDF & SVG Export'],
           },
           {
-            id: 'templates',
+            id: 'templates_library',
             name: 'Saved Templates Library',
             authority: 'Template Storage',
             category: 'core' as const,
             icon: FolderOpen,
             iconColor: 'text-amber-400',
             status: 'active' as const,
-            badgeText: 'Active',
+            badgeText: 'Admin',
             action: () => {
               setActiveScreen('templates');
               onClose();
@@ -156,7 +167,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
           },
           {
             id: 'sms_payments',
-            name: 'Payments',
+            name: 'Payments & Transactions',
             authority: 'SMS Forwarder & Auto-Verification',
             category: 'core' as const,
             icon: Receipt,
@@ -170,7 +181,67 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
             description: 'Verify SMS transactions, manage payment settings, and monitor incoming payments.',
           },
         ]
-      : []),
+      : [
+          {
+            id: 'user_payments',
+            name: 'Token Billing & Top-Up',
+            authority: 'Usage & Token Balance',
+            category: 'core' as const,
+            icon: CreditCard,
+            iconColor: 'text-emerald-500',
+            status: 'active' as const,
+            badgeText: 'User',
+            action: () => {
+              setActiveScreen('billing');
+              onClose();
+            },
+          },
+        ]),
+    {
+      id: 'downloads',
+      name: 'Downloads',
+      authority: 'Generated Files & History',
+      category: 'core',
+      icon: DownloadCloud,
+      iconColor: 'text-blue-600',
+      status: 'active',
+      badgeText: readyCount > 0 ? `${readyCount} Ready` : undefined,
+      action: () => {
+        setActiveScreen('downloads');
+        onClose();
+      },
+      description: 'Manage generated files, track export status (Generating, Ready, Downloaded, Failed), and redownload anytime.',
+      features: ['Server-Side Export Persistence', 'One-Click Re-download', 'Token Protection on Failure'],
+    },
+    {
+      id: 'settings',
+      name: 'Settings',
+      authority: 'Account & Preferences',
+      category: 'core',
+      icon: Settings,
+      iconColor: 'text-gray-600',
+      status: 'active',
+      action: () => {
+        setActiveScreen('settings');
+        onClose();
+      },
+    },
+    {
+      id: 'nida',
+      name: 'NIDA Services',
+      authority: 'National Identification Authority',
+      category: 'identity',
+      icon: UserCheck,
+      iconColor: 'text-[#47A5FF]',
+      status: 'active',
+      badgeText: 'Active',
+      action: () => {
+        setActiveScreen('nida');
+        onClose();
+      },
+      description: 'Instant auto-fill, verification & CR80 card generation for Front & Back National IDs.',
+      features: ['20-Digit ID Verification', 'Biometric Photo Upload', 'Digital Signature Pad', 'Barcode Sync'],
+    },
     {
       id: 'birth_certificate',
       name: 'Birth Certificate Services',
@@ -289,23 +360,19 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
     },
     {
       id: 'nhif',
-      name: 'NHIF Services',
+      name: 'NHIF Membership Card',
       authority: 'National Health Insurance Fund',
       category: 'health',
       icon: HeartPulse,
       iconColor: 'text-rose-400',
-      status: 'coming_soon',
-      badgeText: 'Coming Soon',
+      status: 'active',
+      badgeText: 'Active',
       action: () => {
-        onSelectInfoService?.({
-          id: 'nhif',
-          name: 'NHIF Services',
-          authority: 'National Health Insurance Fund (NHIF)',
-          description: 'Healthcare membership smart cards, dependent coverage validation & biometric health passes.',
-          features: ['Principal & Dependent Mapping', 'Hospital Tier Endorsements', 'Smart Card Chip Specs'],
-        });
+        setActiveScreen('nhif' as any);
         onClose();
       },
+      description: 'Healthcare membership smart cards, dependent coverage validation & biometric health passes.',
+      features: ['Principal & Dependent Mapping', 'Hospital Tier Endorsements', 'Smart Card Chip Specs'],
     },
     {
       id: 'ajira',
@@ -357,24 +424,33 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
         aria-modal="true"
         aria-label="Services Navigation"
       >
-        {/* Drawer Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E7E9EB] bg-[#FFFFFF] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#000000] text-white">
-              <CreditCard className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-sm font-extrabold text-[#000000] tracking-wide uppercase">
-                BIGsta
-              </h2>
-              <p className="text-[11px] text-[#555555] font-semibold hidden sm:block">Government & Identity Services</p>
-            </div>
+        {/* Drawer Header - Centered BIGsta Title with CEO / Welcome Back Tag */}
+        <div className="relative flex flex-col items-center justify-center px-5 py-4 border-b border-[#E7E9EB] bg-[#FFFFFF] shrink-0">
+          <div className="text-center">
+            <h2 className="text-sm font-black text-[#000000] tracking-wider uppercase font-sans">
+              BIGsta
+            </h2>
+          </div>
+
+          {/* Current Role / Greeting Tag Badge */}
+          <div className="mt-2">
+            {authRole === 'admin' ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                <Shield className="w-3.5 h-3.5 text-amber-700" />
+                <span>CEO</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider px-3.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 shadow-2xs">
+                <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                <span>Welcome back</span>
+              </span>
+            )}
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#555555] hover:text-[#000000] hover:bg-[#E7E9EB] transition-colors cursor-pointer"
+            className="absolute right-4 top-4 p-1.5 rounded-lg text-[#555555] hover:text-[#000000] hover:bg-[#E7E9EB] transition-colors cursor-pointer"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />
@@ -382,122 +458,132 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
         </div>
 
         {/* Navigation List - Vertically Scrollable */}
-        <div className="flex-1 overflow-y-auto min-h-0 py-3 px-3 space-y-1 divide-y divide-[#E7E9EB]">
+        <div className="flex-1 overflow-y-auto min-h-0 py-3 px-3 space-y-2 divide-y divide-[#E7E9EB]">
           {/* Active Workspaces */}
-          <div className="pb-3 space-y-1">
+          <div className="pb-2 space-y-1">
             <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#777777]">
               Workspace Navigation
             </div>
-            {navItems.filter(item => item.category === 'core' && (authRole === 'admin' || item.id === 'home')).map((item) => {
-              const Icon = item.icon;
-              const isActive = (item.id === 'home' && activeScreen === 'home') ||
-                               (item.id === 'custom_studio' && (activeScreen === 'upload' || activeScreen === 'editor')) ||
-                               (item.id === 'sms_payments' && activeScreen === 'admin-payments') ||
-                               (item.id === 'templates' && activeScreen === 'templates');
+
+            {/* Dashboard */}
+            {(() => {
+              const dashItem = navItems.find((i) => i.id === 'dashboard');
+              if (!dashItem) return null;
+              const isDashActive = activeScreen === 'home';
               return (
                 <button
-                  key={item.id}
+                  key={dashItem.id}
                   type="button"
-                  onClick={item.action}
+                  onClick={dashItem.action}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
-                    isActive
+                    isDashActive
                       ? 'bg-[#000000] text-[#FFFFFF]'
                       : 'hover:bg-[#E7E9EB] text-[#000000]'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`p-1.5 rounded-lg shrink-0 ${isActive ? 'bg-white/20 text-white' : 'bg-[#E7E9EB] text-[#000000]'}`}>
-                      <Icon className="w-4 h-4" />
+                    <div className={`p-1.5 rounded-lg shrink-0 ${isDashActive ? 'bg-white/20 text-white' : 'bg-[#E7E9EB] text-[#000000]'}`}>
+                      <Home className="w-4 h-4" />
                     </div>
                     <div className="truncate min-w-0">
-                      <div className="text-xs font-bold truncate">{item.name}</div>
-                      <div className={`text-[10px] truncate hidden sm:block ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>{item.authority}</div>
+                      <div className="text-xs font-bold truncate">{dashItem.name}</div>
+                      <div className={`text-[10px] truncate hidden sm:block ${isDashActive ? 'text-slate-300' : 'text-slate-500'}`}>{dashItem.authority}</div>
                     </div>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 ${isActive ? 'bg-white text-black' : 'bg-[#E7E9EB] text-[#000000]'}`}>
-                    Active
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 ${isDashActive ? 'bg-white text-black' : 'bg-[#E7E9EB] text-[#000000]'}`}>
+                    {isDashActive ? 'Active' : 'Open'}
                   </span>
                 </button>
               );
-            })}
-          </div>
+            })()}
 
-          {/* National & Public Services */}
-          <div className="pt-3 pb-2 space-y-1">
-            <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#777777]">
-              Public Services Directory
-            </div>
-            {navItems.filter(item => item.category !== 'core').map((item) => {
-              const Icon = item.icon;
-              const isNidaActive = item.id === 'nida' && activeScreen === 'nida';
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={item.action}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
-                    isNidaActive
-                      ? 'bg-[#000000] text-[#FFFFFF]'
-                      : 'hover:bg-[#E7E9EB] text-[#000000]'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`p-1.5 rounded-lg shrink-0 ${isNidaActive ? 'bg-white/20 text-white' : 'bg-[#E7E9EB] text-[#000000]'}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="truncate min-w-0">
-                      <div className="text-xs font-bold truncate">{item.name}</div>
-                      <div className={`text-[10px] truncate hidden sm:block ${isNidaActive ? 'text-slate-300' : 'text-slate-500'}`}>{item.authority}</div>
-                    </div>
+            {/* Services Dropdown Parent - Consolidated All Services */}
+            <div className="space-y-1 pt-1">
+              <button
+                type="button"
+                onClick={() => setIsServicesExpanded((prev) => !prev)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left hover:bg-[#E7E9EB] text-[#000000] transition-all cursor-pointer border border-[#E7E9EB] bg-[#F8F9FA]"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-1.5 rounded-lg shrink-0 bg-[#000000] text-white">
+                    <UserCheck className="w-4 h-4" />
                   </div>
-
-                  {item.status === 'active' ? (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#CEE9B9] text-[#000000] shrink-0">
-                      Ready
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-[#555555] px-2 py-0.5 rounded-md bg-[#E7E9EB] shrink-0 font-medium">
-                      Info
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Logout Navigation Item at the VERY BOTTOM of menu items */}
-          <div className="pt-3 pb-2">
-            <div className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-red-600 flex items-center gap-1.5 mb-1.5">
-              <LogOut className="w-3.5 h-3.5 text-red-600 shrink-0" />
-              <span>System Session</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                logoutPasskey();
-                onClose();
-              }}
-              className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 transition-all cursor-pointer font-bold shadow-xs group"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-xl bg-red-600 text-white shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                  <LogOut className="w-4.5 h-4.5" />
-                </div>
-                <div className="truncate">
-                  <div className="text-xs font-black text-red-950 flex items-center gap-1">
-                    <span>Logout</span>
-                    <span className="text-[10px] text-red-600 font-semibold">(Toka)</span>
-                  </div>
-                  <div className="text-[10px] text-red-600 font-medium truncate">
-                    Return to Passkey Gateway
+                  <div className="truncate min-w-0">
+                    <div className="text-xs font-bold truncate">Services</div>
+                    <div className="text-[10px] text-slate-500 truncate hidden sm:block">Identity, Cards & Public Services</div>
                   </div>
                 </div>
-              </div>
-              <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white shrink-0 shadow-xs flex items-center gap-1">
-                <span>Logout</span>
-                <span className="text-xs">↩</span>
-              </span>
-            </button>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#CEE9B9] text-[#000000]">
+                    Active
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-600 transition-transform duration-200 ${isServicesExpanded ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
+
+              {/* Collapsible Dropdown Children nested under Services - Consolidated */}
+              {isServicesExpanded && (
+                <div className="pl-2 ml-2 border-l-2 border-[#E7E9EB] space-y-1 pt-1 pb-1 animate-in slide-in-from-top-1 duration-150">
+                  {navItems
+                    .filter((item) => item.id !== 'dashboard' && item.id !== 'services')
+                    .map((item) => {
+                      const Icon = item.icon;
+                      const isActive =
+                        (item.id === 'nida' && activeScreen === 'nida') ||
+                        (item.id === 'driving_license' && activeScreen === 'driving_license') ||
+                        (item.id === 'nhif' && activeScreen === 'nhif') ||
+                        ((item.id === 'templates' || item.id === 'templates_library') && (activeScreen === 'upload' || activeScreen === 'templates' || activeScreen === 'editor')) ||
+                        ((item.id === 'payments' || item.id === 'sms_payments' || item.id === 'user_payments') && activeScreen === 'admin-payments') ||
+                        (item.id === 'downloads' && activeScreen === 'downloads') ||
+                        (item.id === 'custom_studio' && activeScreen === 'upload');
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={item.action}
+                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-[#000000] text-[#FFFFFF]'
+                              : 'hover:bg-[#E7E9EB] text-[#000000]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`p-1.5 rounded-lg shrink-0 ${isActive ? 'bg-white/20 text-white' : 'bg-[#E7E9EB] text-[#000000]'}`}>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="truncate min-w-0">
+                              <div className="text-xs font-semibold truncate">{item.name}</div>
+                              <div className={`text-[9px] truncate ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>{item.authority}</div>
+                            </div>
+                          </div>
+
+                          {item.badgeText ? (
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                              item.status === 'coming_soon'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                                : isActive
+                                ? 'bg-white text-black'
+                                : 'bg-blue-600 text-white'
+                            }`}>
+                              {item.badgeText}
+                            </span>
+                          ) : item.status === 'active' ? (
+                            <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0 ${isActive ? 'bg-white text-black font-bold' : 'bg-[#CEE9B9] text-[#000000] font-bold'}`}>
+                              {isActive ? 'Active' : 'Ready'}
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-[#555555] px-1.5 py-0.5 rounded bg-[#E7E9EB] shrink-0 font-medium">
+                              Info
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

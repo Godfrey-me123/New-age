@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTemplateStore } from './store/useTemplateStore';
 import { UploadScreen } from './components/UploadScreen';
 import { TemplatesScreen } from './components/TemplatesScreen';
@@ -16,6 +16,7 @@ import { MobileNavBar } from './components/MobileNavBar';
 import { MobileBottomSheet } from './components/MobileBottomSheet';
 import { NidaFormScreen } from './components/nida';
 import { DrivingLicenseFormScreen } from './components/nida/DrivingLicenseFormScreen';
+import { NhifFormScreen } from './components/nida/NhifFormScreen';
 import { NidaSuccessToast } from './components/nida/NidaSuccessToast';
 import { HomeScreen } from './components/HomeScreen';
 import { CardPreviewScreen } from './components/CardPreviewScreen';
@@ -25,12 +26,18 @@ import { ManualApplicationModal } from './components/auth/ManualApplicationModal
 import { RechargeModal } from './components/auth/RechargeModal';
 import { UsageExhaustedBanner } from './components/auth/UsageExhaustedBanner';
 import { DownloadsScreen } from './components/DownloadsScreen';
+import { TokenBillingScreen } from './components/billing/TokenBillingScreen';
+import { SettingsScreen } from './components/SettingsScreen';
 import { PaymentDashboard } from './components/admin/PaymentDashboard';
 import { UnsavedChangesModal } from './components/common/UnsavedChangesModal';
 import { StartupDisclaimerModal } from './components/common/StartupDisclaimerModal';
 
 export default function App() {
-  const { activeScreen, setActiveScreen, authRole } = useTemplateStore();
+  const { activeScreen, setActiveScreen, authRole, fetchPasskeysFromSupabase } = useTemplateStore();
+
+  useEffect(() => {
+    fetchPasskeysFromSupabase();
+  }, [fetchPasskeysFromSupabase]);
 
   // PASSKEY GATEWAY SYSTEM: Must enter valid passkey first
   if (!authRole) {
@@ -69,6 +76,28 @@ export default function App() {
       <>
         <UsageExhaustedBanner />
         <DownloadsScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'billing') {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <TokenBillingScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'settings') {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <SettingsScreen />
         <PasskeyManagerModal />
         <RechargeModal />
       </>
@@ -129,7 +158,7 @@ export default function App() {
       <>
         <UsageExhaustedBanner />
         <NidaFormScreen
-          onCancel={() => setActiveScreen('home')}
+          onCancel={() => useTemplateStore.getState().goBack()}
           onSuccess={() => {
             // Handled in workflow -> transitions to preview screen
           }}
@@ -150,7 +179,28 @@ export default function App() {
       <>
         <UsageExhaustedBanner />
         <DrivingLicenseFormScreen
-          onCancel={() => setActiveScreen('home')}
+          onCancel={() => useTemplateStore.getState().goBack()}
+          onSuccess={() => {
+            // Handled in workflow -> transitions to preview screen
+          }}
+        />
+        <PasskeyManagerModal />
+        <RechargeModal />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'nhif') {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <NhifFormScreen
+          onCancel={() => useTemplateStore.getState().goBack()}
           onSuccess={() => {
             // Handled in workflow -> transitions to preview screen
           }}

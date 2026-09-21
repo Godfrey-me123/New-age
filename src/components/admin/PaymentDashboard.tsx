@@ -34,6 +34,7 @@ import {
 import { paymentService } from '../../services/paymentService';
 import { PaymentRecord, PaymentStatus, VerificationLog } from '../../types';
 import { useTemplateStore } from '../../store/useTemplateStore';
+import { UniversalBackButton } from '../common/UniversalBackButton';
 
 export const PaymentDashboard: React.FC = () => {
   const { setActiveScreen } = useTemplateStore();
@@ -271,7 +272,7 @@ export const PaymentDashboard: React.FC = () => {
   const handleReject = async (paymentId: string) => {
     if (!confirm('Reject this payment?')) return;
     try {
-      await paymentService.rejectPayment(paymentId, 'admin');
+      await paymentService.rejectPayment(paymentId, 'admin', 'Rejected by admin');
       alert('Payment rejected');
       loadData();
     } catch (e) {
@@ -1204,13 +1205,7 @@ export const PaymentDashboard: React.FC = () => {
       {/* Page Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 shadow-sm">
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setActiveScreen('home')}
-            className="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-xl transition-all shadow-sm active:scale-95"
-            title="Back to Home"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <UniversalBackButton />
           <div>
             <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Payments Management</h1>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">Transaction Records & Verification</p>

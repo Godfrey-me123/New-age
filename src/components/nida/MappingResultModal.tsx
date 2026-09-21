@@ -87,7 +87,7 @@ export const MappingResultModal: React.FC<MappingResultModalProps> = ({
               </div>
               <ul className="list-disc list-inside space-y-1 text-[11px] text-amber-200/90 leading-relaxed">
                 {warnings.map((w, i) => (
-                  <li key={i}>{w}</li>
+                  <li key={`${w}-${i}`}>{w}</li>
                 ))}
               </ul>
             </div>
@@ -101,7 +101,7 @@ export const MappingResultModal: React.FC<MappingResultModalProps> = ({
             <div className="space-y-1.5">
               {plan.fieldMappings.map((m, idx) => (
                 <div
-                  key={idx}
+                  key={m.binding || idx}
                   className="flex items-center justify-between p-2 rounded-lg bg-[#0A0B0E] border border-[#4C5055]/40"
                 >
                   <div className="flex items-center gap-2">

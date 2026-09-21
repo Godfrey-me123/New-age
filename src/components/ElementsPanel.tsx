@@ -30,7 +30,27 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
     let bindingKey: any = undefined;
     let fieldId: string | undefined = undefined;
 
-    if (defaultText.includes('first_middle_name') || defaultText.includes('full_name')) {
+    if (defaultText.includes('nhif_card_number')) {
+      layerName = 'NHIF Card Number';
+      bindingKey = 'NHIF_CARD_NUMBER';
+      fieldId = 'nhif_card_number';
+    } else if (defaultText.includes('nhif_full_name')) {
+      layerName = 'NHIF Full Name';
+      bindingKey = 'NHIF_FULL_NAME';
+      fieldId = 'nhif_full_name';
+    } else if (defaultText.includes('nhif_gender')) {
+      layerName = 'NHIF Gender';
+      bindingKey = 'NHIF_GENDER';
+      fieldId = 'nhif_gender';
+    } else if (defaultText.includes('nhif_date_of_birth')) {
+      layerName = 'NHIF Date of Birth';
+      bindingKey = 'NHIF_DATE_OF_BIRTH';
+      fieldId = 'nhif_date_of_birth';
+    } else if (defaultText.includes('nhif_status')) {
+      layerName = 'NHIF Card Status';
+      bindingKey = 'NHIF_CARD_STATUS';
+      fieldId = 'nhif_status';
+    } else if (defaultText.includes('first_middle_name') || defaultText.includes('full_name')) {
       layerName = 'First Name + Middle Name';
       bindingKey = 'FIRST_MIDDLE_NAME';
       fieldId = 'firstMiddleName';
@@ -100,10 +120,12 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
     onElementAdded?.();
   };
 
-  const handleAddPlaceholder = (key: string, label: string) => {
+  const handleAddPlaceholder = (key: string, label: string, customFieldId?: string) => {
+    const isNhif = activeServiceId === 'nhif' || customFieldId?.includes('nhif');
+    const fId = customFieldId || (isNhif ? 'nhif_passport_photo' : undefined);
     const newLayer: Layer = {
       id: 'ph_' + Date.now(),
-      name: `${label} Placeholder`,
+      name: label.endsWith('Placeholder') ? label : `${label} Placeholder`,
       type: 'placeholder',
       placeholderKey: key,
       label,
@@ -118,6 +140,9 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
       hidden: false,
       borderColor: '#1e3a8a',
       backgroundColor: '#f1f5f9',
+      fieldId: fId,
+      fieldName: fId,
+      bindingKey: key === 'photo' ? (isNhif ? 'NHIF_PASSPORT_PHOTO' : 'PHOTO') : 'SIGNATURE',
     };
     addLayer(newLayer);
     onElementAdded?.();
@@ -170,12 +195,17 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
     onElementAdded?.();
   };
 
-  const handleAddQRCode = () => {
+  const handleAddQRCode = (customData?: string, customName?: string, customFieldId?: string) => {
+    const isNhif = activeServiceId === 'nhif' || customFieldId?.includes('nhif');
+    const dataVal = customData || (isNhif ? '{{nhif_qr}}' : 'https://example.com/verify/id/987654321');
+    const nameVal = customName || (isNhif ? 'NHIF QR Code' : 'QR Code');
+    const fId = customFieldId || (isNhif ? 'nhif_qr' : undefined);
+
     const newLayer: Layer = {
       id: 'qr_' + Date.now(),
-      name: 'QR Code',
+      name: nameVal,
       type: 'qrcode',
-      data: 'https://example.com/verify/id/987654321',
+      data: dataVal,
       x: currentTemplate.cardWidth - 22,
       y: currentTemplate.cardHeight - 22,
       width: 18,
@@ -186,6 +216,9 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
       hidden: false,
       colorDark: '#000000',
       colorLight: '#ffffff',
+      fieldId: fId,
+      fieldName: fId,
+      bindingKey: isNhif ? 'NHIF_QR' : undefined,
     };
     addLayer(newLayer);
     onElementAdded?.();
@@ -426,7 +459,61 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
             </>
           )}
 
-          {activeServiceId !== 'driving_license' && (
+          {activeServiceId === 'nhif' && (
+            <>
+              <button
+                onClick={() => handleAddText('{{nhif_card_number}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">NHIF Card Number</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{nhif_full_name}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">NHIF Full Name</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{nhif_gender}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">NHIF Gender</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{nhif_date_of_birth}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">NHIF Date Of Birth</span>
+              </button>
+              <button
+                onClick={() => handleAddText('{{nhif_status}}')}
+                className="p-2 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+              >
+                <Brackets className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">NHIF Card Status</span>
+              </button>
+              <button
+                onClick={() => handleAddPlaceholder('photo', 'NHIF Passport Photo', 'nhif_passport_photo')}
+                className="p-2 rounded-lg bg-[#CEE9B9] hover:bg-[#bddeaa] border border-[#a3d489] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">NHIF Passport Photo</span>
+              </button>
+              <button
+                onClick={() => handleAddQRCode('{{nhif_qr}}', 'NHIF QR Code', 'nhif_qr')}
+                className="p-2 rounded-lg bg-[#ECA6FC] hover:bg-[#e48efa] border border-[#dd76f8] text-xs font-semibold text-[#000000] flex items-center gap-1.5 transition-colors min-h-[40px] cursor-pointer col-span-2"
+              >
+                <QrCode className="w-3.5 h-3.5 text-[#000000] flex-shrink-0" />
+                <span className="truncate">NHIF QR Code</span>
+              </button>
+            </>
+          )}
+
+          {activeServiceId !== 'driving_license' && activeServiceId !== 'nhif' && (
             <>
               <button
                 onClick={() => handleAddText('{{first_name}}')}

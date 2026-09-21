@@ -1,6 +1,6 @@
 import { CardTemplate, Layer, TextLayer, ImageLayer, PlaceholderLayer, BarcodeLayer, QRCodeLayer } from '../types';
 import { NidaFormData } from '../components/nida/NidaFormScreen';
-import { normalizeDateInput, formatToDdMmYyyy } from './dateValidation';
+import { normalizeDateInput, formatToDdMmYyyy, formatToMmmDdYyyy, toTitleCase } from './dateValidation';
 
 export type { NidaFormData };
 
@@ -22,7 +22,17 @@ export type SupportedBinding =
   | 'ISSUING_AUTHORITY'
   | 'REGION'
   | 'PIN_NUMBER'
-  | 'LICENCE_NUMBER';
+  | 'LICENCE_NUMBER'
+  | 'CARD_NO'
+  | 'FULL_NAME'
+  | 'CARD_STATUS'
+  | 'NHIF_CARD_NUMBER'
+  | 'NHIF_FULL_NAME'
+  | 'NHIF_GENDER'
+  | 'NHIF_DATE_OF_BIRTH'
+  | 'NHIF_CARD_STATUS'
+  | 'NHIF_PASSPORT_PHOTO'
+  | 'NHIF_QR';
 
 export const ALL_SUPPORTED_BINDINGS: SupportedBinding[] = [
   'FIRST_NAME',
@@ -42,6 +52,16 @@ export const ALL_SUPPORTED_BINDINGS: SupportedBinding[] = [
   'ISSUING_AUTHORITY',
   'REGION',
   'PIN_NUMBER',
+  'CARD_NO',
+  'FULL_NAME',
+  'CARD_STATUS',
+  'NHIF_CARD_NUMBER',
+  'NHIF_FULL_NAME',
+  'NHIF_GENDER',
+  'NHIF_DATE_OF_BIRTH',
+  'NHIF_CARD_STATUS',
+  'NHIF_PASSPORT_PHOTO',
+  'NHIF_QR',
 ];
 
 export interface FieldMappingDetail {
@@ -121,6 +141,16 @@ export function ensureTemplateFieldIds(template: CardTemplate): CardTemplate {
     REGION: 'region',
     PIN_NUMBER: 'pinNumber',
     LICENCE_NUMBER: 'licenceNumber',
+    CARD_NO: 'cardNumber',
+    FULL_NAME: 'fullName',
+    CARD_STATUS: 'cardStatus',
+    NHIF_CARD_NUMBER: 'nhif_card_number',
+    NHIF_FULL_NAME: 'nhif_full_name',
+    NHIF_GENDER: 'nhif_gender',
+    NHIF_DATE_OF_BIRTH: 'nhif_date_of_birth',
+    NHIF_CARD_STATUS: 'nhif_status',
+    NHIF_PASSPORT_PHOTO: 'nhif_passport_photo',
+    NHIF_QR: 'nhif_qr',
   };
 
   const sanitizedLayers = template.layers.map((layer) => {
@@ -158,7 +188,9 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if ([
       'FIRST_NAME', 'MIDDLE_NAME', 'LAST_NAME', 'DOB', 'GENDER', 'NIDA_NUMBER', 'PHOTO', 'SIGNATURE',
       'FIRST_MIDDLE_NAME', 'CATEGORIES_FIELD9', 'DRIVING_LICENCE_CATEGORIES', 'CLASSES_TABLE',
-      'ISSUE_DATE', 'EXPIRY_DATE', 'ISSUING_AUTHORITY', 'REGION', 'PIN_NUMBER', 'LICENCE_NUMBER'
+      'ISSUE_DATE', 'EXPIRY_DATE', 'ISSUING_AUTHORITY', 'REGION', 'PIN_NUMBER', 'LICENCE_NUMBER',
+      'CARD_NO', 'CARD_NUMBER', 'FULL_NAME', 'CARD_STATUS',
+      'NHIF_CARD_NUMBER', 'NHIF_FULL_NAME', 'NHIF_GENDER', 'NHIF_DATE_OF_BIRTH', 'NHIF_CARD_STATUS', 'NHIF_PASSPORT_PHOTO', 'NHIF_QR'
     ].includes(b)) {
       return b as SupportedBinding;
     }
@@ -168,6 +200,12 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   if (layer.type === 'text') {
     const textLayer = layer as TextLayer;
     const text = (textLayer.text || '').trim();
+
+    if (/\{\{(?:nhif_card_number|card_no|card_number|cardno|cardnumber)\}\}/i.test(text)) return 'CARD_NO';
+    if (/\{\{(?:nhif_full_name|full_name|fullname|member_name)\}\}/i.test(text)) return 'FULL_NAME';
+    if (/\{\{(?:nhif_status|card_status|membership_status)\}\}/i.test(text)) return 'CARD_STATUS';
+    if (/\{\{(?:nhif_gender)\}\}/i.test(text)) return 'GENDER';
+    if (/\{\{\s*(?:nhif_date_of_birth|nhif_dob)\s*\}\}/i.test(text)) return 'DOB';
 
     if (/\{\{(?:first_middle_name|first_name_middle_name|first_name_plus_middle_name|first_plus_middle_name|first_name_\+_middle_name|display_name_line1|displaynameline1|first_name_and_middle_name)\}\}/i.test(text)) return 'FIRST_MIDDLE_NAME';
     if (/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/i.test(text) && /\{\{(?:middle_name|middlename|other_names|othernames|mname)\}\}/i.test(text)) return 'FIRST_MIDDLE_NAME';
@@ -195,6 +233,13 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   ).toLowerCase();
 
   if (explicitField) {
+    if (/nhif_card_number|nhif_card_no|card_?no|card_?number|membership_?number|namba_?ya_?kadi/i.test(explicitField)) return 'CARD_NO';
+    if (/nhif_full_name|full_?name|member_?name|jina_?kamili/i.test(explicitField)) return 'FULL_NAME';
+    if (/nhif_status|card_?status|membership_?status/i.test(explicitField)) return 'CARD_STATUS';
+    if (/nhif_gender/i.test(explicitField)) return 'GENDER';
+    if (/nhif_date_of_birth|nhif_dob/i.test(explicitField)) return 'DOB';
+    if (/nhif_passport_photo/i.test(explicitField)) return 'PHOTO';
+    if (/nhif_qr/i.test(explicitField)) return 'CARD_NO';
     if (/first_?middle_?name|firstname_?middlename|first_?name_?plus_?middle_?name|display_?name_?line1/i.test(explicitField)) return 'FIRST_MIDDLE_NAME';
     if (/first_?name|fname|given_?name/i.test(explicitField)) return 'FIRST_NAME';
     if (/middle_?name|mname|other_?name/i.test(explicitField)) return 'MIDDLE_NAME';
@@ -225,6 +270,9 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   // 5. Barcode / QR Code Layers
   if (layer.type === 'barcode') {
     const b = layer as BarcodeLayer;
+    if (/\{\{(?:card_no|card_number|cardno|cardnumber)\}\}/i.test(b.data) || /nhif|card_no|barcode_nhif/i.test(layer.id)) {
+      return 'CARD_NO';
+    }
     if (/\{\{(?:id_number|nida_number|nida)\}\}/i.test(b.data) || /nida|id_no|barcode_nida/i.test(layer.id)) {
       return 'NIDA_NUMBER';
     }
@@ -232,6 +280,9 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
 
   if (layer.type === 'qrcode') {
     const q = layer as QRCodeLayer;
+    if (/\{\{(?:card_no|card_number|cardno|cardnumber)\}\}/i.test(q.data) || /nhif|card_no|qr_nhif/i.test(layer.id)) {
+      return 'CARD_NO';
+    }
     if (/\{\{(?:id_number|nida_number|nida)\}\}/i.test(q.data) || /qr_nida/i.test(layer.id)) {
       return 'NIDA_NUMBER';
     }
@@ -325,7 +376,9 @@ export function getFormValueForBinding(binding: SupportedBinding, formData: Part
     case 'LAST_NAME':
       return formData.lastName?.trim() || '';
     case 'DOB': {
+      const isNhif = !!((formData as any).cardNumber || (formData as any).card_no || (formData as any).cardNo);
       const rawDob = (formData.dob || (formData as any).dateOfBirth || '').trim();
+      if (isNhif) return rawDob ? formatToMmmDdYyyy(rawDob) : '';
       return rawDob ? (isDL ? formatToDdMmYyyy(rawDob) : normalizeDateInput(rawDob)) : '';
     }
     case 'ISSUE_DATE': {
@@ -337,10 +390,17 @@ export function getFormValueForBinding(binding: SupportedBinding, formData: Part
       return rawExpiry ? (isDL ? formatToDdMmYyyy(rawExpiry) : normalizeDateInput(rawExpiry)) : '';
     }
     case 'GENDER': {
-      const g = (formData.gender || '').trim().toUpperCase();
-      if (g.startsWith('M')) return 'M';
-      if (g.startsWith('F')) return 'F';
-      return g || 'M';
+      const isNhif = !!((formData as any).cardNumber || (formData as any).card_no || (formData as any).cardNo);
+      const g = (formData.gender || '').trim();
+      if (isNhif) {
+        if (g.toLowerCase().startsWith('m')) return 'Male';
+        if (g.toLowerCase().startsWith('f')) return 'Female';
+        return 'Male';
+      }
+      const gUpper = g.toUpperCase();
+      if (gUpper.startsWith('M')) return 'M';
+      if (gUpper.startsWith('F')) return 'F';
+      return gUpper || 'M';
     }
     case 'NIDA_NUMBER':
       return (formData.nidaNumber || (formData as any).licenceNumber || '').trim();
@@ -364,6 +424,12 @@ export function getFormValueForBinding(binding: SupportedBinding, formData: Part
       return ((formData as any).region || '').trim();
     case 'PIN_NUMBER':
       return ((formData as any).pinNumber || '').trim();
+    case 'CARD_NO':
+      return ((formData as any).cardNumber || (formData as any).card_no || (formData as any).cardNo || '').trim();
+    case 'FULL_NAME':
+      return toTitleCase(((formData as any).fullName || (formData as any).full_name || '').trim());
+    case 'CARD_STATUS':
+      return toTitleCase(((formData as any).cardStatus || (formData as any).card_status || 'Active').trim());
     case 'PHOTO':
       return formData.photoUrl || '';
     case 'SIGNATURE':
@@ -439,12 +505,26 @@ export function replaceAllTokens(layer: Layer, formData: any): Layer {
   const categoriesFront = formatDrivingLicenceCategoriesFront(formData.classes || formData.categories);
   const categoriesBack = formatDrivingLicenceCategoriesBack(formData.classes || formData.categories, issue, expiry);
 
-  text = text.replace(/\{\{(?:first_middle_name|first_name_middle_name|display_name_line1)\}\}/gi, `${fVal} ${mVal}`.trim());
-  text = text.replace(/\{\{(?:first_name|firstname|given_name|given_names|fname)\}\}/gi, fVal);
-  text = text.replace(/\{\{(?:middle_name|middlename|other_names|mname)\}\}/gi, mVal);
-  text = text.replace(/\{\{(?:last_name|lastname|surname|family_name|lname)\}\}/gi, lVal);
-  text = text.replace(/\{\{\s*(?:dob|date_of_birth|birth_date|birthdate|dateofbirth|birth)\s*\}\}/gi, dob);
-  text = text.replace(/\{\{(?:gender|sex|jinsia|jinsi)\}\}/gi, gender);
+  const isNhif = !!(formData.cardNumber || formData.card_no || formData.cardNo);
+  const cardNo = (formData.cardNumber || formData.card_no || formData.cardNo || '').trim();
+  const fullName = toTitleCase((formData.fullName || formData.full_name || '').trim());
+  const cardStatus = toTitleCase((formData.cardStatus || formData.card_status || 'Active').trim());
+
+  if (isNhif) {
+    const nhifDob = rawDob ? formatToMmmDdYyyy(rawDob) : '';
+    const nhifGender = (formData.gender || '').trim().toLowerCase().startsWith('m') ? 'Male' : 'Female';
+    text = text.replace(/\{\{(?:nhif_card_number|card_no|card_number|cardno|cardnumber)\}\}/gi, cardNo);
+    text = text.replace(/\{\{(?:nhif_full_name|full_name|fullname|member_name)\}\}/gi, fullName);
+    text = text.replace(/\{\{(?:nhif_status|card_status|membership_status)\}\}/gi, cardStatus);
+    text = text.replace(/\{\{\s*(?:nhif_date_of_birth|nhif_dob|dob|date_of_birth|birth_date|birthdate|dateofbirth|birth)\s*\}\}/gi, nhifDob);
+    text = text.replace(/\{\{(?:nhif_gender|gender|sex|jinsia|jinsi)\}\}/gi, nhifGender);
+  } else {
+    text = text.replace(/\{\{(?:nhif_card_number|card_no|card_number|cardno|cardnumber)\}\}/gi, cardNo);
+    text = text.replace(/\{\{(?:nhif_full_name|full_name|fullname|member_name)\}\}/gi, fullName);
+    text = text.replace(/\{\{(?:nhif_status|card_status|membership_status)\}\}/gi, cardStatus);
+    text = text.replace(/\{\{\s*(?:dob|date_of_birth|birth_date|birthdate|dateofbirth|birth)\s*\}\}/gi, dob);
+    text = text.replace(/\{\{(?:gender|sex|jinsia|jinsi)\}\}/gi, gender);
+  }
   text = text.replace(/\{\{(?:nida_number|nida|id_number|national_id|nin)\}\}/gi, nida);
   text = text.replace(/\{\{\s*(?:issue_date|date_of_issue|issued_date|issueddate|dateofissue|issuedate|first_issue_date|first_issued_date|date_of_first_issue|valid_from|date_issued|issue)\s*\}\}/gi, issue);
   text = text.replace(/\{\{\s*(?:expiry_date|date_of_expiry|expirydate|dateofexpiry|expiration_date|expirationdate|expires|expire_date|valid_to|valid_until|date_expired|expiry)\s*\}\}/gi, expiry);
@@ -570,6 +650,7 @@ export function injectValueIntoLayer(
         break;
       }
       case 'DOB': {
+        const isNhif = !!((formData as any).cardNumber || (formData as any).card_no || (formData as any).cardNo);
         const isDrivingLicence = !!(
           (formData as any).classes ||
           (formData as any).categories ||
@@ -579,8 +660,8 @@ export function injectValueIntoLayer(
           (textLayer as any).licenseCategoryGroup !== undefined ||
           (textLayer as any).licenseCategoriesSeparator !== undefined
         );
-        const rawDob = (formData.dob || '').trim();
-        const val = rawDob ? (isDrivingLicence ? formatToDdMmYyyy(rawDob) : normalizeDateInput(rawDob)) : '';
+        const rawDob = (formData.dob || (formData as any).dateOfBirth || '').trim();
+        const val = rawDob ? (isNhif ? formatToMmmDdYyyy(rawDob) : isDrivingLicence ? formatToDdMmYyyy(rawDob) : normalizeDateInput(rawDob)) : '';
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:dob|date_of_birth|birth_date|birthdate)\}\}/gi, val);
         } else if (/^(?:tarehe\s+ya\s+kuzaliwa|date\s+of\s+birth|dob)\s*[:：\-]?\s*/i.test(text)) {
@@ -591,8 +672,10 @@ export function injectValueIntoLayer(
         break;
       }
       case 'GENDER': {
+        const isNhif = !!((formData as any).cardNumber || (formData as any).card_no || (formData as any).cardNo);
         const rawGender = (formData.gender || '').trim();
-        const val = rawGender ? targetGender : '';
+        const nhifGender = rawGender.toLowerCase().startsWith('m') ? 'Male' : rawGender.toLowerCase().startsWith('f') ? 'Female' : 'Male';
+        const val = rawGender ? (isNhif ? nhifGender : targetGender) : '';
         if (text.includes('{{')) {
           text = text.replace(/\{\{(?:gender|sex|jinsia|jinsi|gender_val|sex_val|jinsi_val)\}\}/gi, val);
         } else if (/^(?:jinsi|jinsia|sex|gender)\s*[:：\-]?\s*/i.test(text)) {
@@ -716,6 +799,68 @@ export function injectValueIntoLayer(
         }
         break;
       }
+      case 'CARD_NO':
+      case 'NHIF_CARD_NUMBER': {
+        const rawVal = ((formData as any).cardNumber || (formData as any).card_no || (formData as any).cardNo || '').trim();
+        const val = rawVal;
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:nhif_card_number|card_no|card_number|cardno|cardnumber)\}\}/gi, val);
+          if (text.startsWith('{{') && text.endsWith('}}')) {
+            text = val;
+          }
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'FULL_NAME':
+      case 'NHIF_FULL_NAME': {
+        const rawVal = ((formData as any).fullName || (formData as any).full_name || '').trim();
+        const val = rawVal ? toTitleCase(rawVal) : '';
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:nhif_full_name|full_name|fullname|member_name)\}\}/gi, val);
+          if (text.startsWith('{{') && text.endsWith('}}')) {
+            text = val;
+          }
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'CARD_STATUS':
+      case 'NHIF_CARD_STATUS': {
+        const rawVal = ((formData as any).cardStatus || (formData as any).card_status || 'Active').trim();
+        const val = rawVal ? toTitleCase(rawVal) : 'Active';
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:nhif_status|card_status|membership_status)\}\}/gi, val);
+          if (text.startsWith('{{') && text.endsWith('}}')) {
+            text = val;
+          }
+        } else {
+          text = val;
+        }
+        break;
+      }
+      case 'NHIF_GENDER': {
+        const rawGender = (formData.gender || '').trim();
+        const nhifGender = rawGender.toLowerCase().startsWith('m') ? 'Male' : rawGender.toLowerCase().startsWith('f') ? 'Female' : 'Male';
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{(?:nhif_gender|gender|sex)\}\}/gi, nhifGender);
+        } else {
+          text = nhifGender;
+        }
+        break;
+      }
+      case 'NHIF_DATE_OF_BIRTH': {
+        const rawDob = (formData.dob || (formData as any).dateOfBirth || '').trim();
+        const val = rawDob ? formatToMmmDdYyyy(rawDob) : '';
+        if (text.includes('{{')) {
+          text = text.replace(/\{\{\s*(?:nhif_date_of_birth|nhif_dob|dob|date_of_birth)\s*\}\}/gi, val);
+        } else {
+          text = val;
+        }
+        break;
+      }
     }
 
     // Replace any remaining tokens for general fields
@@ -746,15 +891,15 @@ export function injectValueIntoLayer(
     return { ...textLayer, text, hidden: false };
   }
 
-  if (layer.type === 'barcode' && binding === 'NIDA_NUMBER') {
+  if (layer.type === 'barcode' && (binding === 'NIDA_NUMBER' || binding === 'CARD_NO')) {
     const b = layer as BarcodeLayer;
-    const val = (formData.nidaNumber || '').replace(/-/g, '');
+    const val = ((formData as any).cardNumber || (formData as any).card_no || formData.nidaNumber || '').replace(/-/g, '');
     return { ...b, data: val };
   }
 
-  if (layer.type === 'qrcode' && binding === 'NIDA_NUMBER') {
+  if (layer.type === 'qrcode' && (binding === 'NIDA_NUMBER' || binding === 'CARD_NO')) {
     const q = layer as QRCodeLayer;
-    const val = formData.nidaNumber || '';
+    const val = (formData as any).cardNumber || (formData as any).card_no || formData.nidaNumber || '';
     return { ...q, data: val };
   }
 

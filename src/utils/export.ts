@@ -45,9 +45,10 @@ export async function renderTemplateToCanvas(
 ): Promise<HTMLCanvasElement> {
   const store = useTemplateStore.getState();
 
-  // 1. Determine effective card data (fallback to store's lastNidaFormData or lastDrivingLicenseFormData)
+  // 1. Determine effective card data (fallback to store's lastNidaFormData, lastDrivingLicenseFormData, or lastNhifFormData)
   const isDrivingLicense = template.cardType === 'Driving License' || store.activeServiceId === 'driving_license';
-  const storeFormData = (isDrivingLicense ? store.lastDrivingLicenseFormData : store.lastNidaFormData) || {};
+  const isNhif = template.serviceId === 'nhif' || store.activeServiceId === 'nhif';
+  const storeFormData = (isNhif ? store.lastNhifFormData : isDrivingLicense ? store.lastDrivingLicenseFormData : store.lastNidaFormData) || {};
   const effectiveCardData: CardData = {
     ...storeFormData,
     ...cardData,
@@ -61,7 +62,9 @@ export async function renderTemplateToCanvas(
   }
 
   // 3. Apply mapping engine pass if form data exists
-  const hasFormData = isDrivingLicense 
+  const hasFormData = isNhif
+    ? (effectiveCardData.cardNumber || effectiveCardData.card_no || effectiveCardData.fullName || effectiveCardData.dateOfBirth)
+    : isDrivingLicense 
     ? (effectiveCardData.licenceNumber || effectiveCardData.firstName || effectiveCardData.lastName || (effectiveCardData.classes && effectiveCardData.classes.length > 0))
     : (effectiveCardData.nidaNumber || effectiveCardData.firstName || effectiveCardData.lastName || effectiveCardData.dob);
 
@@ -215,6 +218,30 @@ export async function renderTemplateToCanvas(
       }
       if (trimmed === 'gender' || trimmed === 'sex' || trimmed === 'jinsi' || trimmed === 'jinsia') return (effectiveCardData.gender as string) || '';
       if (trimmed === 'nida_number' || trimmed === 'id_number' || trimmed === 'nin' || trimmed === 'national_id') return (effectiveCardData.nidaNumber as string) || '';
+
+      // NHIF Specific Tokens
+      if (trimmed === 'nhif_card_number' || trimmed === 'card_no' || trimmed === 'card_number') {
+        return ((cardData.cardNumber ?? effectiveCardData.cardNumber ?? cardData.card_no ?? effectiveCardData.card_no ?? '') as string);
+      }
+      if (trimmed === 'nhif_full_name' || trimmed === 'full_name' || trimmed === 'member_name') {
+        const rawName = ((cardData.fullName ?? effectiveCardData.fullName ?? cardData.full_name ?? effectiveCardData.full_name ?? '') as string);
+        return rawName ? toTitleCase(rawName) : '';
+      }
+      if (trimmed === 'nhif_gender') {
+        const rawG = ((cardData.gender ?? effectiveCardData.gender ?? '') as string).trim().toLowerCase();
+        return rawG.startsWith('m') ? 'Male' : rawG.startsWith('f') ? 'Female' : 'Male';
+      }
+      if (trimmed === 'nhif_date_of_birth' || trimmed === 'nhif_dob') {
+        const rawD = ((cardData.dob ?? effectiveCardData.dob ?? cardData.dateOfBirth ?? effectiveCardData.dateOfBirth ?? '') as string);
+        return rawD ? formatToMmmDdYyyy(rawD) : '';
+      }
+      if (trimmed === 'nhif_status' || trimmed === 'card_status') {
+        const rawS = ((cardData.cardStatus ?? effectiveCardData.cardStatus ?? cardData.card_status ?? effectiveCardData.card_status ?? 'Active') as string);
+        return rawS ? toTitleCase(rawS) : 'Active';
+      }
+      if (trimmed === 'nhif_qr') {
+        return ((cardData.cardNumber ?? effectiveCardData.cardNumber ?? cardData.card_no ?? effectiveCardData.card_no ?? '') as string);
+      }
 
       return `{{${trimmed}}}`;
     });
@@ -585,7 +612,7 @@ export async function renderTemplateToCanvas(
 }
 
 /**
- * Export options
+ * Export options - Restored working client-side rendering pipeline
  */
 export async function downloadPNG(
   template: CardTemplate,
@@ -595,25 +622,27 @@ export async function downloadPNG(
 ) {
   const canvas = await renderTemplateToCanvas(template, cardData, 300, cropRegion);
   const dataUrl = canvas.toDataURL('image/png');
-  const finalFilename = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_300dpi.png`;
+  const finalFilename = filename || `${template.templateName?.toLowerCase().replace(/\s+/g, '_') || 'card'}_300dpi.png`;
   
-  import('./idb').then(async (m) => {
-    await m.saveDownloadRecordDB({
-      id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      fileName: finalFilename,
-      service: template.templateName,
-      format: 'PNG',
-      date: new Date().toLocaleString(),
-      timestamp: Date.now(),
-      dataUrl,
-      status: 'COMPLETED'
-    });
-  }).catch(e => console.warn('Could not save download to history:', e));
-
   const link = document.createElement('a');
   link.download = finalFilename;
   link.href = dataUrl;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
+
+  const recordId = `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const { saveDownloadRecordDB } = await import('./idb');
+  await saveDownloadRecordDB({
+    id: recordId,
+    fileName: finalFilename,
+    service: template.templateName || 'Card Export',
+    format: 'PNG',
+    date: new Date().toLocaleString(),
+    timestamp: Date.now(),
+    dataUrl: dataUrl,
+    status: 'COMPLETED'
+  });
 }
 
 export async function downloadJPG(
@@ -624,25 +653,27 @@ export async function downloadJPG(
 ) {
   const canvas = await renderTemplateToCanvas(template, cardData, 300, cropRegion);
   const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-  const finalFilename = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_300dpi.jpg`;
-
-  import('./idb').then(async (m) => {
-    await m.saveDownloadRecordDB({
-      id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      fileName: finalFilename,
-      service: template.templateName,
-      format: 'JPG',
-      date: new Date().toLocaleString(),
-      timestamp: Date.now(),
-      dataUrl,
-      status: 'COMPLETED'
-    });
-  }).catch(e => console.warn('Could not save download to history:', e));
-
+  const finalFilename = filename || `${template.templateName?.toLowerCase().replace(/\s+/g, '_') || 'card'}_300dpi.jpg`;
+  
   const link = document.createElement('a');
   link.download = finalFilename;
   link.href = dataUrl;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
+
+  const recordId = `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const { saveDownloadRecordDB } = await import('./idb');
+  await saveDownloadRecordDB({
+    id: recordId,
+    fileName: finalFilename,
+    service: template.templateName || 'Card Export',
+    format: 'JPG',
+    date: new Date().toLocaleString(),
+    timestamp: Date.now(),
+    dataUrl: dataUrl,
+    status: 'COMPLETED'
+  });
 }
 
 export async function downloadPDF(
@@ -651,45 +682,38 @@ export async function downloadPDF(
   filename?: string,
   cropRegion?: CropRegion
 ) {
-  const cardWidth = cropRegion ? cropRegion.width : template.cardWidth;
-  const cardHeight = cropRegion ? cropRegion.height : template.cardHeight;
-
-  // Standard A4 sheet dimensions in mm (210 x 297 mm)
-  const pageWidth = 210;
-  const pageHeight = 297;
-
+  const canvas = await renderTemplateToCanvas(template, cardData, 300, cropRegion);
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+  
   const pdf = new jsPDF({
-    orientation: 'portrait',
+    orientation: template.cardWidth > template.cardHeight ? 'landscape' : 'portrait',
     unit: 'mm',
-    format: 'a4',
+    format: [template.cardWidth, template.cardHeight]
   });
 
-  const canvas = await renderTemplateToCanvas(template, cardData, 300, cropRegion);
-  const imgData = canvas.toDataURL('image/png');
+  pdf.addImage(imgData, 'JPEG', 0, 0, template.cardWidth, template.cardHeight);
+  const pdfOutput = pdf.output('datauristring');
+  const finalFilename = filename || `${template.templateName?.toLowerCase().replace(/\s+/g, '_') || 'card'}_print.pdf`;
 
-  // Position card in exact 1:1 physical real-world size centered on A4 paper
-  const x = (pageWidth - cardWidth) / 2;
-  const y = (pageHeight - cardHeight) / 2;
+  const link = document.createElement('a');
+  link.download = finalFilename;
+  link.href = pdfOutput;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 
-  pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
-  const finalFilename = filename || `${template.templateName.toLowerCase().replace(/\s+/g, '_')}_print.pdf`;
-  
-  import('./idb').then(async (m) => {
-    // Generate a data URL of the PDF for storage
-    const pdfDataUrl = pdf.output('datauristring');
-    await m.saveDownloadRecordDB({
-      id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      fileName: finalFilename,
-      service: template.templateName,
-      format: 'PDF',
-      date: new Date().toLocaleString(),
-      timestamp: Date.now(),
-      dataUrl: pdfDataUrl,
-      status: 'COMPLETED'
-    });
-  }).catch(e => console.warn('Could not save download to history:', e));
-
-  pdf.save(finalFilename);
+  const recordId = `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const { saveDownloadRecordDB } = await import('./idb');
+  await saveDownloadRecordDB({
+    id: recordId,
+    fileName: finalFilename,
+    service: template.templateName || 'Card Export',
+    format: 'PDF',
+    date: new Date().toLocaleString(),
+    timestamp: Date.now(),
+    dataUrl: pdfOutput,
+    status: 'COMPLETED'
+  });
 }
 
 export async function download2In1PDF(
@@ -698,108 +722,55 @@ export async function download2In1PDF(
   cardData: CardData = {},
   filename?: string
 ) {
-  const store = useTemplateStore.getState();
-
-  const storeFormData = store.lastNidaFormData || {};
-  const effectiveCardData: CardData = {
-    ...storeFormData,
-    ...cardData,
-  };
-
-  // Source of truth for templates:
-  // If the passed template ID matches the active populated template in the store, use the store's populated template directly!
-  // This guarantees that the PDF export matches the preview exactly, with all latest layout and text edits intact.
-  let fTpl = frontTemplate;
-  if (fTpl && store.frontPopulatedTemplate && fTpl.id === store.frontPopulatedTemplate.id) {
-    fTpl = store.frontPopulatedTemplate;
-  } else if (!fTpl) {
-    fTpl = store.frontPopulatedTemplate || store.currentTemplate;
-  }
-
-  let bTpl = backTemplate;
-  if (bTpl && store.backPopulatedTemplate && bTpl.id === store.backPopulatedTemplate.id) {
-    bTpl = store.backPopulatedTemplate;
-  } else if (!bTpl) {
-    bTpl = store.backPopulatedTemplate;
-  }
-
-  if (!bTpl) {
-    // If no back template provided, find or generate appropriate service back
-    const isDL = store.activeServiceId === 'driving_license' || fTpl?.cardType === 'Driving License';
-    const sampleBack = isDL
-      ? (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_driving_license_back') || SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tz_dl_back') || SAMPLE_TEMPLATES[1])
-      : (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1]);
-    if (sampleBack) {
-      const bRes = applyTemplateMapping(sampleBack, effectiveCardData as any);
-      bTpl = bRes.populatedTemplate || sampleBack;
-    } else {
-      bTpl = fTpl;
-    }
-  }
-
-  // Ensure both front and back templates have 1:1 mapping applied
-  if (fTpl && effectiveCardData && (effectiveCardData.firstName || effectiveCardData.nidaNumber || effectiveCardData.lastName || effectiveCardData.licenceNumber)) {
-    const fRes = applyTemplateMapping(fTpl, effectiveCardData as any);
-    if (fRes.populatedTemplate) fTpl = fRes.populatedTemplate;
-  }
-
-  if (bTpl && effectiveCardData && (effectiveCardData.firstName || effectiveCardData.nidaNumber || effectiveCardData.lastName || effectiveCardData.licenceNumber)) {
-    const bRes = applyTemplateMapping(bTpl, effectiveCardData as any);
-    if (bRes.populatedTemplate) bTpl = bRes.populatedTemplate;
-  }
-
-  // Standard A4 sheet dimensions in mm (210 x 297 mm)
-  const pageWidth = 210;
-  const pageHeight = 297;
-  const gapMm = 12; // 12mm spacing between front and back cards
-
-  const frontW = fTpl.cardWidth;
-  const frontH = fTpl.cardHeight;
-  const backW = bTpl.cardWidth;
-  const backH = bTpl.cardHeight;
-
-  const totalHeight = frontH + gapMm + backH;
+  const w = frontTemplate?.cardWidth || 85.6;
+  const h = frontTemplate?.cardHeight || 54;
 
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
-    format: 'a4',
+    format: 'a4'
   });
 
-  // Calculate vertical centering for the front + back stack on A4 page
-  const startY = (pageHeight - totalHeight) / 2;
+  const xOffset = (210 - w) / 2;
 
-  // Render front card
-  const frontCanvas = await renderTemplateToCanvas(fTpl, effectiveCardData, 300);
-  const frontImg = frontCanvas.toDataURL('image/png');
-  const frontX = (pageWidth - frontW) / 2;
-  const frontY = startY;
-  pdf.addImage(frontImg, 'PNG', frontX, frontY, frontW, frontH);
+  if (frontTemplate) {
+    const frontCanvas = await renderTemplateToCanvas(frontTemplate, cardData, 300);
+    const frontImg = frontCanvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(frontImg, 'JPEG', xOffset, 20, w, h);
+    pdf.setFontSize(10);
+    pdf.text('FRONT SIDE', xOffset, 15);
+  }
 
-  // Render back card directly below with 12mm gap
-  const backCanvas = await renderTemplateToCanvas(bTpl, effectiveCardData, 300);
-  const backImg = backCanvas.toDataURL('image/png');
-  const backX = (pageWidth - backW) / 2;
-  const backY = frontY + frontH + gapMm;
-  pdf.addImage(backImg, 'PNG', backX, backY, backW, backH);
+  if (backTemplate) {
+    const backCanvas = await renderTemplateToCanvas(backTemplate, cardData, 300);
+    const backImg = backCanvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(backImg, 'JPEG', xOffset, 30 + h, w, h);
+    pdf.setFontSize(10);
+    pdf.text('BACK SIDE', xOffset, 25 + h);
+  }
 
-  const finalFilename = filename || `merged_2in1_${fTpl.templateName.toLowerCase().replace(/\s+/g, '_')}.pdf`;
-  
-  import('./idb').then(async (m) => {
-    const pdfDataUrl = pdf.output('datauristring');
-    await m.saveDownloadRecordDB({
-      id: `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      fileName: finalFilename,
-      service: `2-in-1: ${fTpl.templateName}`,
-      format: 'PDF',
-      date: new Date().toLocaleString(),
-      timestamp: Date.now(),
-      dataUrl: pdfDataUrl,
-      status: 'COMPLETED'
-    });
-  }).catch(e => console.warn('Could not save download to history:', e));
+  const pdfOutput = pdf.output('datauristring');
+  const finalFilename = filename || `2in1_merged_card_sheet.pdf`;
 
-  pdf.save(finalFilename);
+  const link = document.createElement('a');
+  link.download = finalFilename;
+  link.href = pdfOutput;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  const recordId = `dl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const { saveDownloadRecordDB } = await import('./idb');
+  await saveDownloadRecordDB({
+    id: recordId,
+    fileName: finalFilename,
+    service: frontTemplate?.templateName || '2-in-1 Card Merge',
+    format: 'PDF',
+    date: new Date().toLocaleString(),
+    timestamp: Date.now(),
+    dataUrl: pdfOutput,
+    status: 'COMPLETED'
+  });
 }
 
 export function downloadJSON(template: CardTemplate, filename?: string) {

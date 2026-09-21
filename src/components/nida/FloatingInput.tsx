@@ -32,7 +32,11 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const inputId = id || `floating-input-${label.toLowerCase().replace(/\s+/g, '-')}`;
 
-  const hasValue = value !== undefined && value !== null && value.toString().length > 0;
+  const displayValue = (typeof value === 'object' && value !== null)
+    ? ('target' in (value as any) ? (value as any).target.value : (value as any).value || '')
+    : (value ?? '');
+
+  const hasValue = displayValue !== undefined && displayValue !== null && String(displayValue).length > 0;
   const isFloating = isFocused || hasValue;
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -99,7 +103,7 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
 
           <input
             id={inputId}
-            value={value}
+            value={displayValue}
             disabled={disabled}
             onFocus={handleFocus}
             onBlur={handleBlur}

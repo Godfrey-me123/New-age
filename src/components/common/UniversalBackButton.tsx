@@ -26,11 +26,11 @@ export const UniversalBackButton: React.FC<UniversalBackButtonProps> = ({
   return (
     <button
       onClick={handleClick}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-bold text-[#000000] transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95 ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-bold text-inherit hover:opacity-75 transition-colors cursor-pointer shrink-0 active:scale-95 ${className}`}
       title="Return to previous screen"
       aria-label="Return to previous screen"
     >
-      <ArrowLeft className="w-3.5 h-3.5 text-[#000000] shrink-0" />
+      <ArrowLeft className="w-4 h-4 shrink-0" />
       <span className="truncate">{label}</span>
     </button>
   );

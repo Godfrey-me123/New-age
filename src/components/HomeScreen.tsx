@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Phone,
+  DownloadCloud,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { ServiceMenuDrawer } from './navigation/ServiceMenuDrawer';
@@ -118,6 +119,8 @@ export const HomeScreen: React.FC = () => {
           ? () => navigateSafely('nida', 'nida')
           : s.id === 'driving_license'
           ? () => navigateSafely('driving_license', 'driving_license')
+          : s.id === 'nhif'
+          ? () => navigateSafely('nhif', 'nhif')
           : () => navigateSafely('nida', s.id);
 
         return {
@@ -231,10 +234,6 @@ export const HomeScreen: React.FC = () => {
             <Menu className="w-5 h-5 text-[#101010]" />
           </button>
 
-          <div className="w-10 h-10 rounded-2xl bg-[#101010] flex items-center justify-center font-black text-white text-sm shadow-xs shrink-0">
-            ID
-          </div>
-
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-[#101010] text-sm sm:text-base tracking-tight font-sans">
@@ -255,11 +254,11 @@ export const HomeScreen: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
               type="button"
-              onClick={() => setActiveScreen('home')}
+              onClick={() => setActiveScreen('downloads')}
               className="p-2 sm:p-2.5 rounded-xl bg-[#E7E2DE] hover:bg-[#dad5d0] text-[#101010] border border-[#dad5d0] transition-colors flex items-center justify-center cursor-pointer"
-              title="Home"
+              title="Downloads Center"
             >
-              <Home className="w-5 h-5" />
+              <DownloadCloud className="w-5 h-5 text-blue-600" />
             </button>
           
           {/* Custom Designer Direct Button (Admin Only) */}
@@ -274,17 +273,6 @@ export const HomeScreen: React.FC = () => {
               <span>Studio</span>
             </button>
           )}
-
-          {/* Downloads Center Button */}
-          <button
-            type="button"
-            onClick={() => setActiveScreen('downloads')}
-            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 bg-[#E7E2DE] hover:bg-[#dad5d0] border border-[#dad5d0] text-xs font-bold text-[#101010] rounded-2xl transition-all shadow-xs cursor-pointer whitespace-nowrap"
-            title="Downloads"
-          >
-            <ScrollText className="w-3.5 h-3.5 text-[#101010]" />
-            <span>Downloads</span>
-          </button>
 
           {/* Saved Templates Button (Admin Only) */}
           {authRole === 'admin' && (
@@ -414,7 +402,7 @@ export const HomeScreen: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 pb-8 sm:pb-12">
-            {filteredServices.map((service) => {
+            {filteredServices.map((service, idx) => {
               const IconComponent = service.icon;
               const isActive = service.status === 'active';
 
@@ -434,7 +422,7 @@ export const HomeScreen: React.FC = () => {
 
               return (
                 <div
-                  key={service.id}
+                  key={`${service.id}-${idx}`}
                   onClick={() => handleCardClick(service)}
                   role="button"
                   tabIndex={0}

@@ -78,6 +78,12 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
       action: () => navigateSafely('driving_license'),
       icon: <FileText className="w-3 h-3" />,
     });
+  } else if ((activeScreen as string) === 'nhif') {
+    items.push({
+      label: 'NHIF Membership Form',
+      action: () => navigateSafely('nhif' as any),
+      icon: <FileText className="w-3 h-3" />,
+    });
   } else if (activeScreen === 'preview') {
     items.push({
       label: currentServiceName,

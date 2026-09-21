@@ -233,14 +233,14 @@ export const NidaTemplatePickerModal: React.FC<NidaTemplatePickerModalProps> = (
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTemplates.map((tpl) => {
+              {filteredTemplates.map((tpl, idx) => {
                 const isSelected = selectedTemplateId === tpl.id;
                 const thumb = thumbnails[tpl.id];
                 const isNida = tpl.id.toLowerCase().includes('nida') || tpl.templateName.toLowerCase().includes('nida');
 
                 return (
                   <div
-                    key={tpl.id}
+                    key={`${tpl.id}-${idx}`}
                     onClick={() => {
                       onSelectTemplate(tpl);
                       onClose();

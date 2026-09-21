@@ -1,6 +1,6 @@
 export type Unit = 'px' | 'mm' | 'cm' | 'in';
 
-export type CardType = 'National ID' | 'Employee ID' | 'Student ID' | 'Membership Card' | 'Access Badge' | 'Driving License' | 'Other';
+export type CardType = 'National ID' | 'Employee ID' | 'Student ID' | 'Membership Card' | 'NHIF Membership Card' | 'Access Badge' | 'Driving License' | 'Other';
 export type CardSide = 'Front Side' | 'Back Side' | 'Full Card' | 'Single Side';
 
 export type LayerType = 'text' | 'image' | 'placeholder' | 'shape' | 'barcode' | 'qrcode' | 'group';
@@ -299,4 +299,68 @@ export interface PaymentSettings {
   forwardingStatus: 'active' | 'inactive';
   lastSmsReceived?: string;
   lastVerification?: string;
+}
+
+export interface ConfigurablePaymentMethod {
+  id: string;
+  name: string;
+  number: string;
+  accountName: string;
+  instructions: string;
+  status: 'active' | 'inactive';
+}
+
+export interface UserProfileSettings {
+  name: string;
+  phone: string;
+  email: string;
+  region: string;
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  language: 'en' | 'sw';
+  fontSize: 'compact' | 'standard' | 'large';
+  paymentAlerts: boolean;
+  downloadAlerts: boolean;
+  systemAlerts: boolean;
+  downloadFolder: string;
+  autoSave: boolean;
+  openAfterDownload: boolean;
+  keepHistoryDays: number;
+}
+
+export interface AdminSystemSettings {
+  ocrProvider: string;
+  ocrConfidenceThreshold: number;
+  autoApprovalEnabled: boolean;
+  tokenPriceTsh: number;
+  tokenRewardBonus: number;
+  maxDailyTokenLimit: number;
+  autoApprovalRules: string;
+}
+
+export interface ExtractedPaymentData {
+  amount: number;
+  sender: string;
+  receiver: string;
+  reference: string;
+  date: string;
+  time?: string;
+}
+
+export interface UserPaymentSubmission {
+  id: string;
+  userId: string;
+  passkeyId?: string;
+  amount: number;
+  sender: string;
+  receiver: string;
+  reference: string;
+  date: string;
+  submittedAt: string;
+  status: 'pending' | 'verified' | 'rejected';
+  extractedData: ExtractedPaymentData;
+  rejectionReason?: string;
+  tokensGranted?: number;
 }

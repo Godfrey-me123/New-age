@@ -8,8 +8,13 @@ export interface DownloadRecord {
   format: 'PDF' | 'PNG' | 'JPG' | 'JSON' | 'SVG';
   date: string;
   timestamp: number;
-  dataUrl: string; // Base64 or Object URL
-  status: 'COMPLETED' | 'FAILED';
+  dataUrl: string; // Base64 or Object URL / HTTPS download URL
+  status: 'QUEUED' | 'GENERATING' | 'READY' | 'DOWNLOADING' | 'COMPLETED' | 'DOWNLOADED' | 'FAILED';
+  sizeBytes?: number;
+  failureReason?: string;
+  progressPercent?: number;
+  queuePosition?: number;
+  userId?: string;
 }
 
 export interface StudioDraftRecord {

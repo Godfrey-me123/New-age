@@ -210,13 +210,13 @@ export const LayersList: React.FC<LayersListProps> = ({ onLayerSelected, isMobil
         </div>
       ) : (
         <div className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-14rem)] sm:max-h-none">
-          {layersReversed.map((layer) => {
+          {layersReversed.map((layer, idx) => {
             const isSelected = selectedLayerIds.includes(layer.id);
             const isEditing = editingLayerId === layer.id;
 
             return (
               <div
-                key={layer.id}
+                key={`${layer.id}-${idx}`}
                 ref={(el) => {
                   layerItemRefs.current[layer.id] = el;
                 }}

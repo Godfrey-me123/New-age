@@ -199,35 +199,20 @@ export const TemplatesScreen: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-[#FFFFFF] text-[#000000] overflow-y-auto font-sans">
       {/* Top Header */}
       <div className="px-6 py-4 border-b border-[#E7E9EB] bg-[#FFFFFF] flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-[#000000] text-white">
-            <FolderOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-[#000000] flex items-center gap-2">
-              <span>Templates Management</span>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#CEE9B9] text-[#000000] border border-[#b8df9d]">
-                {templates.length} Saved
-              </span>
-            </h1>
-            <p className="text-xs text-[#555555] font-medium">
-              Manage, search, organize, duplicate, and open all your saved card templates
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl font-bold text-[#000000] flex items-center gap-2">
+            <span>Templates Management</span>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#CEE9B9] text-[#000000] border border-[#b8df9d]">
+              {templates.length} Saved
+            </span>
+          </h1>
+          <p className="text-xs text-[#555555] font-medium">
+            Manage, search, organize, duplicate, and open all your saved card templates
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
           <UniversalBackButton />
-
-          <button
-            type="button"
-            onClick={() => setActiveScreen('home')}
-            className="px-3 py-2 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#E7E9EB] text-[#000000] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Return to Services Home"
-          >
-            <Home className="w-4 h-4 text-[#000000]" />
-            <span className="hidden sm:inline">Services</span>
-          </button>
 
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -269,7 +254,7 @@ export const TemplatesScreen: React.FC = () => {
         </div>
 
         {/* Categories Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
+        <div className="flex items-center justify-center sm:justify-start gap-1.5 overflow-x-auto py-1 scrollbar-none w-full sm:w-auto">
           {['All', 'National ID', 'Employee ID', 'Student ID', 'Membership Card'].map((cat) => (
             <button
               key={cat}
@@ -316,9 +301,9 @@ export const TemplatesScreen: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {sorted.map((tpl) => (
+            {sorted.map((tpl, idx) => (
               <div
-                key={tpl.id}
+                key={`${tpl.id}-${idx}`}
                 onClick={(e) => handleOpenEdit(tpl, e)}
                 className="group bg-[#FFFFFF] hover:bg-[#F8FAFC] border border-[#E7E9EB] hover:border-[#000000] rounded-2xl p-4 transition-all duration-200 shadow-xs hover:shadow-md flex flex-col justify-between relative overflow-hidden cursor-pointer"
               >

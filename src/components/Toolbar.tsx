@@ -152,13 +152,13 @@ export const Toolbar: React.FC = () => {
   return (
     <>
       <header className="h-14 bg-[#FFFFFF] border-b border-[#E7E9EB] px-2 sm:px-4 flex items-center justify-between text-[#000000] select-none sticky top-0 z-40 shrink-0 w-full gap-2 shadow-xs">
-        {/* Top-Left: Menu Button, Home & Template Info */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0">
+        {/* Top-Left: Menu Button & Service Selector */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Menu Drawer Toggle Button */}
           <button
             type="button"
             onClick={() => setIsMenuDrawerOpen(true)}
-            className="p-2 rounded-xl bg-[#E7E9EB] hover:bg-[#dadcdc] text-[#000000] border border-[#dadcdc] transition-colors flex items-center justify-center cursor-pointer"
+            className="p-2 rounded-xl bg-[#E7E9EB] hover:bg-[#dadcdc] text-[#000000] border border-[#dadcdc] transition-colors flex items-center justify-center cursor-pointer shrink-0"
             title="Open Services Menu"
             aria-label="Open Services Navigation Menu"
           >
@@ -167,17 +167,6 @@ export const Toolbar: React.FC = () => {
 
           {/* Universal Back Button */}
           <UniversalBackButton />
-
-          {/* Return Home Button */}
-          <button
-            type="button"
-            onClick={() => navigateSafely('home')}
-            className="p-2 rounded-xl bg-[#E7E9EB] hover:bg-[#dadcdc] text-[#000000] border border-[#dadcdc] transition-colors flex items-center justify-center cursor-pointer"
-            title="Return to Services Home"
-            aria-label="Return to Services Overview"
-          >
-            <Home className="w-4 h-4 text-[#000000]" />
-          </button>
 
           {/* Application Brand / App Name */}
           <div className="hidden lg:flex flex-col border-r border-[#E7E9EB] pr-3">
@@ -190,12 +179,12 @@ export const Toolbar: React.FC = () => {
           </div>
 
           {/* Service Selector Dropdown */}
-          <div className="flex flex-col justify-center border-r border-[#E7E9EB] pr-3">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-[#555555]">Studio Service</span>
+          <div className="flex flex-col justify-center border-r border-[#E7E9EB] pr-1.5 sm:pr-3 shrink-0">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#555555] whitespace-nowrap">Studio Service</span>
             <select
               value={activeServiceId}
               onChange={(e) => setActiveServiceId(e.target.value)}
-              className="bg-[#CEE9E9] text-xs font-bold text-[#000000] px-2 py-0.5 rounded-lg border border-[#a1d3d3] focus:outline-none cursor-pointer"
+              className="bg-[#CEE9E9] text-xs font-bold text-[#000000] px-1.5 sm:px-2 py-0.5 rounded-lg border border-[#a1d3d3] focus:outline-none cursor-pointer max-w-[110px] xs:max-w-[130px] sm:max-w-none truncate"
               title="Select Active Studio Service Context"
             >
               <option value="nida">NIDA</option>
@@ -208,20 +197,6 @@ export const Toolbar: React.FC = () => {
               <option value="nhif">NHIF Health Card</option>
               <option value="ajira">Ajira Portal</option>
             </select>
-          </div>
-
-          {/* Current Template Name & Dimensions */}
-          <div className="flex flex-col justify-center max-w-[120px] sm:max-w-[180px] md:max-w-[220px]">
-            <input
-              type="text"
-              value={currentTemplate.templateName}
-              onChange={(e) => updateTemplateMeta({ templateName: e.target.value })}
-              className="bg-transparent text-xs sm:text-sm font-bold text-[#000000] hover:bg-[#E7E9EB]/60 focus:bg-[#FFFFFF] focus:outline-none px-1.5 py-0.5 rounded border border-transparent focus:border-[#E7E9EB] transition-colors w-full truncate"
-              title="Edit Template Name"
-            />
-            <span className="text-[9px] sm:text-[10px] text-[#555555] px-1.5 font-mono truncate">
-              {currentTemplate.cardWidth}×{currentTemplate.cardHeight} mm
-            </span>
           </div>
         </div>
 
@@ -508,9 +483,9 @@ export const Toolbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Right: PRIMARY ACTION BAR - Swipable on mobile without whole-page horizontal scrolling */}
-      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 max-w-[58vw] sm:max-w-none overflow-x-auto no-scrollbar">
-        <HorizontalActionRow className="gap-1.5">
+      {/* Right: PRIMARY ACTION BAR - Swipable on mobile with smooth touch horizontal scrolling */}
+      <div className="flex-1 min-w-0 flex items-center justify-end gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar touch-pan-x scroll-smooth">
+        <HorizontalActionRow className="gap-1.5 justify-end">
           {/* Undo / Redo for Mobile */}
           <div className="flex md:hidden items-center bg-[#E7E9EB] rounded-lg p-0.5 border border-[#dadcdc] shrink-0">
             <button
@@ -544,7 +519,7 @@ export const Toolbar: React.FC = () => {
           {/* Templates Button */}
           <button
             onClick={() => setActiveScreen('templates')}
-            className="hidden sm:flex px-2 py-1.5 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-[#000000] text-xs font-bold rounded-lg transition-colors items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+            className="px-2 py-1.5 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-[#000000] text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
             title="Templates"
           >
             <FolderOpen className="w-3.5 h-3.5 text-[#000000] shrink-0" />
@@ -554,7 +529,7 @@ export const Toolbar: React.FC = () => {
           {/* Import JSON Button */}
           <button
             onClick={handleImportClick}
-            className="hidden sm:flex px-2 py-1.5 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-[#000000] text-xs font-bold rounded-lg transition-colors items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+            className="px-2 py-1.5 bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-[#000000] text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
             title="Import Template JSON"
           >
             <Upload className="w-3.5 h-3.5 text-[#000000] shrink-0" />
