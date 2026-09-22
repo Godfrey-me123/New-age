@@ -520,6 +520,176 @@ export async function fetchAllActiveTemplatesSupabase(): Promise<any[]> {
   }
 }
 
+// Helper: Fetch Payment Methods from Supabase
+export async function fetchPaymentMethodsSupabase(): Promise<any[] | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('config_value')
+      .eq('config_key', 'payment_methods')
+      .single();
+    if (error || !data) return null;
+    return data.config_value as any[];
+  } catch (e) {
+    console.error('Failed to fetch payment methods from Supabase:', e);
+    return null;
+  }
+}
+
+// Helper: Save/Publish Payment Methods to Supabase
+export async function savePaymentMethodsSupabase(methods: any[]): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('system_settings').upsert({
+      id: 'payment_methods',
+      config_key: 'payment_methods',
+      config_value: methods,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      console.error('Failed to save payment methods to Supabase:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to save payment methods to Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Fetch Admin Settings from Supabase
+export async function fetchAdminSettingsSupabase(): Promise<any | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('config_value')
+      .eq('config_key', 'admin_settings')
+      .single();
+    if (error || !data) return null;
+    return data.config_value;
+  } catch (e) {
+    console.error('Failed to fetch admin settings from Supabase:', e);
+    return null;
+  }
+}
+
+// Helper: Save/Publish Admin Settings to Supabase
+export async function saveAdminSettingsSupabase(settings: any): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('system_settings').upsert({
+      id: 'admin_settings',
+      config_key: 'admin_settings',
+      config_value: settings,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      console.error('Failed to save admin settings to Supabase:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to save admin settings to Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Fetch All Profiles (Registered Users) from Supabase
+export async function fetchAllProfilesSupabase(): Promise<any[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error || !data) return [];
+    return data;
+  } catch (e) {
+    console.error('Failed to fetch profiles from Supabase:', e);
+    return [];
+  }
+}
+
+// Helper: Deterministic UUID Generator to prevent PostgreSQL casting syntax errors
+export function getUUID(id: string): string {
+  if (!id) return '00000000-0000-0000-0000-000000000000';
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(id)) return id;
+  
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h << 5) - h + id.charCodeAt(i);
+    h = h & h;
+  }
+  const hex = Math.abs(h).toString(16).padStart(8, '0');
+  const part2 = Math.abs(h * 31).toString(16).padStart(4, '0').slice(0, 4);
+  const part3 = Math.abs(h * 17).toString(16).padStart(4, '0').slice(0, 4);
+  const part4 = Math.abs(h * 7).toString(16).padStart(4, '0').slice(0, 4);
+  const part5 = Math.abs(h * 13).toString(16).padStart(12, '0').slice(0, 12);
+  return `${hex}-${part2}-${part3}-${part4}-${part5}`;
+}
+
+// Helper: Sync Payment Record to Supabase user_payments table
+export async function syncPaymentRecordSupabase(payment: any): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('user_payments').upsert({
+      id: payment.id,
+      user_id: payment.passkeyId ? getUUID(payment.passkeyId) : null,
+      user_name: payment.senderName || null,
+      user_phone: payment.senderPhone || payment.sender || null,
+      amount: payment.amount || 0,
+      sender: payment.senderName || payment.sender || null,
+      receiver: payment.deviceName || 'BIGsta Gateway',
+      reference: payment.transactionReference || null,
+      status: payment.status?.toUpperCase() || 'PENDING',
+      payment_date: payment.transactionTime || payment.receivedAt || new Date().toISOString(),
+      tokens_granted: payment.tokensGranted || 0,
+    });
+    if (error) {
+      console.warn('Sync payment record to Supabase warning:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to sync payment record to Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Fetch All Payment Records from Supabase user_payments table
+export async function fetchAllPaymentsSupabase(): Promise<any[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('user_payments')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error || !data) return [];
+    
+    return data.map((d: any) => ({
+      id: d.id,
+      rawSms: d.reference ? `${d.reference} Imethibitishwa. Tsh ${d.amount} imetumwa kwa ${d.receiver}.` : '',
+      sender: d.user_phone || d.sender || '',
+      receivedAt: d.payment_date || d.created_at,
+      deviceName: d.receiver || '',
+      status: d.status?.toLowerCase() === 'verified' ? 'verified' : d.status?.toLowerCase() || 'pending',
+      used: d.status?.toLowerCase() === 'verified' || d.status?.toLowerCase() === 'used',
+      transactionReference: d.reference,
+      senderName: d.user_name || d.sender,
+      senderPhone: d.user_phone,
+      amount: Number(d.amount),
+      tokensGranted: d.tokens_granted || 0,
+      passkeyId: d.user_id,
+    }));
+  } catch (e) {
+    console.error('Failed to fetch payments from Supabase:', e);
+    return [];
+  }
+}
+
 // Helper: Sync Profile
 export async function syncProfileSupabase(profile: {
   id: string;
@@ -533,7 +703,7 @@ export async function syncProfileSupabase(profile: {
   if (!supabase) return false;
   try {
     const { error } = await supabase.from('profiles').upsert({
-      id: profile.id,
+      id: getUUID(profile.id),
       name: profile.name,
       phone: profile.phone,
       email: profile.email,
@@ -557,7 +727,7 @@ export async function syncProfileSupabase(profile: {
 export async function fetchProfileSupabase(userId: string): Promise<any | null> {
   if (!supabase) return null;
   try {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', getUUID(userId)).single();
     if (error || !data) return null;
     return data;
   } catch (e) {

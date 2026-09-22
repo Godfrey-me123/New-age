@@ -11,6 +11,20 @@ export interface ParsedSms {
 export function parseSms(rawSms: string): Partial<ParsedSms> | null {
   const normalized = rawSms.trim();
 
+  // Swahili Universal Payment Match (M-Pesa, Airtel Money, Yas, etc)
+  // Match format: starts with 10-char reference, followed by Imethibitishwa / Confirmed, contains Tsh[Amount]
+  const swahiliMatch = normalized.match(/^([A-Z0-9]{10}).*?Tsh\s*([\d,]+\.\d{2})/i);
+  if (swahiliMatch) {
+    return {
+      transactionReference: swahiliMatch[1],
+      amount: parseFloat(swahiliMatch[2].replace(/,/g, '')),
+      senderName: 'Mobile Payment Transfer',
+      network: 'Mobile Money Gateway',
+      transactionTime: new Date().toISOString().substring(0, 10),
+      newBalance: 0,
+    };
+  }
+
   // M-Pesa Patterns
   // Example: 5K786HG98F Confirmed. You have received Tsh50,000.00 from JOHN DOE 255754000000 on 19/9/2026 at 10:24 AM. New M-Pesa balance is Tsh150,000.00.
   const mpesaMatch = normalized.match(/^([A-Z0-9]+)\s+Confirmed\.\s+You\s+have\s+received\s+Tsh([\d,.]+)\s+from\s+([\w\s]+)\s+(\d+)\s+on\s+([\d/]+)\s+at\s+([\d:APM\s]+)\.\s+New\s+M-Pesa\s+balance\s+is\s+Tsh([\d,.]+)/i);

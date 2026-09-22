@@ -412,6 +412,8 @@ interface TemplateState {
   updatePaymentMethod: (id: string, updates: Partial<ConfigurablePaymentMethod>) => void;
   addPaymentMethod: (method: Omit<ConfigurablePaymentMethod, 'id'>) => void;
   deletePaymentMethod: (id: string) => void;
+  publishPaymentMethodsToSupabase: () => Promise<boolean>;
+  publishAdminSettingsToSupabase: () => Promise<boolean>;
   updateUserProfile: (updates: Partial<UserProfileSettings>) => void;
   updateUserPreferences: (updates: Partial<UserPreferences>) => void;
   updateAdminSettings: (updates: Partial<AdminSystemSettings>) => void;
@@ -900,12 +902,14 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   })();
 
   const initialPaymentMethods: ConfigurablePaymentMethod[] = (() => {
-    if (typeof window === 'undefined') return [
+    const DEFAULT_METHODS: ConfigurablePaymentMethod[] = [
       { id: 'pm_mpesa', name: 'M-Pesa', number: '0754 000 111', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*00# -> Pay Merchant or Send Money to 0754 000 111', status: 'active' },
-      { id: 'pm_tigopesa', name: 'Tigo Pesa', number: '0655 000 222', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*01# -> Pay Merchant or Send Money to 0655 000 222', status: 'active' },
+      { id: 'pm_mixx', name: 'Mixx by Yas', number: '0655 000 222', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*01# -> Pay Merchant or Send Money to 0655 000 222', status: 'active' },
       { id: 'pm_airtel', name: 'Airtel Money', number: '0784 000 333', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*60# -> Pay Merchant or Send Money to 0784 000 333', status: 'active' },
-      { id: 'pm_halopesa', name: 'HaloPesa', number: '0622 000 444', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*88# -> Send Money to 0622 000 444', status: 'active' }
+      { id: 'pm_halopesa', name: 'HaloPesa', number: '0622 000 444', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*88# -> Send Money to 0622 000 444', status: 'active' },
+      { id: 'pm_lipanamba', name: 'Lipa Namba', number: '5443322', accountName: 'BIGSTA SERVICES LTD', instructions: 'Pay via Lipa Namba merchant payment to number 5443322', status: 'active' }
     ];
+    if (typeof window === 'undefined') return DEFAULT_METHODS;
     try {
       const raw = localStorage.getItem('bigsta_payment_methods');
       if (raw) {
@@ -913,12 +917,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return [
-      { id: 'pm_mpesa', name: 'M-Pesa', number: '0754 000 111', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*00# -> Pay Merchant or Send Money to 0754 000 111', status: 'active' },
-      { id: 'pm_tigopesa', name: 'Tigo Pesa', number: '0655 000 222', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*01# -> Pay Merchant or Send Money to 0655 000 222', status: 'active' },
-      { id: 'pm_airtel', name: 'Airtel Money', number: '0784 000 333', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*60# -> Pay Merchant or Send Money to 0784 000 333', status: 'active' },
-      { id: 'pm_halopesa', name: 'HaloPesa', number: '0622 000 444', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*88# -> Send Money to 0622 000 444', status: 'active' }
-    ];
+    return DEFAULT_METHODS;
   })();
 
   const initialUserProfile: UserProfileSettings = (() => {
@@ -1065,6 +1064,28 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const updated = get().paymentMethods.filter(pm => pm.id !== id);
       safeLocalStorageSetItem('bigsta_payment_methods', JSON.stringify(updated));
       set({ paymentMethods: updated });
+    },
+
+    publishPaymentMethodsToSupabase: async () => {
+      try {
+        const { savePaymentMethodsSupabase } = await import('../services/supabase');
+        const success = await savePaymentMethodsSupabase(get().paymentMethods);
+        return success;
+      } catch (e) {
+        console.error('Failed to publish payment methods to Supabase:', e);
+        return false;
+      }
+    },
+
+    publishAdminSettingsToSupabase: async () => {
+      try {
+        const { saveAdminSettingsSupabase } = await import('../services/supabase');
+        const success = await saveAdminSettingsSupabase(get().adminSettings);
+        return success;
+      } catch (e) {
+        console.error('Failed to publish admin settings to Supabase:', e);
+        return false;
+      }
     },
 
     updateUserProfile: (updates) => {
@@ -2434,23 +2455,92 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
     fetchPasskeysFromSupabase: async () => {
       try {
-        const { fetchPasskeysSupabase } = await import('../services/supabase');
+        const { 
+          fetchPasskeysSupabase, 
+          fetchAllProfilesSupabase, 
+          fetchPaymentMethodsSupabase, 
+          fetchAdminSettingsSupabase 
+        } = await import('../services/supabase');
+
+        // 1. Fetch Passkeys
         const supabasePasskeys = await fetchPasskeysSupabase();
         if (supabasePasskeys && supabasePasskeys.length > 0) {
           const currentLocal = get().activePasskeys;
           const merged = [...currentLocal];
           supabasePasskeys.forEach((sp) => {
-            if (!merged.some((m) => m.key.toLowerCase() === sp.key.toLowerCase())) {
+            const idx = merged.findIndex((m) => m.key.toLowerCase() === sp.key.toLowerCase());
+            if (idx === -1) {
               merged.push(sp);
+            } else {
+              merged[idx] = { ...merged[idx], ...sp };
             }
           });
           set({ activePasskeys: merged });
         }
+
+        // 2. Fetch Profiles (Registered Users)
+        const supabaseProfiles = await fetchAllProfilesSupabase();
+        if (supabaseProfiles && supabaseProfiles.length > 0) {
+          const currentLocalUsers = get().registeredUsers;
+          const mergedUsers = [...currentLocalUsers];
+          
+          supabaseProfiles.forEach((p) => {
+            const mappedUser: RegisteredUser = {
+              id: p.id,
+              fullName: p.name || 'Anonymous User',
+              phone: p.phone || '',
+              passkey: p.passkey || '',
+              passkeyId: 'pk_user_' + p.id.split('_')[1] || p.id,
+              role: (p.role || 'user') as 'user',
+              status: (p.status || 'ACTIVE') as 'ACTIVE' | 'DISABLED' | 'PENDING',
+              registeredDate: p.created_at ? new Date(p.created_at).toISOString().replace('T', ' ').substring(0, 16) : new Date().toISOString().replace('T', ' ').substring(0, 16),
+              createdAtTimestamp: p.created_at ? new Date(p.created_at).getTime() : Date.now(),
+              lastActive: p.last_active || 'Recent activity',
+              lastActiveTimestamp: p.last_active_timestamp || Date.now(),
+              isOnline: p.is_online || false,
+              currentService: p.current_service || 'None',
+              currentActivity: p.current_activity || 'Active',
+              servicesUsed: p.services_used || [],
+            };
+
+            const idx = mergedUsers.findIndex((u) => u.id === p.id || u.phone === p.phone);
+            if (idx === -1) {
+              mergedUsers.push(mappedUser);
+            } else {
+              mergedUsers[idx] = { ...mergedUsers[idx], ...mappedUser };
+            }
+          });
+          
+          set({ registeredUsers: mergedUsers });
+          try {
+            localStorage.setItem('bigsta_registered_users', JSON.stringify(mergedUsers));
+          } catch (e) {}
+        }
+
+        // 3. Fetch Payment Methods
+        const dbPaymentMethods = await fetchPaymentMethodsSupabase();
+        if (dbPaymentMethods && dbPaymentMethods.length > 0) {
+          set({ paymentMethods: dbPaymentMethods });
+          try {
+            localStorage.setItem('bigsta_payment_methods', JSON.stringify(dbPaymentMethods));
+          } catch (e) {}
+        }
+
+        // 4. Fetch Admin Settings
+        const dbAdminSettings = await fetchAdminSettingsSupabase();
+        if (dbAdminSettings) {
+          const currentSettings = get().adminSettings;
+          set({ adminSettings: { ...currentSettings, ...dbAdminSettings } });
+          try {
+            localStorage.setItem('bigsta_admin_system_settings', JSON.stringify({ ...currentSettings, ...dbAdminSettings }));
+          } catch (e) {}
+        }
+
         if (typeof window !== 'undefined') {
           localStorage.removeItem('bigsta_passkeys');
         }
       } catch (e) {
-        console.warn('Failed to fetch passkeys from Supabase:', e);
+        console.warn('Failed to fetch passkeys and profiles from Supabase:', e);
       }
     },
 

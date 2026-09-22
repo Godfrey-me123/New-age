@@ -36,8 +36,50 @@ export const RechargeModal: React.FC = () => {
   const [submittedMessage, setSubmittedMessage] = useState('');
   const [actionNotice, setActionNotice] = useState('');
   const [reference, setReference] = useState('');
+  const [verifyAmount, setVerifyAmount] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
+
+  // Swahili SMS simulation states
+  const [simulatedSmsText, setSimulatedSmsText] = useState('DIFEQ2LX2R Imethibitishwa. Tsh3,000.00 imetumwa kwa LOCKWOOD TECHNOLOGY.');
+  const [smsSimStatus, setSmsSimStatus] = useState<'idle' | 'sending' | 'success' | 'failed'>('idle');
+
+  const handleSimulateSmsReceive = async (textToSimulate: string) => {
+    setSmsSimStatus('sending');
+    try {
+      const response = await fetch('/api/payment-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: 'Vodacom',
+          raw_sms: textToSimulate,
+          device_name: 'BIGsta SMS Simulator Integration'
+        })
+      });
+      if (response.ok) {
+        setSmsSimStatus('success');
+        
+        // Extract 10-char alphanumeric code starting the message
+        const refMatch = textToSimulate.trim().match(/^([A-Z0-9]{10})/i);
+        if (refMatch) {
+          setReference(refMatch[1].toUpperCase());
+        }
+
+        // Extract amount (e.g., Tsh3,000.00 or Tsh6,000.00)
+        const amtMatch = textToSimulate.match(/Tsh\s*([\d,]+(?:\.\d{2})?)/i);
+        if (amtMatch) {
+          const rawAmt = amtMatch[1].split('.')[0].replace(/,/g, '');
+          setVerifyAmount(rawAmt);
+        }
+
+        setTimeout(() => setSmsSimStatus('idle'), 4000);
+      } else {
+        setSmsSimStatus('failed');
+      }
+    } catch (e) {
+      setSmsSimStatus('failed');
+    }
+  };
 
   // Escape key listener
   useEffect(() => {
@@ -95,7 +137,12 @@ export const RechargeModal: React.FC = () => {
 
   const handleAutoVerify = async () => {
     if (!reference.trim()) {
-      setVerificationError('Please enter your transaction reference.');
+      setVerificationError('Please enter your transaction reference code.');
+      return;
+    }
+    const amt = parseFloat(verifyAmount.replace(/,/g, ''));
+    if (isNaN(amt) || amt <= 0) {
+      setVerificationError('Please enter the transaction amount in TSh.');
       return;
     }
 
@@ -103,11 +150,12 @@ export const RechargeModal: React.FC = () => {
     setVerificationError('');
     
     try {
-      const res = await paymentService.autoConfirmWithReference(reference.trim(), currentPasskey?.id || '');
+      const res = await paymentService.autoConfirmWithReference(reference.trim(), amt, currentPasskey?.id || '');
       if (res.success) {
         setSubmittedMessage(res.message);
         refreshUserStatus();
         setReference('');
+        setVerifyAmount('');
       } else {
         setVerificationError(res.message);
       }
@@ -204,26 +252,10 @@ export const RechargeModal: React.FC = () => {
             <p className="text-gray-100 text-base font-bold">Dear BIGsta User,</p>
             <p className="text-gray-300 text-sm font-medium">You need to recharge your account.</p>
           </div>
-          {rechargeNotice && (
-            <p className="text-amber-300 text-xs mt-3 bg-amber-500/20 p-2.5 rounded-xl border border-amber-500/30 w-full text-center font-bold">
-              {rechargeNotice}
-            </p>
-          )}
         </div>
 
         {/* Modal Body */}
         <div className="p-5 space-y-4 overflow-y-auto text-slate-900">
-          {/* Out of Usages Notice if passed */}
-          {rechargeNotice && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-red-800 text-xs animate-shake">
-              <AlertCircle className="w-4.5 h-4.5 text-red-600 shrink-0 mt-0.5" />
-              <div>
-                <strong className="font-extrabold block text-red-950">You're out of usages.</strong>
-                <span className="text-red-700">{rechargeNotice}</span>
-              </div>
-            </div>
-          )}
-
           {/* Current Usages & Status Header */}
           <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
             <div>
@@ -362,8 +394,22 @@ export const RechargeModal: React.FC = () => {
                   type="text"
                   value={reference}
                   onChange={(e) => setReference(e.target.value.toUpperCase())}
-                  placeholder="E.g. QRC7W8X9Z2"
-                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-9 pr-3 py-2.5 text-sm font-bold placeholder:text-blue-300/50 focus:outline-none focus:ring-2 focus:ring-white/30 uppercase"
+                  placeholder="Reference Code (E.g. DIFEQ2LX2R)"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-9 pr-3 py-2.5 text-sm font-bold placeholder:text-blue-200/50 focus:outline-none focus:ring-2 focus:ring-white/30 uppercase"
+                />
+              </div>
+
+              <div className="relative">
+                <span className="text-sm font-extrabold text-blue-300 absolute left-3.5 top-1/2 -translate-y-1/2">TSh</span>
+                <input
+                  type="text"
+                  value={verifyAmount}
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/[^\d,]/g, '');
+                    setVerifyAmount(clean);
+                  }}
+                  placeholder="Payment Amount (E.g. 3,000)"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl pl-12 pr-3 py-2.5 text-sm font-bold placeholder:text-blue-200/50 focus:outline-none focus:ring-2 focus:ring-white/30 font-mono"
                 />
               </div>
               
@@ -377,19 +423,93 @@ export const RechargeModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAutoVerify}
-                disabled={isVerifying || !reference.trim()}
+                disabled={isVerifying || !reference.trim() || !verifyAmount.trim()}
                 className="w-full py-2.5 bg-white text-blue-900 hover:bg-blue-50 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 {isVerifying ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Verifying with Vodacom/Airtel/Tigo...</span>
+                    <span>Verifying and Confirming Claim...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
-                    <span>Auto-Confirm Reference</span>
+                    <span>Auto-Confirm and Grant</span>
                   </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* SWAHILI SMS PAYMENT SIMULATION & SANDBOX */}
+          <div className="p-4 bg-slate-100 dark:bg-white/5 rounded-2xl border border-dashed border-slate-300 dark:border-white/10 space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="p-1 px-2 bg-purple-600 text-white rounded-md text-[10px] font-black uppercase">
+                TEST SANDBOX
+              </span>
+              <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-200">Swahili SMS Simulation System</h4>
+            </div>
+            
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              To test the SMS verification loop immediately inside the app, select one of the swahili mobile money transaction presets below:
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const txt = 'DIFEQ2LX2R Imethibitishwa. Tsh3,000.00 imetumwa kwa LOCKWOOD TECHNOLOGY.';
+                  setSimulatedSmsText(txt);
+                  handleSimulateSmsReceive(txt);
+                }}
+                className="p-2 bg-white dark:bg-[#1E2328] border border-slate-200 dark:border-white/10 hover:border-purple-500 rounded-xl text-left transition-all group cursor-pointer"
+              >
+                <div className="text-[10px] font-bold text-purple-700 dark:text-purple-400 group-hover:underline">Preset 1: Tsh 3,000</div>
+                <div className="text-[9px] font-mono font-bold text-slate-500 truncate">Ref: DIFEQ2LX2R</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const txt = 'DIHEQ2MO5T Imethibitishwa. Tsh6,000.00 imetumwa kwa MALIPO YA SERIKALI 3.';
+                  setSimulatedSmsText(txt);
+                  handleSimulateSmsReceive(txt);
+                }}
+                className="p-2 bg-white dark:bg-[#1E2328] border border-slate-200 dark:border-white/10 hover:border-purple-500 rounded-xl text-left transition-all group cursor-pointer"
+              >
+                <div className="text-[10px] font-bold text-purple-700 dark:text-purple-400 group-hover:underline">Preset 2: Tsh 6,000</div>
+                <div className="text-[9px] font-mono font-bold text-slate-500 truncate">Ref: DIHEQ2MO5T</div>
+              </button>
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <label className="block text-[9.5px] font-bold uppercase text-slate-400">Custom Swahili SMS Editor:</label>
+              <textarea
+                rows={2}
+                value={simulatedSmsText}
+                onChange={(e) => setSimulatedSmsText(e.target.value)}
+                className="w-full p-2 text-xs font-medium bg-white dark:bg-[#14171A] text-slate-900 dark:text-white border border-slate-200 dark:border-white/15 rounded-lg focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => handleSimulateSmsReceive(simulatedSmsText)}
+                disabled={smsSimStatus === 'sending' || !simulatedSmsText.trim()}
+                className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-[11px] rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {smsSimStatus === 'sending' ? (
+                  <>
+                    <RefreshCw className="w-3 animate-spin" />
+                    <span>Sending SMS to Webhook...</span>
+                  </>
+                ) : smsSimStatus === 'success' ? (
+                  <>
+                    <Check className="w-3 text-emerald-300" />
+                    <span className="text-emerald-300">SMS Sent & Code Autofilled below!</span>
+                  </>
+                ) : smsSimStatus === 'failed' ? (
+                  <span>Failed to Post SMS. Retry?</span>
+                ) : (
+                  <span>Send SMS to Webhook Endpoint</span>
                 )}
               </button>
             </div>

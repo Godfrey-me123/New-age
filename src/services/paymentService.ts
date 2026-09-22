@@ -36,49 +36,118 @@ export class PaymentService {
     await paymentDb.addPayment(payment);
     await this.logAction(payment.id, 'received', `SMS received from ${sender} via ${device_name}`);
     
+    // Sync to Supabase cloud!
+    try {
+      const { syncPaymentRecordSupabase } = await import('./supabase');
+      await syncPaymentRecordSupabase(payment);
+    } catch (e) {
+      console.warn('Failed to sync incoming SMS payment to Supabase:', e);
+    }
+
     return payment;
   }
 
   /**
-   * User provides a reference to auto-verify their payment and grant tokens
+   * User provides a reference and amount to auto-verify their payment or submit a claim
    */
-  async autoConfirmWithReference(reference: string, passkeyId: string): Promise<{ success: boolean; message: string }> {
-    const all = await paymentDb.getAllPayments();
+  async autoConfirmWithReference(reference: string, amountInput: number, passkeyId: string): Promise<{ success: boolean; message: string; status: 'verified' | 'submitted' }> {
+    // 1. Fetch from Supabase as first choice for cross-device connectivity
+    let all: PaymentRecord[] = [];
+    try {
+      const { fetchAllPaymentsSupabase } = await import('./supabase');
+      all = await fetchAllPaymentsSupabase();
+    } catch (e) {
+      console.warn('Failed to fetch payments from Supabase, falling back to local DB:', e);
+      try {
+        all = await paymentDb.getAllPayments();
+      } catch (err) {}
+    }
+
+    const cleanRef = reference.trim().toUpperCase();
+
+    // 2. Find matching reference in database
     const match = all.find(p => 
-      p.transactionReference?.toUpperCase() === reference.toUpperCase() && 
-      p.status === 'pending' && 
+      p.transactionReference?.toUpperCase() === cleanRef && 
       !p.used
     );
 
-    if (!match) {
-      return { success: false, message: 'Matching pending transaction not found or already used.' };
-    }
-
-    // Determine token grant based on amount
-    // Logic: 1000 TSh = 1 token (example logic, adjust as needed)
-    const amount = match.amount || 0;
-    const tokens = Math.floor(amount / 2000); // Assume 2000 TSh per token for standard packages
-
-    if (tokens <= 0) {
-      return { success: false, message: 'Transaction amount too low to grant tokens.' };
-    }
-
-    // Grant tokens in store
     const store = useTemplateStore.getState();
-    store.addUsagesToPasskey(passkeyId, tokens, `${tokens} Tokens Recharged`);
+    const tokenPrice = store.adminSettings?.tokenPriceTsh || 2000;
+    const computedTokens = Math.max(1, Math.floor(amountInput / tokenPrice));
 
-    // Update payment record
-    match.status = 'verified';
-    match.used = true;
-    match.verificationType = 'auto';
-    match.verifiedAt = new Date().toISOString();
-    match.verifiedBy = 'auto';
-    match.tokensGranted = tokens;
+    if (match) {
+      // Found pre-synced transaction! Instant auto-confirm
+      // Determine token grant based on match amount or user-claimed amount
+      const finalAmount = match.amount || amountInput;
+      const tokens = Math.max(1, Math.floor(finalAmount / tokenPrice));
 
-    await paymentDb.updatePayment(match);
-    await this.logAction(match.id, 'auto_confirm', `Auto-confirmed via reference matching for passkey ${passkeyId}. Granted ${tokens} tokens.`);
+      store.addUsagesToPasskey(passkeyId, tokens, `${tokens} Tokens Recharged (Ref: ${cleanRef})`);
 
-    return { success: true, message: `Successfully verified! ${tokens} tokens have been added to your account.` };
+      // Update payment record status
+      match.status = 'verified';
+      match.used = true;
+      match.verificationType = 'auto';
+      match.verifiedAt = new Date().toISOString();
+      match.verifiedBy = 'auto';
+      match.tokensGranted = tokens;
+      match.passkeyId = passkeyId;
+
+      try {
+        await paymentDb.updatePayment(match);
+      } catch (e) {}
+
+      await this.logAction(match.id, 'auto_confirm', `Auto-confirmed via reference matching for passkey ${passkeyId}. Granted ${tokens} tokens.`);
+
+      // Sync updated verification to Supabase!
+      try {
+        const { syncPaymentRecordSupabase } = await import('./supabase');
+        await syncPaymentRecordSupabase(match);
+      } catch (e) {}
+
+      return { success: true, message: `Successfully verified! ${tokens} tokens have been added to your account.`, status: 'verified' };
+    }
+
+    // 3. If no pre-synced SMS transaction matches, create a REAL user payment submission in Supabase
+    // This allows the admin on the other side of the BIGsta app to instantly review and approve it!
+    const newClaimId = 'claim_' + Math.random().toString(36).substring(2, 11).toUpperCase();
+    const activeUser = store.activePasskeys.find(p => p.id === passkeyId);
+
+    const newClaim: PaymentRecord = {
+      id: newClaimId,
+      rawSms: '',
+      sender: activeUser?.key || 'User Claim',
+      receivedAt: new Date().toISOString(),
+      deviceName: 'BIGsta Manual Entry',
+      status: 'pending',
+      used: false,
+      transactionReference: cleanRef,
+      senderName: activeUser?.description || activeUser?.key || 'User Claim',
+      senderPhone: activeUser?.key || '',
+      amount: amountInput,
+      tokensGranted: computedTokens,
+      passkeyId: passkeyId,
+    };
+
+    try {
+      // Save local DB
+      await paymentDb.addPayment(newClaim);
+    } catch (e) {}
+
+    // Push to Supabase user_payments table so the Admin Panel on the other side sees it!
+    try {
+      const { syncPaymentRecordSupabase } = await import('./supabase');
+      await syncPaymentRecordSupabase(newClaim);
+    } catch (e) {
+      console.warn('Failed to publish manual claim to Supabase:', e);
+    }
+
+    await this.logAction(newClaimId, 'claim_submitted', `User submitted payment claim for Ref: ${cleanRef}, Amount: Tsh ${amountInput}. Awaiting Admin confirmation.`);
+
+    return { 
+      success: true, 
+      message: `No pre-recorded SMS matches code ${cleanRef} yet. We have submitted your payment details (TSh ${amountInput.toLocaleString()}) to our Admin Panel. The admin will verify and grant your tokens shortly!`, 
+      status: 'submitted' 
+    };
   }
 
   async verifyPaymentManually(paymentId: string, adminId: string, tokens?: number, passkeyId?: string): Promise<void> {
@@ -101,6 +170,12 @@ export class PaymentService {
 
     await paymentDb.updatePayment(payment);
     await this.logAction(paymentId, 'verified_manual', `Payment verified manually by ${adminId}${targetPasskeyId ? ` for passkey ${targetPasskeyId}` : ''}`, adminId);
+
+    // Sync manually verified status to Supabase
+    try {
+      const { syncPaymentRecordSupabase } = await import('./supabase');
+      await syncPaymentRecordSupabase(payment);
+    } catch (e) {}
   }
 
   async rejectPayment(paymentId: string, adminId: string, reason: string): Promise<void> {
@@ -111,6 +186,12 @@ export class PaymentService {
     payment.verificationType = 'manual';
     await paymentDb.updatePayment(payment);
     await this.logAction(paymentId, 'rejected', `Payment rejected by ${adminId}: ${reason}`, adminId);
+
+    // Sync rejected status to Supabase
+    try {
+      const { syncPaymentRecordSupabase } = await import('./supabase');
+      await syncPaymentRecordSupabase(payment);
+    } catch (e) {}
   }
 
   async suspendPayment(paymentId: string, adminId: string): Promise<void> {

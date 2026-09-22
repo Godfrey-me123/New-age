@@ -42,7 +42,8 @@ export const SettingsScreen: React.FC = () => {
     paymentMethods,
     updatePaymentMethod,
     logoutPasskey,
-    currentAuthKey
+    currentAuthKey,
+    publishPaymentMethodsToSupabase
   } = useTemplateStore();
 
   // Active Category Tab
@@ -55,8 +56,12 @@ export const SettingsScreen: React.FC = () => {
   const [profileForm, setProfileForm] = useState(userProfile);
   const [prefsForm, setPrefsForm] = useState(userPreferences);
   const [adminForm, setAdminForm] = useState(adminSettings);
+  const [paymentMethodsForm, setPaymentMethodsForm] = useState(paymentMethods);
 
   // Keep forms synced if store updates
+  useEffect(() => {
+    setPaymentMethodsForm(paymentMethods);
+  }, [paymentMethods]);
   useEffect(() => {
     setProfileForm(userProfile);
   }, [userProfile]);
@@ -97,10 +102,32 @@ export const SettingsScreen: React.FC = () => {
     triggerToast(`Theme environment changed to ${newTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}`);
   };
 
-  const handleSaveAdminSettings = (e: React.FormEvent) => {
+  const handleSavePaymentMethods = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Save each locally to state store
+    paymentMethodsForm.forEach((pm) => {
+      updatePaymentMethod(pm.id, pm);
+    });
+
+    // Publish to Supabase
+    const success = await publishPaymentMethodsToSupabase();
+    if (success) {
+      triggerToast('Payment Gateways successfully published & synced to Supabase!');
+    } else {
+      triggerToast('Payment settings saved locally.');
+    }
+  };
+
+  const handleSaveAdminSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     updateAdminSettings(adminForm);
-    triggerToast('Admin gateway & OCR settings saved');
+    const { publishAdminSettingsToSupabase } = useTemplateStore.getState();
+    const success = await publishAdminSettingsToSupabase();
+    if (success) {
+      triggerToast('OCR and Token settings successfully published & synced to Supabase!');
+    } else {
+      triggerToast('OCR settings saved locally.');
+    }
   };
 
   const handleSendSupport = (e: React.FormEvent) => {
@@ -597,6 +624,99 @@ export const SettingsScreen: React.FC = () => {
                   >
                     Submit Support Ticket
                   </button>
+                </form>
+              </div>
+            )}
+
+            {/* ADMIN EXCLUSIVE TAB: PAYMENT CONFIG */}
+            {authRole === 'admin' && activeTab === 'payment_config' && (
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-purple-200 dark:border-purple-900 p-6 shadow-xs space-y-6">
+                <div className="border-b border-purple-100 dark:border-purple-900/40 pb-3">
+                  <h2 className="text-base font-bold text-purple-950 dark:text-purple-300 flex items-center gap-2">
+                    <Coins className="w-5 h-5 text-purple-700 dark:text-purple-400" /> Payment Gateways & Merchant Accounts
+                  </h2>
+                  <p className="text-xs text-purple-700 dark:text-purple-400">
+                    Configure payment networks, phone numbers, merchant names, and customer instructions. Updates publish instantly to all devices and APK users.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSavePaymentMethods} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {paymentMethodsForm.map((pm, index) => (
+                      <div key={pm.id} className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-2">
+                          <span className="text-sm font-extrabold text-[#111827] dark:text-[#F3F4F6]">{pm.name} Gateway</span>
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={pm.status === 'active'}
+                              onChange={(e) => {
+                                const updated = [...paymentMethodsForm];
+                                updated[index] = { ...pm, status: e.target.checked ? 'active' : 'inactive' };
+                                setPaymentMethodsForm(updated);
+                              }}
+                              className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                            />
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Active</span>
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">PHONE NUMBER / MERCHANT NO</label>
+                            <input
+                              type="text"
+                              value={pm.number}
+                              onChange={(e) => {
+                                const updated = [...paymentMethodsForm];
+                                updated[index] = { ...pm, number: e.target.value };
+                                setPaymentMethodsForm(updated);
+                              }}
+                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs font-mono font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">ACCOUNT HOLDER NAME</label>
+                            <input
+                              type="text"
+                              value={pm.accountName}
+                              onChange={(e) => {
+                                const updated = [...paymentMethodsForm];
+                                updated[index] = { ...pm, accountName: e.target.value };
+                                setPaymentMethodsForm(updated);
+                              }}
+                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs font-bold"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">DIALING / PAYMENT INSTRUCTIONS</label>
+                          <textarea
+                            rows={2}
+                            value={pm.instructions}
+                            onChange={(e) => {
+                              const updated = [...paymentMethodsForm];
+                              updated[index] = { ...pm, instructions: e.target.value };
+                              setPaymentMethodsForm(updated);
+                            }}
+                            placeholder="e.g. Dial *150*00# -> Pay Merchant..."
+                            className="w-full p-2 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Save className="w-4 h-4" /> Save & Publish Gateways to Supabase
+                    </button>
+                  </div>
                 </form>
               </div>
             )}
