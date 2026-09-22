@@ -695,7 +695,7 @@ export const ElementsPanel: React.FC<ElementsPanelProps> = ({ onElementAdded }) 
             <span className="truncate">Code 128</span>
           </button>
           <button
-            onClick={handleAddQRCode}
+            onClick={() => handleAddQRCode()}
             className="p-2.5 rounded-lg bg-[#E7E9EB] hover:bg-[#dadcdc] border border-[#dadcdc] text-xs font-semibold text-[#000000] flex items-center gap-2 transition-colors min-h-[42px] cursor-pointer"
           >
             <QrCode className="w-4 h-4 text-[#000000] flex-shrink-0" />

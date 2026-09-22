@@ -44,7 +44,7 @@ export const UserRegistrationModal: React.FC<UserRegistrationModalProps> = ({
     return /^(?:\+255|255|0)[67]\d{8}$/.test(cleaned);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -85,8 +85,8 @@ export const UserRegistrationModal: React.FC<UserRegistrationModalProps> = ({
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const res = registerUserAccount({
+    try {
+      const res = await registerUserAccount({
         fullName: fullName.trim(),
         phone: phone.trim(),
         passkey: passkey.trim(),
@@ -101,7 +101,10 @@ export const UserRegistrationModal: React.FC<UserRegistrationModalProps> = ({
 
       onSuccess(passkey.trim());
       onClose();
-    }, 300);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setErrorMessage(err.message || 'Registration failed');
+    }
   };
 
   return (

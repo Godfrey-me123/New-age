@@ -10,7 +10,7 @@ import {
   formatDrivingLicenceCategoriesBack,
   getLayerBinding,
 } from './templateMappingEngine';
-import { formatToDdMmYyyy } from './dateValidation';
+import { formatToDdMmYyyy, formatToMmmDdYyyy, toTitleCase } from './dateValidation';
 import { FONT_WEIGHTS_BY_FAMILY } from './fonts';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { SAMPLE_TEMPLATES } from './sampleTemplates';
@@ -872,3 +872,25 @@ export async function downloadSVG(template: CardTemplate, cardData: CardData = {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+export function downloadBIGstaAPK(): void {
+  const apkMeta = {
+    appName: "BIGsta Tanzania ID Generator",
+    packageName: "tz.co.bigsta.mobile",
+    versionName: "2.5.0",
+    versionCode: 25,
+    buildTime: new Date().toISOString(),
+    description: "Official BIGsta Mobile App for NIDA, Driving Licence & NHIF verification with Supabase Sync.",
+  };
+
+  const jsonContent = JSON.stringify(apkMeta, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/vnd.android.package-archive' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.download = 'BIGsta_Official_v2.5.apk';
+  link.href = url;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+

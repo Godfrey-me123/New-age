@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Shield, Key, Eye, EyeOff, ArrowRight, AlertCircle, Sparkles, UserPlus, CheckCircle2 } from 'lucide-react';
+import { Shield, Key, Eye, EyeOff, ArrowRight, AlertCircle, Sparkles, UserPlus, CheckCircle2, HelpCircle } from 'lucide-react';
 import { useTemplateStore } from '../../store/useTemplateStore';
 import { UserRegistrationModal } from './UserRegistrationModal';
+import { ForgotPasskeyModal } from './ForgotPasskeyModal';
 
 export const PasskeyScreen: React.FC = () => {
   const { loginWithPasskey } = useTemplateStore();
@@ -11,6 +12,7 @@ export const PasskeyScreen: React.FC = () => {
   const [successNotice, setSuccessNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
 
   console.log('[Auth Debug] PasskeyScreen Render:', { authRole: useTemplateStore.getState().authRole, isRegisterOpen });
 
@@ -147,6 +149,18 @@ export const PasskeyScreen: React.FC = () => {
               </>
             )}
           </button>
+
+          {/* Forgot Passkey Link */}
+          <div className="flex justify-end pt-1">
+            <button
+              type="button"
+              onClick={() => setIsForgotOpen(true)}
+              className="text-xs text-[#47A5FF] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Umesahau Passkey? / Forgot Passkey?</span>
+            </button>
+          </div>
         </form>
 
         {/* Register Now Button (Prompt 21) */}
@@ -177,6 +191,16 @@ export const PasskeyScreen: React.FC = () => {
         isOpen={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
         onSuccess={handleRegistrationSuccess}
+      />
+
+      {/* Forgot Passkey Modal */}
+      <ForgotPasskeyModal
+        isOpen={isForgotOpen}
+        onClose={() => setIsForgotOpen(false)}
+        onSuccess={(newPk) => {
+          setPasskeyInput(newPk);
+          setSuccessNotice('Passkey updated successfully! You can now continue with your new passkey.');
+        }}
       />
     </div>
   );

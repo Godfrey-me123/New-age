@@ -475,7 +475,8 @@ interface TemplateState {
   logoutPasskey: () => void;
   setPasskeyManagerOpen: (open: boolean) => void;
   setRechargeModalOpen: (open: boolean, notice?: string | null) => void;
-  registerUserAccount: (data: { fullName: string; phone: string; passkey: string }) => { success: boolean; message: string; user?: RegisteredUser };
+  registerUserAccount: (data: { fullName: string; phone: string; passkey: string }) => Promise<{ success: boolean; message: string; user?: RegisteredUser }>;
+  recoverPasskey: (phone: string, newPasskey: string) => Promise<{ success: boolean; message: string }>;
   updateUserActivity: (currentService?: string, currentActivity?: string) => void;
   submitPaymentRequest: (packageId: string, packageName: string, amount: string, requestedUsages: number) => { success: boolean; message: string; request?: PaymentRequest };
   approvePaymentRequest: (requestId: string) => { success: boolean; message: string };
@@ -1575,7 +1576,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     setManualAppModalOpen: (open, service = null) =>
       set({ isManualAppModalOpen: open, selectedManualService: service }),
 
-    registerUserAccount: (data) => {
+    registerUserAccount: async (data) => {
       const fullName = data.fullName.trim();
       const rawPhone = data.phone.trim().replace(/\s+/g, '');
       const passkey = data.passkey.trim();
@@ -1648,9 +1649,10 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         localStorage.setItem('bigsta_registered_users', JSON.stringify(updatedUsers));
       } catch (e) {}
 
-      // Supabase Profile & Auth Sync
+      // Supabase Profile & Auth Sync (awaited to ensure multi-device availability instantly)
       try {
-        import('../services/supabase').then(({ syncProfileSupabase, syncPasskeySupabase }) => {
+        const { syncProfileSupabase, syncPasskeySupabase } = await import('../services/supabase');
+        await Promise.all([
           syncProfileSupabase({
             id: newUser.id,
             name: newUser.fullName,
@@ -1659,13 +1661,54 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
             role: newUser.role,
             tokens: 1,
             passkey: newUser.passkey,
-          });
-          syncPasskeySupabase(newPasskeyItem);
-        }).catch(() => {});
-      } catch (e) {}
+          }),
+          syncPasskeySupabase(newPasskeyItem)
+        ]);
+      } catch (e) {
+        console.warn('Supabase immediate registration sync warning:', e);
+      }
 
       set({ activePasskeys: updatedPasskeys, registeredUsers: updatedUsers });
       return { success: true, message: 'Usajili umekamilika kikamilifu! Tumia Passkey yako kuingia.', user: newUser };
+    },
+
+    recoverPasskey: async (phone, newPasskey) => {
+      const rawPhone = phone.trim().replace(/\s+/g, '');
+      const trimmedKey = newPasskey.trim();
+      if (!rawPhone || !trimmedKey) {
+        return { success: false, message: 'Please enter both your phone number and new passkey.' };
+      }
+      if (trimmedKey.length < 4) {
+        return { success: false, message: 'New passkey must be at least 4 characters long.' };
+      }
+
+      try {
+        const { recoverPasskeyByPhoneSupabase } = await import('../services/supabase');
+        const res = await recoverPasskeyByPhoneSupabase(rawPhone, trimmedKey);
+        if (!res.success) {
+          return { success: false, message: res.message || 'Recovery failed in backend.' };
+        }
+
+        // Also update local store if user exists locally
+        const users = get().registeredUsers;
+        const passkeys = get().activePasskeys;
+
+        const updatedUsers = users.map((u) =>
+          u.phone.replace(/\s+/g, '') === rawPhone ? { ...u, passkey: trimmedKey } : u
+        );
+        const updatedPasskeys = passkeys.map((p) =>
+          p.description?.includes(rawPhone) ? { ...p, key: trimmedKey } : p
+        );
+
+        try {
+          localStorage.setItem('bigsta_registered_users', JSON.stringify(updatedUsers));
+        } catch (e) {}
+
+        set({ registeredUsers: updatedUsers, activePasskeys: updatedPasskeys });
+        return { success: true, message: 'Passkey recovered successfully! You can now log in with your new passkey.' };
+      } catch (e: any) {
+        return { success: false, message: e.message || 'Failed to connect to backend for recovery.' };
+      }
     },
 
     updateUserActivity: (currentService, currentActivity) => {
@@ -2086,7 +2129,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       let match: PasskeyItem | null = null;
 
-      // 1. Always query Supabase backend directly for authentication
+      // 1. Query Supabase canonical passkeys table / profiles table
       try {
         const { fetchPasskeyByKeySupabase } = await import('../services/supabase');
         const supabaseMatch = await fetchPasskeyByKeySupabase(trimmed);
@@ -2097,24 +2140,31 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         console.warn('Supabase passkey lookup error:', e);
       }
 
-      // 2. Fallback to in-memory activePasskeys state if backend call returned null
+      // 2. Fallback to in-memory activePasskeys state if backend call returned null (e.g. freshly created admin/user passkey pending sync)
       if (!match) {
         const list = get().activePasskeys;
-        match = list.find((p) => p.key.toLowerCase() === trimmed.toLowerCase()) || null;
+        const localMatch = list.find((p) => p.key.toLowerCase() === trimmed.toLowerCase());
+        if (localMatch) {
+          match = localMatch;
+          // Auto-sync to Supabase in background
+          import('../services/supabase').then(({ syncPasskeySupabase }) => {
+            syncPasskeySupabase(localMatch);
+          }).catch(() => {});
+        }
       }
 
       if (!match) {
-        return { success: false, message: 'Invalid Passkey' };
+        return { success: false, message: 'Invalid Passkey or account does not exist in Supabase' };
       }
 
       if (!match.active || match.paymentStatus === 'DISABLED') {
-        return { success: false, message: 'Passkey is Disabled. Please contact Administrator.' };
+        return { success: false, message: 'Passkey is Disabled or account deleted. Please contact Administrator.' };
       }
 
       const now = new Date();
       const lastUsedStr = now.toISOString().replace('T', ' ').substring(0, 16);
 
-      // Store auth session token only (never store passkeys database in user phone/local storage)
+      // Store session role & key convenience only in localStorage (authentication authority is Supabase / activePasskeys)
       try {
         localStorage.removeItem('bigsta_passkeys');
         localStorage.setItem('bigsta_auth_role', match.role);
