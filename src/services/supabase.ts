@@ -337,6 +337,62 @@ export async function uploadBackgroundToSupabase(file: File | Blob, filename: st
   }
 }
 
+// Helper: Sync/Upsert Manual Request on Supabase
+export async function syncManualRequestSupabase(req: any): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('manual_requests').upsert({
+      id: req.id,
+      full_name: req.fullName,
+      whatsapp_number: req.whatsappNumber,
+      normal_call_number: req.normalCallNumber || req.normalNumber || '',
+      service_name: req.serviceName,
+      status: req.status,
+    });
+
+    if (error) {
+      console.warn('Supabase manual_requests sync error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to sync manual request to Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Fetch All Manual Requests from Supabase
+export async function fetchManualRequestsSupabase(): Promise<any[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('manual_requests')
+      .select('*')
+      .order('id', { ascending: false });
+    if (error || !data) return [];
+    return data.map((d: any) => ({
+      id: d.id,
+      timestamp: d.submitted_at ? new Date(d.submitted_at).getTime() : Date.now(),
+      submittedAt: d.submitted_at ? new Date(d.submitted_at).getTime() : Date.now(),
+      date: d.submitted_at ? new Date(d.submitted_at).toISOString().replace('T', ' ').substring(0, 16) : '',
+      serviceId: d.service_id || d.service_name?.toLowerCase().replace(' ', '_') || 'unknown',
+      serviceName: d.service_name,
+      fullName: d.full_name,
+      whatsappNumber: d.whatsapp_number,
+      normalNumber: d.normal_call_number,
+      normalCallNumber: d.normal_call_number,
+      accountKey: d.user_passkey || 'Guest',
+      accountUser: d.full_name,
+      userPasskey: d.user_passkey || 'Guest',
+      status: d.status || 'PENDING',
+      adminNotes: d.admin_notes || '',
+    }));
+  } catch (e) {
+    console.error('Failed to fetch manual requests from Supabase:', e);
+    return [];
+  }
+}
+
 // Helper: Save/Update Universal Template on Supabase
 export async function saveUniversalTemplateSupabase(
   serviceType: string,
@@ -348,13 +404,14 @@ export async function saveUniversalTemplateSupabase(
   try {
     // 1. Deactivate previous active version for this service_type & orientation
     const orientationTag = isUniversalBack ? 'back' : 'front';
-    const matchTag = `${serviceType}_${orientationTag}`;
+    const sideValue = isUniversalBack ? 'Back Side' : 'Front Side';
 
     await supabase
       .from('templates')
       .update({ is_active: false })
       .eq('service_type', serviceType)
-      .eq('is_universal', true);
+      .eq('is_universal', true)
+      .eq('template_json->>side', sideValue);
 
     // 2. Insert new active template record
     const { error } = await supabase.from('templates').upsert({
@@ -380,16 +437,62 @@ export async function saveUniversalTemplateSupabase(
   }
 }
 
+// Helper: Save/Update General Template on Supabase
+export async function saveTemplateSupabase(template: any): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('templates').upsert({
+      id: template.id,
+      service_type: template.serviceId || template.cardType?.toLowerCase().replace(' ', '_') || 'custom',
+      template_name: template.templateName || 'Untitled Template',
+      template_json: template,
+      background_url: template.background?.src || null,
+      is_universal: template.isUniversal || false,
+      is_active: true,
+      version: template.version || 1,
+      created_by: template.publishedBy || 'User',
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error('Supabase template save error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to save template to Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Delete Template on Supabase
+export async function deleteTemplateSupabase(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('templates').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase template delete error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to delete template from Supabase:', e);
+    return false;
+  }
+}
+
 // Helper: Fetch Latest Active Universal Template from Supabase
 export async function fetchActiveUniversalTemplateSupabase(serviceType: string, isBack: boolean): Promise<any | null> {
   if (!supabase) return null;
   try {
+    const sideValue = isBack ? 'Back Side' : 'Front Side';
     const { data, error } = await supabase
       .from('templates')
       .select('*')
       .eq('service_type', serviceType)
       .eq('is_universal', true)
       .eq('is_active', true)
+      .eq('template_json->>side', sideValue)
       .order('version', { ascending: false })
       .limit(1);
 

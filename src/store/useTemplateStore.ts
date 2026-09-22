@@ -2306,6 +2306,11 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         localStorage.setItem('bigsta_manual_requests', JSON.stringify(updatedRequests));
       } catch (e) {}
 
+      // Sync to Supabase in background
+      import('../services/supabase').then(({ syncManualRequestSupabase }) => {
+        syncManualRequestSupabase(newRequest);
+      }).catch((e) => console.warn('Supabase manual request sync skipped:', e));
+
       set({ manualRequests: updatedRequests });
       return { success: true, message: 'Manual application request submitted successfully!', request: newRequest };
     },
@@ -2317,6 +2322,14 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       try {
         localStorage.setItem('bigsta_manual_requests', JSON.stringify(updated));
       } catch (e) {}
+
+      const updatedItem = updated.find((r) => r.id === requestId);
+      if (updatedItem) {
+        import('../services/supabase').then(({ syncManualRequestSupabase }) => {
+          syncManualRequestSupabase(updatedItem);
+        }).catch((e) => console.warn('Supabase manual request status sync skipped:', e));
+      }
+
       set({ manualRequests: updated });
       return { success: true, message: `Request status updated to ${status}` };
     },
@@ -2326,6 +2339,13 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       try {
         localStorage.setItem('bigsta_manual_requests', JSON.stringify(updated));
       } catch (e) {}
+
+      import('../services/supabase').then(({ supabase }) => {
+        if (supabase) {
+          supabase.from('manual_requests').delete().eq('id', requestId).then(() => {});
+        }
+      }).catch((e) => console.warn('Supabase manual request delete skipped:', e));
+
       set({ manualRequests: updated });
       return { success: true, message: 'Request deleted successfully' };
     },
@@ -3813,6 +3833,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     };
     const sanitized = sanitizeTemplateForSaving(template);
     await saveTemplateDB(sanitized);
+
+    // Sync to Supabase
+    try {
+      const { saveTemplateSupabase } = await import('../services/supabase');
+      await saveTemplateSupabase(sanitized);
+    } catch (e) {
+      console.warn('Failed to sync current draft template to Supabase:', e);
+    }
+
     set({ currentTemplate: template, hasUnsavedChanges: false });
     get().saveStudioDraft();
     await get().loadSavedTemplates();
@@ -3831,6 +3860,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       updatedAt: new Date().toISOString(),
     };
     await saveTemplateDB(newTpl);
+
+    // Sync to Supabase
+    try {
+      const { saveTemplateSupabase } = await import('../services/supabase');
+      await saveTemplateSupabase(newTpl);
+    } catch (e) {
+      console.warn('Failed to sync new template to Supabase:', e);
+    }
+
     set({ currentTemplate: newTpl, hasUnsavedChanges: false });
     get().saveStudioDraft();
     await get().loadSavedTemplates();
@@ -3848,8 +3886,9 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
     // 2. Fetch active universal templates from Supabase database and sync to local store
     try {
-      const { fetchAllActiveTemplatesSupabase, isSupabaseConfigured } = await import('../services/supabase');
+      const { fetchAllActiveTemplatesSupabase, isSupabaseConfigured, fetchManualRequestsSupabase } = await import('../services/supabase');
       if (isSupabaseConfigured) {
+        // Fetch active templates
         const supabaseTemplates = await fetchAllActiveTemplatesSupabase();
         for (const t of supabaseTemplates) {
           if (t && t.id) {
@@ -3859,9 +3898,24 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
             await saveTemplateDB(sanitized);
           }
         }
+
+        // Fetch manual requests and sync/merge
+        const supabaseManuals = await fetchManualRequestsSupabase();
+        const localManuals = get().manualRequests || [];
+        const manualMap = new Map<string, ManualRequestItem>();
+        localManuals.forEach((m) => manualMap.set(m.id, m));
+        supabaseManuals.forEach((m) => {
+          manualMap.set(m.id, {
+            ...manualMap.get(m.id),
+            ...m
+          });
+        });
+        const mergedManuals = Array.from(manualMap.values()).sort((a, b) => b.submittedAt - a.submittedAt);
+        localStorage.setItem('bigsta_manual_requests', JSON.stringify(mergedManuals));
+        set({ manualRequests: mergedManuals });
       }
     } catch (e) {
-      console.warn('Failed to fetch/sync templates from Supabase:', e);
+      console.warn('Failed to fetch/sync templates or manual requests from Supabase:', e);
     }
 
     // 3. Detect which serviceIds have custom/admin made templates
@@ -3901,6 +3955,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
   deleteSavedTemplate: async (id) => {
     await deleteTemplateDB(id);
+    try {
+      const { deleteTemplateSupabase } = await import('../services/supabase');
+      await deleteTemplateSupabase(id);
+    } catch (e) {
+      console.warn('Failed to delete template on Supabase:', e);
+    }
   },
 
   setSelectedFrontTemplateId: (id) => {
