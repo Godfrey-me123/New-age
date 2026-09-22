@@ -21,6 +21,7 @@ import {
   Check,
   Settings,
   Webhook,
+  Sparkles,
   ShieldAlert,
   ShieldCheck,
   Tag,
@@ -52,6 +53,34 @@ export const PaymentDashboard: React.FC = () => {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
   const [testLogs, setTestLogs] = useState<any[]>([]);
+  const [customAppUrl, setCustomAppUrl] = useState(
+    typeof window !== 'undefined' ? window.location.origin : ''
+  );
+
+  const handleSaveAndGenerate = async () => {
+    try {
+      const trimmedUrl = customAppUrl.trim().replace(/\/+$/, '');
+      if (!trimmedUrl) {
+        alert('Please enter a valid app deployment URL.');
+        return;
+      }
+      const res = await fetch('/api/admin/webhook-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          webhookUrl: `${trimmedUrl}/api/payment-sms`,
+          customAppUrl: trimmedUrl
+        }),
+      });
+      const secRes = await fetch('/api/admin/webhook-secret/regenerate', { method: 'POST' });
+      const secData = await secRes.json();
+      setWebhookSecret(secData.secret);
+
+      alert(`App URL saved and connected successfully!\n\nWebhook Endpoint:\n${trimmedUrl}/api/payment-sms\n\nNew Secret Key generated and saved.`);
+    } catch (err) {
+      alert('Failed to save and generate webhook settings.');
+    }
+  };
 
   // TAB: DEBUG
   const [debugData, setDebugData] = useState<{ 
@@ -885,6 +914,33 @@ export const PaymentDashboard: React.FC = () => {
             <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Webhook Settings</h4>
           </div>
           <div className="space-y-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+            {/* Custom App / Deployment Link Input & Save & Generate */}
+            <div className="space-y-2 pb-4 border-b border-gray-200">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                Paste Your App / Deployment Link
+              </label>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <input
+                  type="text"
+                  value={customAppUrl}
+                  onChange={(e) => setCustomAppUrl(e.target.value)}
+                  placeholder="https://your-app.run.app"
+                  className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 font-mono text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveAndGenerate}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Save and Generate
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-600 font-medium">
+                Active Webhook Endpoint: <code className="font-mono text-blue-600 font-bold">{customAppUrl.trim().replace(/\/+$/, '') || window.location.origin}/api/payment-sms</code>
+              </p>
+            </div>
+
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 Webhook Path
@@ -899,10 +955,15 @@ export const PaymentDashboard: React.FC = () => {
               </label>
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 font-mono text-[11px] text-gray-600 truncate">
-                  {window.location.origin}/api/payment-sms
+                  {customAppUrl.trim().replace(/\/+$/, '') || window.location.origin}/api/payment-sms
                 </div>
                 <button
-                  onClick={copyWebhookUrl}
+                  onClick={() => {
+                    const fullUrl = `${customAppUrl.trim().replace(/\/+$/, '') || window.location.origin}/api/payment-sms`;
+                    navigator.clipboard.writeText(fullUrl);
+                    setCopiedUrl(true);
+                    setTimeout(() => setCopiedUrl(false), 2000);
+                  }}
                   className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-md flex items-center justify-center shrink-0 active:scale-95"
                 >
                   {copiedUrl ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
