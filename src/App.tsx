@@ -39,6 +39,71 @@ export default function App() {
     fetchPasskeysFromSupabase();
   }, [fetchPasskeysFromSupabase]);
 
+  // Native Android APK JS Bridges
+  useEffect(() => {
+    // 1. Android Native SMS Receiver Callback
+    (window as any).onNativeSmsReceived = async (sender: string, rawSms: string) => {
+      console.log('[Native APK Bridge] SMS received:', { sender, rawSms });
+      try {
+        const response = await fetch('/api/payment-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sender: sender || 'Native SMS',
+            raw_sms: rawSms,
+            device_name: 'BIGsta Native Android APK'
+          })
+        });
+        if (response.ok) {
+          console.log('[Native APK Bridge] SMS successfully forwarded to backend.');
+          alert(`[BIGsta Native APK] Successfully intercepted payment SMS from ${sender}! Checking and auto-confirming your tokens...`);
+          
+          // Force active state reload
+          fetchPasskeysFromSupabase();
+        } else {
+          console.error('[Native APK Bridge] Webhook rejection:', await response.text());
+        }
+      } catch (err) {
+        console.error('[Native APK Bridge] Network error posting intercepted SMS:', err);
+      }
+    };
+
+    // 2. Request Permissions Bridge
+    (window as any).requestApkPermissions = () => {
+      const android = (window as any).AndroidInterface || (window as any).Android || (window as any).JSInterface;
+      if (android && typeof android.requestPermissions === 'function') {
+        android.requestPermissions();
+        return true;
+      }
+      console.warn('[Native APK Bridge] No Java/Kotlin interface found. Run inside APK with standard WebAppInterface bindings.');
+      return false;
+    };
+
+    // 3. Native Storage Save Bridge
+    (window as any).saveFileNatively = (fileName: string, base64Data: string) => {
+      const android = (window as any).AndroidInterface || (window as any).Android || (window as any).JSInterface;
+      if (android && typeof android.saveFile === 'function') {
+        android.saveFile(fileName, base64Data);
+        return true;
+      }
+      return false;
+    };
+  }, [fetchPasskeysFromSupabase]);
+
+  // Automatically trigger Native Permissions request if inside the APK Webview environment on startup
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const android = (window as any).AndroidInterface || (window as any).Android || (window as any).JSInterface;
+      if (android) {
+        console.log('[Native APK Bridge] Native wrapper detected. Launching automated permission trigger...');
+        if (typeof android.requestPermissions === 'function') {
+          android.requestPermissions();
+        }
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Synchronize system and user theme with DOM
   useEffect(() => {
     const isDark = userPreferences?.theme === 'dark';

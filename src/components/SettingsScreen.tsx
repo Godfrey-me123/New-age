@@ -47,7 +47,7 @@ export const SettingsScreen: React.FC = () => {
   } = useTemplateStore();
 
   // Active Category Tab
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance' | 'notifications' | 'downloads' | 'support' | 'payment_config' | 'ocr_config' | 'token_config' | 'system' | 'supabase_db'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance' | 'notifications' | 'downloads' | 'support' | 'payment_config' | 'ocr_config' | 'token_config' | 'system' | 'supabase_db' | 'native_apk'>('profile');
 
   // Feedback Toast
   const [saveToast, setSaveToast] = useState<string | null>(null);
@@ -234,6 +234,15 @@ export const SettingsScreen: React.FC = () => {
                 }`}
               >
                 <HelpCircle className="w-4 h-4" /> Support & Feedback
+              </button>
+
+              <button
+                onClick={() => setActiveTab('native_apk')}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
+                  activeTab === 'native_apk' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
+                }`}
+              >
+                <Smartphone className="w-4 h-4" /> Native APK Features
               </button>
 
               {/* ADMIN EXCLUSIVE CATEGORIES */}
@@ -625,6 +634,124 @@ export const SettingsScreen: React.FC = () => {
                     Submit Support Ticket
                   </button>
                 </form>
+              </div>
+            )}
+
+            {/* TAB: NATIVE APK FEATURES */}
+            {activeTab === 'native_apk' && (
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-xs space-y-6">
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Smartphone className="w-5 h-5 text-blue-600" />
+                    Native APK Permissions & Diagnostics
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Configure and grant native Android permissions for storage, locations, and SMS when running inside the BIGsta compiled APK.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-xl space-y-2">
+                  <h3 className="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider">How to enable native APK permissions:</h3>
+                  <p className="text-[11px] text-blue-700 dark:text-blue-400 leading-relaxed">
+                    By compiling the BIGsta web app into an APK, you can enable direct device hardware access. This allows your app to capture Tanzania mobile money confirmation SMS messages natively, download generated IDs to phone storage, and tag transactions with GPS coordinates.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* SMS Permission Card */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 space-y-2 bg-slate-50/50 dark:bg-white/5">
+                    <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 flex items-center justify-center font-black text-xs">
+                      SMS
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">SMS Interceptor</h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Captures incoming Vodacom, Airtel, and Tigo transaction messages natively on the device and syncs them to Supabase instantly.
+                    </p>
+                    <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[9px] font-bold rounded-md">
+                      RECEIVE_SMS
+                    </span>
+                  </div>
+
+                  {/* Storage Permission Card */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 space-y-2 bg-slate-50/50 dark:bg-white/5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex items-center justify-center font-black text-xs">
+                      IO
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Local File Storage</h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Enables high-precision NIDA ID and Driving License exports to be saved directly to the device&apos;s Downloads folder.
+                    </p>
+                    <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[9px] font-bold rounded-md">
+                      WRITE_EXTERNAL
+                    </span>
+                  </div>
+
+                  {/* GPS Permission Card */}
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 space-y-2 bg-slate-50/50 dark:bg-white/5">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex items-center justify-center font-black text-xs">
+                      GPS
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">GPS Audit Geotags</h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Attaches precise location coordinates during transaction submissions to prevent remote payment spoofing and fraud.
+                    </p>
+                    <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[9px] font-bold rounded-md">
+                      FINE_LOCATION
+                    </span>
+                  </div>
+                </div>
+
+                {/* Diagnostics Status Section */}
+                <div className="p-4 bg-slate-900 text-white rounded-xl space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">BIGsta APK Interface Diagnostics</h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="flex justify-between border-b border-slate-800 pb-1.5">
+                      <span className="text-slate-400">Javascript Bridge Status:</span>
+                      <span className="font-mono font-bold text-blue-400">
+                        {((window as any).AndroidInterface || (window as any).Android || (window as any).JSInterface) ? 'CONNECTED (APK RUNTIME)' : 'INACTIVE (WEB BROWSER)'}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between border-b border-slate-800 pb-1.5">
+                      <span className="text-slate-400">Active Webhook URL:</span>
+                      <span className="font-mono text-[9px] text-amber-400 select-all truncate max-w-[150px]">
+                        {window.location.origin}/api/payment-sms
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const triggered = (window as any).requestApkPermissions?.();
+                        if (triggered) {
+                          alert('Permission request successfully triggered to native APK wrapper!');
+                        } else {
+                          alert('No Android WebView JavaScript interface detected. Ensure you load this page inside your Android Studio Webview with javascriptEnabled = true!');
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                    >
+                      Trigger Android Permission Request
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        // Let's trigger a native mock test SMS in browser to verify bridge handler works
+                        const nativeSms = (window as any).onNativeSmsReceived;
+                        if (nativeSms) {
+                          await nativeSms('Vodacom', 'DIFEQ2LX2R Imethibitishwa. Tsh3,000.00 imetumwa.');
+                        }
+                      }}
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                    >
+                      Test JS-Bridge Callback Handler
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -39,6 +39,7 @@ export const RechargeModal: React.FC = () => {
   const [verifyAmount, setVerifyAmount] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   // Swahili SMS simulation states
   const [simulatedSmsText, setSimulatedSmsText] = useState('DIFEQ2LX2R Imethibitishwa. Tsh3,000.00 imetumwa kwa LOCKWOOD TECHNOLOGY.');
@@ -136,6 +137,11 @@ export const RechargeModal: React.FC = () => {
   };
 
   const handleAutoVerify = async () => {
+    if (failedAttempts >= 3) {
+      setVerificationError('You have reached the maximum limit of 3 pending verification attempts. Please wait for the Admin to verify your submitted claims or contact support.');
+      return;
+    }
+
     if (!reference.trim()) {
       setVerificationError('Please enter your transaction reference code.');
       return;
@@ -156,11 +162,21 @@ export const RechargeModal: React.FC = () => {
         refreshUserStatus();
         setReference('');
         setVerifyAmount('');
+        
+        if (res.status === 'verified') {
+          // Instantly matched and verified - reset attempts!
+          setFailedAttempts(0);
+        } else {
+          // Manual claim submitted - increment attempts so user cannot spam guesses
+          setFailedAttempts(prev => prev + 1);
+        }
       } else {
         setVerificationError(res.message);
+        setFailedAttempts(prev => prev + 1);
       }
     } catch (error) {
       setVerificationError('Verification failed. Please check your reference and try again.');
+      setFailedAttempts(prev => prev + 1);
     } finally {
       setIsVerifying(false);
     }
@@ -417,6 +433,12 @@ export const RechargeModal: React.FC = () => {
                 <p className="text-[10px] font-bold text-red-200 bg-red-900/30 px-2 py-1 rounded flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {verificationError}
+                </p>
+              )}
+
+              {failedAttempts > 0 && (
+                <p className="text-[10px] font-semibold text-amber-200 bg-amber-900/20 px-2 py-1 rounded text-center">
+                  Claim/Verification Attempts: {failedAttempts}/3. After 3 attempts, you must wait for manual Admin approval.
                 </p>
               )}
 
