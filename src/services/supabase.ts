@@ -1,10 +1,25 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Read configuration from environment or fallback
+// Read configuration from environment or fallback.
+// vite.config.ts maps the Supabase integration's injected names
+// (NEXT_PUBLIC_SUPABASE_* / SUPABASE_*) onto VITE_SUPABASE_* at build time,
+// but we also read the raw names here for robustness across contexts.
 const metaEnv = (import.meta as any).env || {};
 const procEnv = typeof process !== 'undefined' ? process.env || {} : {};
-const supabaseUrl = metaEnv.VITE_SUPABASE_URL || procEnv.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = metaEnv.VITE_SUPABASE_ANON_KEY || procEnv.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl =
+  metaEnv.VITE_SUPABASE_URL ||
+  metaEnv.NEXT_PUBLIC_SUPABASE_URL ||
+  procEnv.VITE_SUPABASE_URL ||
+  procEnv.NEXT_PUBLIC_SUPABASE_URL ||
+  procEnv.SUPABASE_URL ||
+  '';
+const supabaseAnonKey =
+  metaEnv.VITE_SUPABASE_ANON_KEY ||
+  metaEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  procEnv.VITE_SUPABASE_ANON_KEY ||
+  procEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  procEnv.SUPABASE_ANON_KEY ||
+  '';
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
