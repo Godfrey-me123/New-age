@@ -158,6 +158,7 @@ export interface UsagePackage {
   usages: number;
   price: string;
   active?: boolean;
+  description?: string;
 }
 
 export interface ServiceData {
@@ -359,7 +360,7 @@ export interface PaymentRequest {
   lipaNumber: string;
   date: string;
   timestamp: number;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   reviewedDate?: string;
 }
 
@@ -1464,6 +1465,10 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const universalCustom = customTemplates.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && t.isUniversalFront && !isBackSideTemplate(t));
       if (universalCustom) return ensureTemplateFieldIds(universalCustom);
 
+      // 3.5 Fallback to any custom admin-made front template for this serviceId
+      const anyCustom = customTemplates.find((t) => t.serviceId === serviceId && !t.id.startsWith('sample_') && !isBackSideTemplate(t));
+      if (anyCustom) return ensureTemplateFieldIds(anyCustom);
+
       // 4. Check sample templates specifically matching serviceId
       const sampleMatch = SAMPLE_TEMPLATES.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && !isBackSideTemplate(t));
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
@@ -1503,6 +1508,10 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       // 3. Check custom templates for universal back matching serviceId
       const universalCustom = customTemplates.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && t.isUniversalBack && isBackSideTemplate(t));
       if (universalCustom) return ensureTemplateFieldIds(universalCustom);
+
+      // 3.5 Fallback to any custom admin-made back template for this serviceId
+      const anyCustom = customTemplates.find((t) => t.serviceId === serviceId && !t.id.startsWith('sample_') && isBackSideTemplate(t));
+      if (anyCustom) return ensureTemplateFieldIds(anyCustom);
 
       // 4. Check sample templates specifically matching serviceId
       const sampleMatch = SAMPLE_TEMPLATES.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && isBackSideTemplate(t));
@@ -3829,6 +3838,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   },
 
   loadSavedTemplates: async () => {
+    // 1. Fetch locally saved templates from IndexedDB
     const dbTemplates = await getAllTemplatesDB();
     const map = new Map<string, CardTemplate>();
 
@@ -3836,12 +3846,46 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       map.set(t.id, ensureTemplateFieldIds(t));
     });
 
-    // Always ensure built-in SAMPLE_TEMPLATES use current code version with explicit field IDs, without overwriting user-modified versions
+    // 2. Fetch active universal templates from Supabase database and sync to local store
+    try {
+      const { fetchAllActiveTemplatesSupabase, isSupabaseConfigured } = await import('../services/supabase');
+      if (isSupabaseConfigured) {
+        const supabaseTemplates = await fetchAllActiveTemplatesSupabase();
+        for (const t of supabaseTemplates) {
+          if (t && t.id) {
+            const sanitized = ensureTemplateFieldIds(t);
+            // Overwrite/insert in map and save to local IndexedDB for local persistence
+            map.set(sanitized.id, sanitized);
+            await saveTemplateDB(sanitized);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch/sync templates from Supabase:', e);
+    }
+
+    // 3. Detect which serviceIds have custom/admin made templates
+    const servicesWithCustom = new Set<string>();
+    map.forEach((t) => {
+      if (t.serviceId && !t.id.startsWith('sample_')) {
+        servicesWithCustom.add(t.serviceId);
+      }
+    });
+
+    // 4. Ensure SAMPLE_TEMPLATES are only present for services that don't have custom ones
     for (const sample of SAMPLE_TEMPLATES) {
-      if (!map.has(sample.id)) {
-        const sanitized = ensureTemplateFieldIds(sample);
-        map.set(sanitized.id, sanitized);
-        await saveTemplateDB(sanitized);
+      const serviceId = sample.serviceId || '';
+      if (!servicesWithCustom.has(serviceId)) {
+        if (!map.has(sample.id)) {
+          const sanitized = ensureTemplateFieldIds(sample);
+          map.set(sanitized.id, sanitized);
+          await saveTemplateDB(sanitized);
+        }
+      } else {
+        // Remove sample template since there is a custom/admin made template for this service
+        if (map.has(sample.id)) {
+          map.delete(sample.id);
+        }
       }
     }
 

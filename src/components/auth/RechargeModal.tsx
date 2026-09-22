@@ -69,6 +69,11 @@ export const RechargeModal: React.FC = () => {
   const userRequests = useMemo(() => paymentRequests.filter(
     (r) => r.userPasskey.toLowerCase() === (currentAuthKey || '').toLowerCase()
   ), [paymentRequests, currentAuthKey]);
+
+  const latestRequest = useMemo(() => {
+    if (userRequests.length === 0) return null;
+    return userRequests[userRequests.length - 1];
+  }, [userRequests]);
   
   const pendingRequest = userRequests.find((r) => r.status === 'PENDING') || null;
   const hasPendingRequest = !!pendingRequest || paymentStatus === 'PENDING';

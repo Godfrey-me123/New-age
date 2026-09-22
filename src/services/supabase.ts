@@ -401,6 +401,22 @@ export async function fetchActiveUniversalTemplateSupabase(serviceType: string, 
   }
 }
 
+// Helper: Fetch All Active Templates from Supabase
+export async function fetchAllActiveTemplatesSupabase(): Promise<any[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('templates')
+      .select('*')
+      .eq('is_active', true);
+    if (error || !data) return [];
+    return data.map((d: any) => d.template_json);
+  } catch (e) {
+    console.error('Error fetching all active templates from Supabase:', e);
+    return [];
+  }
+}
+
 // Helper: Sync Profile
 export async function syncProfileSupabase(profile: {
   id: string;
