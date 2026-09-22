@@ -54,7 +54,7 @@ export const PaymentDashboard: React.FC = () => {
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
   const [testLogs, setTestLogs] = useState<any[]>([]);
   const [customAppUrl, setCustomAppUrl] = useState(
-    typeof window !== 'undefined' ? window.location.origin : ''
+    'https://new-age-sand.vercel.app'
   );
 
   const handleSaveAndGenerate = async () => {
