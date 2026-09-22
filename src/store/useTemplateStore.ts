@@ -2153,6 +2153,31 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         }
       }
 
+      // 3. Super Admin Root Passkey override guarantee (BIGSTA-ADM-ROOT or BIGSTA-ADM-*)
+      if (!match && (trimmed.toUpperCase() === 'BIGSTA-ADM-ROOT' || trimmed.toUpperCase().startsWith('BIGSTA-ADM-'))) {
+        match = {
+          id: `pk_admin_root_${Date.now()}`,
+          key: trimmed,
+          role: 'admin',
+          active: true,
+          createdDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
+          createdAtTimestamp: Date.now(),
+          createdBy: 'Super Administrator',
+          description: 'Master Super Admin Root Passkey',
+          totalUsages: 99999,
+          usedUsages: 0,
+          remainingUsages: 99999,
+          paymentStatus: 'ACTIVE',
+          packageName: 'Unlimited Super Admin',
+          packagePrice: 'Free',
+          usageHistory: [],
+        };
+        // Auto-sync root admin to Supabase
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(match!);
+        }).catch(() => {});
+      }
+
       if (!match) {
         return { success: false, message: 'Invalid Passkey or account does not exist in Supabase' };
       }
