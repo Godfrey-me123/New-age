@@ -31,6 +31,7 @@ export const TemplateLibraryModal: React.FC = () => {
 
   const [templates, setTemplates] = useState<CardTemplate[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'private' | 'universal'>('private');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -66,6 +67,9 @@ export const TemplateLibraryModal: React.FC = () => {
       ...JSON.parse(JSON.stringify(tpl)),
       id: 'template_' + Date.now(),
       templateName: `${tpl.templateName} Copy`,
+      visibility: 'private',
+      isUniversal: false,
+      status: 'draft',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -98,6 +102,9 @@ export const TemplateLibraryModal: React.FC = () => {
               background: parsed.background || { type: 'color', color: '#ffffff' },
               layers: parsed.layers,
               guides: parsed.guides || [],
+              visibility: 'private',
+              isUniversal: false,
+              status: 'draft',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
@@ -116,7 +123,11 @@ export const TemplateLibraryModal: React.FC = () => {
     }
   };
 
-  const filtered = templates.filter((t) =>
+  const privateTemplates = templates.filter((t) => t.visibility === 'private' || !t.isUniversal);
+  const universalTemplates = templates.filter((t) => t.visibility === 'universal' || t.isUniversal);
+
+  const currentTabList = activeTab === 'private' ? privateTemplates : universalTemplates;
+  const filtered = currentTabList.filter((t) =>
     t.templateName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -166,6 +177,36 @@ export const TemplateLibraryModal: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
           </div>
+        </div>
+
+        {/* Tabs: Private vs Universal */}
+        <div className="px-6 pt-4 bg-slate-900 border-b border-slate-800 flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('private')}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'private'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            <span>My Private Templates</span>
+            <span className="px-1.5 py-0.2 bg-black/20 rounded-full text-[10px] font-mono">
+              {privateTemplates.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('universal')}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'universal'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            <span>Universal Published Templates</span>
+            <span className="px-1.5 py-0.2 bg-black/20 rounded-full text-[10px] font-mono">
+              {universalTemplates.length}
+            </span>
+          </button>
         </div>
 
         {/* Search */}

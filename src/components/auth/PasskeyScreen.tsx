@@ -68,8 +68,12 @@ export const PasskeyScreen: React.FC = () => {
         
         {/* BIGsta Logo & Header */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#47A5FF] to-blue-600 flex items-center justify-center shadow-lg shadow-[#47A5FF]/20 mb-4 border border-white/20">
-            <Shield className="w-9 h-9 text-white stroke-[2.2]" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1B4ED8] to-[#3B82F6] flex items-center justify-center shadow-xl shadow-blue-500/20 mb-4 border border-white/20 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.25),transparent)]" />
+            <span className="text-2xl font-black text-white tracking-tighter relative z-10">B</span>
+            <div className="absolute bottom-1.5 right-1.5 w-4 h-3 bg-white/90 rounded-xs shadow-xs flex items-center justify-center">
+              <div className="w-2.5 h-0.5 bg-blue-600 rounded-full" />
+            </div>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -89,7 +93,7 @@ export const PasskeyScreen: React.FC = () => {
         <form onSubmit={handleSubmit} className="w-full space-y-4">
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Passkey / Nenosiri la Kuingia
+              Passkey / Security PIN
             </label>
 
             <div className="relative flex items-center">
@@ -104,7 +108,7 @@ export const PasskeyScreen: React.FC = () => {
                   setPasskeyInput(e.target.value);
                   if (errorMessage) setErrorMessage('');
                 }}
-                placeholder="Ingiza Passkey hapa / Enter Passkey"
+                placeholder="Enter Passkey"
                 className="w-full pl-10 pr-11 py-3 bg-[#0B132B]/80 border border-white/15 rounded-xl text-white placeholder-slate-500 text-sm font-mono tracking-wide focus:outline-none focus:border-[#47A5FF] focus:ring-2 focus:ring-[#47A5FF]/20 transition-all"
                 autoFocus
               />
@@ -113,7 +117,7 @@ export const PasskeyScreen: React.FC = () => {
                 type="button"
                 onClick={() => setShowPasskey(!showPasskey)}
                 className="absolute right-3.5 text-slate-400 hover:text-white transition-colors cursor-pointer p-1"
-                title={showPasskey ? 'Ficha Passkey' : 'Onyesha Passkey'}
+                title={showPasskey ? 'Hide Passkey' : 'Show Passkey'}
               >
                 {showPasskey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -140,11 +144,11 @@ export const PasskeyScreen: React.FC = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Inahakiki Passkey...
+                Verifying Passkey...
               </span>
             ) : (
               <>
-                <span>Endelea / Continue</span>
+                <span>Continue</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -158,7 +162,7 @@ export const PasskeyScreen: React.FC = () => {
               className="text-xs text-[#47A5FF] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
             >
               <HelpCircle className="w-3.5 h-3.5" />
-              <span>Umesahau Passkey? / Forgot Passkey?</span>
+              <span>Forgot Passkey?</span>
             </button>
           </div>
         </form>
@@ -166,7 +170,7 @@ export const PasskeyScreen: React.FC = () => {
         {/* Register Now Button (Prompt 21) */}
         <div className="pt-4 mt-2 flex flex-col items-center gap-2.5 border-t border-white/10 w-full">
           <p className="text-xs text-slate-300 font-medium">
-            Huna Passkey? / Don't have an account?
+            Don't have an account?
           </p>
           <button
             type="button"
@@ -174,7 +178,7 @@ export const PasskeyScreen: React.FC = () => {
             className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 text-[#47A5FF] font-bold text-xs sm:text-sm rounded-xl border border-[#47A5FF]/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <UserPlus className="w-4 h-4 text-[#47A5FF]" />
-            <span>Register Now / Sajili Hapa</span>
+            <span>Register Now</span>
           </button>
         </div>
 

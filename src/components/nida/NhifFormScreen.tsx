@@ -375,7 +375,7 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
               {/* Card Number */}
               <div>
                 <FloatingInput
-                  label="Card Number (Namba ya Kadi) *"
+                  label="Card Number *"
                   icon={CreditCard}
                   value={formData.cardNumber}
                   onChange={(val) => handleChange('cardNumber', val)}
@@ -389,7 +389,7 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
               {/* Full Name */}
               <div>
                 <FloatingInput
-                  label="Full Name (Jina Kamili) *"
+                  label="Full Name *"
                   icon={User}
                   value={formData.fullName}
                   onChange={(val) => handleChange('fullName', val)}
@@ -403,13 +403,13 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
               {/* Gender */}
               <div>
                 <FloatingSelect
-                  label="Gender (Jinsi) *"
+                  label="Gender *"
                   icon={User}
                   value={formData.gender}
                   onChange={(val) => handleChange('gender', val)}
                   options={[
-                    { value: 'Male', label: 'Male (Mume)' },
-                    { value: 'Female', label: 'Female (Mke)' },
+                    { value: 'Male', label: 'Male' },
+                    { value: 'Female', label: 'Female' },
                   ]}
                   error={touched.gender ? errors.gender : ''}
                   required
@@ -419,7 +419,7 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
               {/* Date of Birth */}
               <div>
                 <FloatingDatePicker
-                  label="Date of Birth (Tarehe ya Kuzaliwa) *"
+                  label="Date of Birth *"
                   value={formData.dateOfBirth}
                   onChange={(e) => handleChange('dateOfBirth', e.target.value)}
                   error={touched.dateOfBirth ? errors.dateOfBirth : null}
@@ -432,7 +432,7 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
               <span className="text-[#606060] font-medium">Membership Status:</span>
               <span className="font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300 flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                Active (Hai)
+                Active
               </span>
             </div>
           </div>

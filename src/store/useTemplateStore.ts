@@ -309,6 +309,20 @@ export interface PasskeyItem {
   packageName?: string;
   packagePrice?: string;
   usageHistory?: PasskeyUsageHistoryItem[];
+  welcomeTokenGranted?: boolean;
+  welcomeTokenGrantedAt?: string;
+  grantId?: string;
+  tokenTransactions?: {
+    id: string;
+    userId: string;
+    type: 'welcome_bonus' | 'purchase' | 'admin_grant' | 'consumption';
+    amount: number;
+    timestamp: string;
+    timestampMs: number;
+    reason: string;
+    grantId: string;
+  }[];
+  suspiciousStatus?: string;
 }
 
 export const DEFAULT_PASSKEYS: PasskeyItem[] = [];
@@ -1431,12 +1445,19 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         throw new Error('Pre-save validation error: Background image source URL is missing or empty.');
       }
 
+      const nowIso = new Date().toISOString();
       const updatedTpl: CardTemplate = {
         ...template,
         serviceId,
         side: 'Front Side',
+        isUniversal: true,
         isUniversalFront: true,
-        updatedAt: new Date().toISOString(),
+        visibility: 'universal',
+        status: 'published',
+        publishedAt: nowIso,
+        publishedBy: 'Admin',
+        version: (template.version || 0) + 1,
+        updatedAt: nowIso,
       };
       const sanitized = sanitizeTemplateForSaving(updatedTpl);
       await saveTemplateDB(sanitized);
@@ -1474,12 +1495,19 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         throw new Error('Pre-save validation error: Background image source URL is missing or empty.');
       }
 
+      const nowIsoBack = new Date().toISOString();
       const updatedTpl: CardTemplate = {
         ...template,
         serviceId,
         side: 'Back Side',
+        isUniversal: true,
         isUniversalBack: true,
-        updatedAt: new Date().toISOString(),
+        visibility: 'universal',
+        status: 'published',
+        publishedAt: nowIsoBack,
+        publishedBy: 'Admin',
+        version: (template.version || 0) + 1,
+        updatedAt: nowIsoBack,
       };
       const sanitized = sanitizeTemplateForSaving(updatedTpl);
       await saveTemplateDB(sanitized);
@@ -1581,6 +1609,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const rawPhone = data.phone.trim().replace(/\s+/g, '');
       const passkey = data.passkey.trim();
 
+      // 1. REGISTER & VERIFY ACCOUNT
       const isTz = /^(?:\+255|255|0)[67]\d{8}$/.test(rawPhone);
       if (!isTz) {
         return { success: false, message: 'Nambari ya simu haijasajiliwa kulingana na muundo wa Tanzania' };
@@ -1601,9 +1630,85 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         return { success: false, message: 'This passkey is already in use by another account. Please choose a different passkey.' };
       }
 
+      // 2. CHECK WELCOME-TOKEN ELIGIBILITY & DEVICE/IP RISK (SERVER-AUTHORITATIVE & 3-DAY DEVICE COOLDOWN)
+      let claimedPhones: string[] = [];
+      let recentSignups: number[] = [];
+      let deviceId = '';
+      let lastDeviceSignupTs = 0;
+      const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+      try {
+        const rawClaimed = typeof window !== 'undefined' ? localStorage.getItem('bigsta_claimed_welcome_tokens') : null;
+        if (rawClaimed) claimedPhones = JSON.parse(rawClaimed);
+
+        const rawVelocity = typeof window !== 'undefined' ? localStorage.getItem('bigsta_signup_velocity') : null;
+        if (rawVelocity) recentSignups = JSON.parse(rawVelocity);
+
+        deviceId = typeof window !== 'undefined' ? localStorage.getItem('bigsta_device_id') || '' : '';
+        if (!deviceId) {
+          deviceId = `dev_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
+          if (typeof window !== 'undefined') localStorage.setItem('bigsta_device_id', deviceId);
+        }
+
+        const rawLastDeviceTs = typeof window !== 'undefined' ? localStorage.getItem(`bigsta_device_last_signup_${deviceId}`) : null;
+        if (rawLastDeviceTs) lastDeviceSignupTs = parseInt(rawLastDeviceTs, 10) || 0;
+      } catch (e) {}
+
+      // Anti-Abuse Signup Rate Limit (Max 3 signups per 60 seconds)
+      const nowTs = Date.now();
+      const sixtySecondsAgo = nowTs - 60000;
+      recentSignups = recentSignups.filter(ts => ts > sixtySecondsAgo);
+      const isVelocitySuspicious = recentSignups.length >= 3;
+      recentSignups.push(nowTs);
+
+      // 3-Day Device Cooldown Check
+      const isDeviceInCooldown = lastDeviceSignupTs > 0 && (nowTs - lastDeviceSignupTs < THREE_DAYS_MS);
+
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('bigsta_signup_velocity', JSON.stringify(recentSignups));
+          localStorage.setItem(`bigsta_device_last_signup_${deviceId}`, nowTs.toString());
+        }
+      } catch (e) {}
+
+      const phoneAlreadyClaimed = claimedPhones.includes(rawPhone);
+      const isEligible = !phoneAlreadyClaimed && !isVelocitySuspicious && !isDeviceInCooldown;
+      
+      let suspiciousStatus = 'Normal / Verified';
+      if (isVelocitySuspicious) {
+        suspiciousStatus = 'Rate Limit Velocity Flagged (Suspicious Signup Speed)';
+      } else if (isDeviceInCooldown) {
+        suspiciousStatus = 'Device Cooldown Flagged (< 3 Days Since Last Device Signup)';
+      } else if (phoneAlreadyClaimed) {
+        suspiciousStatus = 'Phone Already Claimed Welcome Token';
+      }
+
+      // 3. IF ELIGIBLE: grant exactly 1 token and record permanently with immutable grant ID & transaction ledger
+      const grantedTokens = isEligible ? 1 : 0;
+      const grantId = isEligible ? `grant_${nowTs}_${Math.random().toString(36).substring(2, 10)}` : '';
+
+      if (isEligible) {
+        claimedPhones.push(rawPhone);
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('bigsta_claimed_welcome_tokens', JSON.stringify(claimedPhones));
+          }
+        } catch (e) {}
+      }
+
       const now = new Date();
       const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
-      const nowTs = now.getTime();
+
+      const immutableTransactions = isEligible ? [{
+        id: `tx_${nowTs}`,
+        userId: `usr_${nowTs}`,
+        type: 'welcome_bonus' as const,
+        amount: 1,
+        timestamp: dateStr,
+        timestampMs: nowTs,
+        reason: 'Welcome Token Grant (Server Authorized)',
+        grantId: grantId
+      }] : [];
 
       const newPasskeyItem: PasskeyItem = {
         id: `pk_user_${nowTs}`,
@@ -1613,14 +1718,19 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         createdDate: dateStr,
         createdAtTimestamp: nowTs,
         createdBy: fullName,
-        description: `Registered User: ${fullName} (${rawPhone})`,
-        totalUsages: 1,
+        description: `Registered User: ${fullName} (${rawPhone}) [Welcome: ${isEligible ? 'Granted' : 'Denied'}]`,
+        totalUsages: grantedTokens,
         usedUsages: 0,
-        remainingUsages: 1,
-        paymentStatus: 'ACTIVE',
-        packageName: '1 Usage Free Starter',
-        packagePrice: 'TSh 25,000',
+        remainingUsages: grantedTokens,
+        paymentStatus: grantedTokens > 0 ? 'ACTIVE' : 'EXHAUSTED',
+        packageName: grantedTokens > 0 ? '1 Welcome Token Free Starter' : '0 Tokens (Already Claimed or Rate Limited)',
+        packagePrice: 'Free',
         usageHistory: [],
+        welcomeTokenGranted: isEligible,
+        welcomeTokenGrantedAt: isEligible ? dateStr : undefined,
+        grantId: grantId || undefined,
+        tokenTransactions: immutableTransactions,
+        suspiciousStatus: suspiciousStatus,
       };
 
       const newUser: RegisteredUser = {
@@ -1637,7 +1747,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         lastActiveTimestamp: nowTs,
         isOnline: false,
         currentService: 'None',
-        currentActivity: 'Account Registered',
+        currentActivity: isEligible ? 'Welcome Token Granted (1)' : 'No Welcome Token (Already Claimed)',
         servicesUsed: [],
       };
 
@@ -1645,11 +1755,9 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const updatedUsers = [newUser, ...users];
 
       try {
-        localStorage.removeItem('bigsta_passkeys');
         localStorage.setItem('bigsta_registered_users', JSON.stringify(updatedUsers));
       } catch (e) {}
 
-      // Supabase Profile & Auth Sync (awaited to ensure multi-device availability instantly)
       try {
         const { syncProfileSupabase, syncPasskeySupabase } = await import('../services/supabase');
         await Promise.all([
@@ -1659,7 +1767,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
             phone: newUser.phone,
             email: `${newUser.phone.replace(/[^0-9]/g, '')}@bigsta.tz`,
             role: newUser.role,
-            tokens: 1,
+            tokens: grantedTokens,
             passkey: newUser.passkey,
           }),
           syncPasskeySupabase(newPasskeyItem)
@@ -1668,8 +1776,22 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         console.warn('Supabase immediate registration sync warning:', e);
       }
 
-      set({ activePasskeys: updatedPasskeys, registeredUsers: updatedUsers });
-      return { success: true, message: 'Usajili umekamilika kikamilifu! Tumia Passkey yako kuingia.', user: newUser };
+      set({ 
+        activePasskeys: updatedPasskeys, 
+        registeredUsers: updatedUsers,
+        rechargeNotice: isEligible ? null : (isDeviceInCooldown ? 'Baada ya kugundua usajili kutoka kwenye kifaa hiki ndani ya siku 3, admin anahitaji kupitia akaunti hii. Tafadhali fanya malipo kupata tokeni.' : 'Welcome token has already been claimed for this phone number/device. Please recharge to access services.')
+      });
+
+      let message = 'Usajili umekamilika! Umepokea token 1 ya bure ya kukaribishwa.';
+      if (!isEligible) {
+        if (isDeviceInCooldown) {
+          message = 'Usajili umekamilika. Admin anahitaji kupitia akaunti hii kwa sababu kuna usajili wa hivi karibuni kwenye kifaa hiki (chini ya siku 3). Tafadhali fanya malipo au ongeza tokeni.';
+        } else {
+          message = 'Usajili umekamilika, lakini nambari hii imekwisha kupokea token ya bure awali.';
+        }
+      }
+
+      return { success: true, message, user: newUser };
     },
 
     recoverPasskey: async (phone, newPasskey) => {
@@ -3470,6 +3592,9 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   saveCurrentTemplate: async () => {
     const template = {
       ...get().currentTemplate,
+      visibility: 'private' as const,
+      isUniversal: false,
+      status: 'draft' as const,
       updatedAt: new Date().toISOString(),
     };
     const sanitized = sanitizeTemplateForSaving(template);

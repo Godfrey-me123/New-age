@@ -129,7 +129,7 @@ export const ForgotPasskeyModal: React.FC<ForgotPasskeyModalProps> = ({
           {/* Phone Number */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Nambari ya Simu (Phone Number) <span className="text-red-400">*</span>
+              Phone Number <span className="text-red-400">*</span>
             </label>
             <div className="relative flex items-center">
               <Phone className="w-4 h-4 text-slate-400 absolute left-3.5" />
@@ -140,7 +140,7 @@ export const ForgotPasskeyModal: React.FC<ForgotPasskeyModalProps> = ({
                   setPhone(e.target.value);
                   if (errorMessage) setErrorMessage('');
                 }}
-                placeholder="0712345678 au +255712345678"
+                placeholder="0712345678 or +255712345678"
                 className="w-full pl-10 pr-4 py-3 bg-[#0B132B] border border-white/15 rounded-xl text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-[#47A5FF] focus:ring-2 focus:ring-[#47A5FF]/20 transition-all"
                 required
               />

@@ -201,6 +201,11 @@ export interface CardTemplate {
   background: BackgroundConfig;
   layers: Layer[];
   guides: Guide[];
+  visibility?: 'private' | 'universal';
+  status?: 'draft' | 'private' | 'published';
+  publishedAt?: string;
+  publishedBy?: string;
+  version?: number;
   createdAt: string;
   updatedAt: string;
 }

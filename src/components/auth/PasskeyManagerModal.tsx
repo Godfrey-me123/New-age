@@ -1040,7 +1040,7 @@ export const PasskeyManagerModal: React.FC = () => {
                 {filteredRegisteredUsers.length === 0 ? (
                   <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
                     <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-xs text-gray-600 font-medium">Hakuna mtumiaji aliyepatikana.</p>
+                    <p className="text-xs text-gray-600 font-medium">No users found.</p>
                   </div>
                 ) : (
                   filteredRegisteredUsers.map((u) => {
@@ -1158,6 +1158,27 @@ export const PasskeyManagerModal: React.FC = () => {
                             <Ticket className="w-3.5 h-3.5 text-emerald-600" />
                             <span>Remaining Usages: <strong className="text-emerald-600 text-sm font-extrabold">{remaining}</strong> / {total}</span>
                           </div>
+                        </div>
+
+                        {/* Welcome Token & Anti-Abuse Status Badge */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs pt-2 border-t border-gray-100 font-medium">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                              passkeyItem?.welcomeTokenGranted ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'
+                            }`}>
+                              {passkeyItem?.welcomeTokenGranted ? '✓ Welcome Token Granted (1)' : '✗ Welcome Token Denied / Already Claimed'}
+                            </span>
+                            {passkeyItem?.welcomeTokenGrantedAt && (
+                              <span className="text-gray-500 font-mono text-[11px]">
+                                Granted: {passkeyItem.welcomeTokenGrantedAt} (ID: <code className="text-gray-900 font-bold">{passkeyItem.grantId}</code>)
+                              </span>
+                            )}
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                            passkeyItem?.suspiciousStatus?.includes('Flagged') ? 'bg-red-100 text-red-800 border border-red-300' : 'bg-slate-100 text-slate-700 border border-slate-300'
+                          }`}>
+                            Security: {passkeyItem?.suspiciousStatus || 'Normal / Verified'}
+                          </span>
                         </div>
                       </div>
                     );
