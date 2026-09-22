@@ -176,31 +176,26 @@ export const RechargeModal: React.FC = () => {
         className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] cursor-default"
       >
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 bg-[#0B132B] text-white flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
-                <span>Usage Packages & Recharge</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                  BIGsta Portal
-                </span>
-              </h2>
-              <p className="text-xs text-slate-300">
-                Top up your BIGsta account usages
-              </p>
-            </div>
+        <div className="p-4 sm:p-6 bg-[#0B132B] text-white flex flex-col items-center justify-between border-b border-slate-800 text-center">
+          <div className="w-full flex items-center justify-end mb-1">
+            <button
+              type="button"
+              onClick={() => setRechargeModalOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setRechargeModalOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="space-y-1.5">
+            <h2 className="text-3xl font-black text-white tracking-wider">BIGsta</h2>
+            <p className="text-gray-100 text-base font-bold">Dear BIGsta User,</p>
+            <p className="text-gray-300 text-sm font-medium">You need to recharge your account.</p>
+          </div>
+          {rechargeNotice && (
+            <p className="text-amber-300 text-xs mt-3 bg-amber-500/20 p-2.5 rounded-xl border border-amber-500/30 w-full text-center font-bold">
+              {rechargeNotice}
+            </p>
+          )}
         </div>
 
         {/* Modal Body */}
