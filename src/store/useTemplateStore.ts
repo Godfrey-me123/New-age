@@ -174,9 +174,9 @@ export interface ServiceData {
 }
 
 export const NIDA_USAGE_PACKAGES: UsagePackage[] = [
-  { id: 'pkg_1', name: '1 Usage Package', usages: 1, price: 'TSh 10,000', active: true },
-  { id: 'pkg_2', name: '2 Usages Package', usages: 2, price: 'TSh 15,000', active: true },
-  { id: 'pkg_5', name: '5 Usages Package', usages: 5, price: 'TSh 25,000', active: true },
+  { id: 'pkg_basic', name: 'Basic Package', usages: 3, price: 'TSh 10,000', description: 'Affordable starter tokens for document generation', active: true },
+  { id: 'pkg_standard', name: 'Standard Package', usages: 7, price: 'TSh 20,000', description: 'Popular bundle for active card creators', active: true },
+  { id: 'pkg_premium', name: 'Premium Package', usages: 18, price: 'TSh 45,000', description: 'High volume card processing with priority generation', active: true },
 ];
 
 export const INITIAL_SERVICES: ServiceData[] = [
@@ -493,6 +493,8 @@ interface TemplateState {
   recoverPasskey: (phone: string, newPasskey: string) => Promise<{ success: boolean; message: string }>;
   updateUserActivity: (currentService?: string, currentActivity?: string) => void;
   submitPaymentRequest: (packageId: string, packageName: string, amount: string, requestedUsages: number) => { success: boolean; message: string; request?: PaymentRequest };
+  cancelPaymentRequest: (requestId?: string) => { success: boolean; message: string };
+  updateUserPaymentRequest: (requestId: string, packageId: string, packageName: string, amount: string, requestedUsages: number) => { success: boolean; message: string };
   approvePaymentRequest: (requestId: string) => { success: boolean; message: string };
   rejectPaymentRequest: (requestId: string) => { success: boolean; message: string };
   updatePaymentRequest: (requestId: string, updates: Partial<PaymentRequest>) => { success: boolean; message: string };
@@ -1073,6 +1075,17 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     updateUserPreferences: (updates) => {
       const updated = { ...get().userPreferences, ...updates };
       safeLocalStorageSetItem('bigsta_user_preferences', JSON.stringify(updated));
+      if (typeof document !== 'undefined') {
+        if (updated.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.body.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.body.classList.remove('dark');
+        }
+      }
       set({ userPreferences: updated });
     },
 
@@ -1304,22 +1317,86 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     },
 
     goBack: () => {
-      if (get().activeScreen === 'preview') {
-        const targetForm = get().activeServiceId === 'driving_license' ? 'driving_license' : 'nida';
-        get().navigateSafely(targetForm);
+      const current = get().activeScreen;
+
+      // 1. Any service form (nida, driving_license, nhif) must ALWAYS navigate directly to 'home' when back is pressed!
+      if (current === 'nida' || current === 'driving_license' || current === 'nhif') {
+        const cleanedHistory = get().navigationHistory.filter(
+          (h) => h.screen !== 'preview' && h.screen !== 'downloads' && h.screen !== current
+        );
+        set({
+          navigationHistory: cleanedHistory,
+          activeScreen: 'home',
+          hasUnsavedChanges: false,
+          isUnsavedModalOpen: false,
+          pendingNavigation: null,
+        });
         return;
       }
-      const history = [...get().navigationHistory];
+
+      // 2. From 'downloads', back must navigate safely to 'home'
+      if (current === 'downloads') {
+        set({
+          navigationHistory: get().navigationHistory.filter(
+            (h) => h.screen !== 'preview' && h.screen !== 'downloads'
+          ),
+          activeScreen: 'home',
+          hasUnsavedChanges: false,
+          isUnsavedModalOpen: false,
+          pendingNavigation: null,
+        });
+        return;
+      }
+
+      // 3. From 'preview', going back returns to the corresponding form, AND strips 'preview' & 'downloads' from history
+      // so pressing Back on the form will never loop back to 'preview'
+      if (current === 'preview') {
+        const targetForm = get().activeServiceId === 'driving_license'
+          ? 'driving_license'
+          : get().activeServiceId === 'nhif'
+          ? 'nhif'
+          : 'nida';
+
+        const cleanedHistory = get().navigationHistory.filter(
+          (h) => h.screen !== 'preview' && h.screen !== 'downloads'
+        );
+        set({
+          navigationHistory: cleanedHistory,
+          activeScreen: targetForm as any,
+          hasUnsavedChanges: false,
+          isUnsavedModalOpen: false,
+          pendingNavigation: null,
+        });
+        return;
+      }
+
+      let history = [...get().navigationHistory];
+      while (
+        history.length > 0 &&
+        (history[history.length - 1].screen === current ||
+          history[history.length - 1].screen === 'preview' ||
+          history[history.length - 1].screen === 'downloads')
+      ) {
+        history.pop();
+      }
+
       if (history.length === 0) {
-        get().navigateSafely('home');
+        set({
+          navigationHistory: [],
+          activeScreen: 'home',
+          hasUnsavedChanges: false,
+          isUnsavedModalOpen: false,
+          pendingNavigation: null,
+        });
         return;
       }
+
       const last = history.pop();
 
       const performBack = () => {
         set({
           navigationHistory: history,
-          activeScreen: last?.screen as any || 'home',
+          activeScreen: (last?.screen as any) || 'home',
           studioMode: last?.screen === 'editor',
           hasUnsavedChanges: false,
           isUnsavedModalOpen: false,
@@ -1612,7 +1689,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       // 1. REGISTER & VERIFY ACCOUNT
       const isTz = /^(?:\+255|255|0)[67]\d{8}$/.test(rawPhone);
       if (!isTz) {
-        return { success: false, message: 'Nambari ya simu haijasajiliwa kulingana na muundo wa Tanzania' };
+        return { success: false, message: 'Phone number does not match a valid Tanzanian format (e.g. 07XXXXXXXX or +2557XXXXXXXX).' };
       }
 
       const users = get().registeredUsers;
@@ -1779,15 +1856,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       set({ 
         activePasskeys: updatedPasskeys, 
         registeredUsers: updatedUsers,
-        rechargeNotice: isEligible ? null : (isDeviceInCooldown ? 'Baada ya kugundua usajili kutoka kwenye kifaa hiki ndani ya siku 3, admin anahitaji kupitia akaunti hii. Tafadhali fanya malipo kupata tokeni.' : 'Welcome token has already been claimed for this phone number/device. Please recharge to access services.')
+        rechargeNotice: isEligible ? null : (isDeviceInCooldown ? 'Registration detected on this device within the last 3 days. Admin needs to review this user. Please proceed with service tokens or recharge.' : 'Welcome token has already been claimed for this phone number/device. Please recharge to access services.')
       });
 
-      let message = 'Usajili umekamilika! Umepokea token 1 ya bure ya kukaribishwa.';
+      let message = 'Registration complete! You have received 1 free welcome token.';
       if (!isEligible) {
         if (isDeviceInCooldown) {
-          message = 'Usajili umekamilika. Admin anahitaji kupitia akaunti hii kwa sababu kuna usajili wa hivi karibuni kwenye kifaa hiki (chini ya siku 3). Tafadhali fanya malipo au ongeza tokeni.';
+          message = 'Registration complete. An administrator needs to review this account due to a recent signup on this device (within 3 days). Please top up service tokens to continue.';
         } else {
-          message = 'Usajili umekamilika, lakini nambari hii imekwisha kupokea token ya bure awali.';
+          message = 'Registration complete. This phone number has already received a free welcome token previously.';
         }
       }
 
@@ -2048,6 +2125,107 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       return { success: true, message: 'Payment request rejected.' };
     },
 
+    cancelPaymentRequest: (requestId) => {
+      const currentAuthKey = get().currentAuthKey;
+      const requests = get().paymentRequests;
+      
+      const targetReq = requestId
+        ? requests.find((r) => r.id === requestId)
+        : requests.find((r) => r.status === 'PENDING' && r.userPasskey.toLowerCase() === (currentAuthKey || '').toLowerCase());
+
+      if (!targetReq) {
+        return { success: false, message: 'No active pending payment request found to cancel.' };
+      }
+
+      const now = new Date();
+      const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
+
+      const updatedRequests = requests.map((r) =>
+        r.id === targetReq.id ? { ...r, status: 'CANCELLED' as const, reviewedDate: dateStr, adminNotes: 'Cancelled by user' } : r
+      );
+
+      const passkeys = get().activePasskeys;
+      const updatedPasskeys = passkeys.map((p) => {
+        if (p.id === targetReq.passkeyId || p.key.toLowerCase() === targetReq.userPasskey.toLowerCase()) {
+          const rem = p.remainingUsages ?? 0;
+          return {
+            ...p,
+            paymentStatus: rem > 0 ? ('ACTIVE' as PaymentStatus) : ('EXHAUSTED' as PaymentStatus),
+          };
+        }
+        return p;
+      });
+
+      try {
+        localStorage.setItem('bigsta_payment_requests', JSON.stringify(updatedRequests));
+        localStorage.setItem('bigsta_active_passkeys', JSON.stringify(updatedPasskeys));
+      } catch (e) {}
+
+      // Sync passkey status to Supabase
+      const affectedPk = updatedPasskeys.find((p) => p.id === targetReq.passkeyId || p.key.toLowerCase() === targetReq.userPasskey.toLowerCase());
+      if (affectedPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(affectedPk);
+        }).catch(() => {});
+      }
+
+      set({ paymentRequests: updatedRequests, activePasskeys: updatedPasskeys });
+      return { success: true, message: 'Token request cancelled successfully.' };
+    },
+
+    updateUserPaymentRequest: (requestId, packageId, packageName, amount, requestedUsages) => {
+      const requests = get().paymentRequests;
+      const targetReq = requests.find((r) => r.id === requestId);
+      if (!targetReq) {
+        return { success: false, message: 'Payment request not found.' };
+      }
+
+      const now = new Date();
+      const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
+
+      const updatedRequests = requests.map((r) =>
+        r.id === requestId
+          ? {
+              ...r,
+              packageId,
+              packageName,
+              amount,
+              requestedUsages,
+              timestamp: Date.now(),
+              date: dateStr,
+            }
+          : r
+      );
+
+      const passkeys = get().activePasskeys;
+      const updatedPasskeys = passkeys.map((p) => {
+        if (p.id === targetReq.passkeyId || p.key.toLowerCase() === targetReq.userPasskey.toLowerCase()) {
+          return {
+            ...p,
+            packageName: `${packageName} (${amount})`,
+            packagePrice: amount,
+            paymentStatus: 'PENDING' as PaymentStatus,
+          };
+        }
+        return p;
+      });
+
+      try {
+        localStorage.setItem('bigsta_payment_requests', JSON.stringify(updatedRequests));
+        localStorage.setItem('bigsta_active_passkeys', JSON.stringify(updatedPasskeys));
+      } catch (e) {}
+
+      const affectedPk = updatedPasskeys.find((p) => p.id === targetReq.passkeyId || p.key.toLowerCase() === targetReq.userPasskey.toLowerCase());
+      if (affectedPk) {
+        import('../services/supabase').then(({ syncPasskeySupabase }) => {
+          syncPasskeySupabase(affectedPk);
+        }).catch(() => {});
+      }
+
+      set({ paymentRequests: updatedRequests, activePasskeys: updatedPasskeys });
+      return { success: true, message: `Token request updated to ${packageName} (${amount}) successfully!` };
+    },
+
     updatePaymentRequest: (requestId, updates) => {
       const { paymentRequests } = get();
       const updated = paymentRequests.map(r => 
@@ -2110,7 +2288,11 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         status: 'PENDING',
       };
 
-      const updatedRequests = [newRequest, ...get().manualRequests];
+      // Filter out any older request for the same service from this user/device
+      const filteredOld = get().manualRequests.filter(
+        (r) => !(r.serviceId === data.serviceId && (r.userPasskey === currentAuthKey || r.accountKey === currentAuthKey || !currentAuthKey))
+      );
+      const updatedRequests = [newRequest, ...filteredOld];
       try {
         localStorage.setItem('bigsta_manual_requests', JSON.stringify(updatedRequests));
       } catch (e) {}
@@ -2301,7 +2483,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       if (!match) {
-        return { success: false, message: 'Invalid Passkey or account does not exist in Supabase' };
+        return { success: false, message: 'Invalid Passkey or account does not exist.' };
       }
 
       if (!match.active || match.paymentStatus === 'DISABLED') {
@@ -2681,6 +2863,29 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         remainingUsages: remaining,
         cost,
       });
+
+      // 3b. 1-Week Offer Token Expiry Verification
+      const isTrialOfferPackage = !currentPasskey.packageName ||
+        currentPasskey.packageName.toLowerCase().includes('welcome') ||
+        currentPasskey.packageName.toLowerCase().includes('offer') ||
+        currentPasskey.packageName.toLowerCase().includes('trial');
+
+      const passkeyCreationTime = currentPasskey.createdAtTimestamp ||
+        (currentPasskey.createdDate ? new Date(currentPasskey.createdDate).getTime() : 0);
+      const isOfferWeekOver = passkeyCreationTime > 0 && (Date.now() - passkeyCreationTime > 7 * 24 * 60 * 60 * 1000);
+
+      if (isTrialOfferPackage && isOfferWeekOver) {
+        const msg = 'Offer Concluded: Your 1-week offer token period has concluded. To continue using services, please select an active Basic or Premium package from the Super Admin panel.';
+        get().setRechargeModalOpen(true, msg);
+        return {
+          allowed: false,
+          reason: 'PAYMENT_REQUIRED',
+          message: msg,
+          paymentStatus: pStatus,
+          remainingUsages: remaining,
+          cost,
+        };
+      }
 
       // 4. Payment Approval Check
       if (pStatus === 'PENDING' && remaining < cost) {

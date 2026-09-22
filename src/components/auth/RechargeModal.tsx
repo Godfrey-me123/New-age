@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, CreditCard, Check, AlertCircle, RefreshCw, X, ShieldCheck, ArrowRight, Clock, Copy, Hash, Zap, Sparkles } from 'lucide-react';
-import { useTemplateStore, NIDA_USAGE_PACKAGES } from '../../store/useTemplateStore';
+import { Wallet, CreditCard, Check, AlertCircle, RefreshCw, X, ShieldCheck, ArrowRight, Clock, Copy, Hash, Zap } from 'lucide-react';
+import { useTemplateStore } from '../../store/useTemplateStore';
 import { paymentService } from '../../services/paymentService';
 
 export const RechargeModal: React.FC = () => {
@@ -13,6 +13,8 @@ export const RechargeModal: React.FC = () => {
     activePasskeys,
     paymentRequests,
     submitPaymentRequest,
+    cancelPaymentRequest,
+    updateUserPaymentRequest,
     refreshUserStatus,
     tokenPackages,
   } = useTemplateStore();
@@ -32,55 +34,10 @@ export const RechargeModal: React.FC = () => {
   const [copiedLipa, setCopiedLipa] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedMessage, setSubmittedMessage] = useState('');
+  const [actionNotice, setActionNotice] = useState('');
   const [reference, setReference] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
-
-  // OCR state (Prompt 22)
-  const [ocrImage, setOcrImage] = useState<string>('');
-  const [ocrText, setOcrText] = useState<string>('');
-  const [isScanning, setIsScanning] = useState(false);
-  const [extractedData, setExtractedData] = useState<any>(null);
-  const [scanError, setScanError] = useState('');
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setOcrImage(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleScanOCR = async () => {
-    if (!ocrImage && !ocrText.trim()) {
-      setScanError('Please upload a screenshot or paste SMS text/receipt.');
-      return;
-    }
-    setIsScanning(true);
-    setScanError('');
-    try {
-      const res = await fetch('/api/payment/extract-ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: ocrImage, text: ocrText }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setExtractedData(data.data);
-        if (data.data.transactionId) {
-          setReference(data.data.transactionId);
-        }
-      } else {
-        setScanError(data.error || 'Extraction failed');
-      }
-    } catch (err: any) {
-      setScanError('Network or extraction error: ' + err.message);
-    } finally {
-      setIsScanning(false);
-    }
-  };
 
   // Escape key listener
   useEffect(() => {
@@ -99,15 +56,29 @@ export const RechargeModal: React.FC = () => {
   const remainingUsages = currentPasskey?.remainingUsages ?? 0;
   const paymentStatus = currentPasskey?.paymentStatus || 'ACTIVE';
 
+  // Check if 1-week free offer token has ended
+  const isOfferWeekOver = useMemo(() => {
+    if (!currentPasskey?.welcomeTokenGranted) return false;
+    const grantTime = currentPasskey.createdAtTimestamp || (currentPasskey.welcomeTokenGrantedAt ? new Date(currentPasskey.welcomeTokenGrantedAt).getTime() : 0);
+    if (!grantTime) return false;
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    return (Date.now() - grantTime) >= ONE_WEEK_MS;
+  }, [currentPasskey]);
+
   // Find latest user payment request if any
   const userRequests = useMemo(() => paymentRequests.filter(
     (r) => r.userPasskey.toLowerCase() === (currentAuthKey || '').toLowerCase()
   ), [paymentRequests, currentAuthKey]);
   
-  const latestRequest = userRequests.length > 0 ? userRequests[userRequests.length - 1] : null;
-  const pendingRequest = userRequests.find((r) => r.status === 'PENDING') || latestRequest;
+  const pendingRequest = userRequests.find((r) => r.status === 'PENDING') || null;
+  const hasPendingRequest = !!pendingRequest || paymentStatus === 'PENDING';
 
-  const selectedPkg = useMemo(() => activePkgs.find((p) => p.id === selectedPkgId) || activePkgs[0] || { id: '', name: 'Standard', price: 'TSh 15,000', usages: 5 }, [activePkgs, selectedPkgId]);
+  const selectedPkg = useMemo(() => activePkgs.find((p) => p.id === selectedPkgId) || activePkgs[0] || { id: 'pkg_basic', name: 'Basic Package', price: 'TSh 10,000', usages: 3 }, [activePkgs, selectedPkgId]);
+
+  const isPendingDifferentPackage = useMemo(() => {
+    if (!pendingRequest) return false;
+    return pendingRequest.packageId !== selectedPkg.id && pendingRequest.packageName !== selectedPkg.name;
+  }, [pendingRequest, selectedPkg]);
 
   if (!isRechargeModalOpen) return null;
 
@@ -157,7 +128,44 @@ export const RechargeModal: React.FC = () => {
       setIsSubmitting(false);
 
       if (res.success) {
-        setSubmittedMessage('Payment request submitted. You can wait for manual approval OR enter your Transaction Reference below for instant auto-verification.');
+        setSubmittedMessage('Payment request submitted. You can wait for admin verification or enter your reference below for instant auto-verify.');
+      }
+    }, 300);
+  };
+
+  const handleCancelPendingRequest = () => {
+    if (!pendingRequest) {
+      const res = cancelPaymentRequest();
+      if (res.success) {
+        setActionNotice(res.message);
+        refreshUserStatus();
+      }
+      return;
+    }
+    const res = cancelPaymentRequest(pendingRequest.id);
+    if (res.success) {
+      setActionNotice('Token request cancelled successfully. You can now select another package or request later.');
+      refreshUserStatus();
+      setTimeout(() => setActionNotice(''), 5000);
+    }
+  };
+
+  const handleUpdatePendingRequest = () => {
+    if (!pendingRequest) return;
+    setIsSubmitting(true);
+    setTimeout(() => {
+      const res = updateUserPaymentRequest(
+        pendingRequest.id,
+        selectedPkg.id,
+        selectedPkg.name,
+        selectedPkg.price,
+        selectedPkg.usages
+      );
+      setIsSubmitting(false);
+      if (res.success) {
+        setActionNotice(`Token request updated to ${selectedPkg.name} (${selectedPkg.price})! Administrator notified.`);
+        refreshUserStatus();
+        setTimeout(() => setActionNotice(''), 5000);
       }
     }, 300);
   };
@@ -242,28 +250,50 @@ export const RechargeModal: React.FC = () => {
             </div>
           </div>
 
+          {/* 1-Week Offer Token Expiration Notification */}
+          {isOfferWeekOver && (
+            <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-1 text-left">
+              <div className="flex items-center gap-1.5 font-extrabold text-amber-950">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Free 1-Week Offer Token Has Ended</span>
+              </div>
+              <p className="text-amber-900 text-[11px] leading-relaxed">
+                Your 1-week free trial offer is complete. Please select a <strong>Basic</strong> or <strong>Premium</strong> token package configured by the administrator to continue generating identity cards.
+              </p>
+            </div>
+          )}
+
+          {/* Action / Update Feedback Notice */}
+          {actionNotice && (
+            <div className="p-3 bg-blue-50 border border-blue-300 rounded-xl text-xs text-blue-900 flex items-center gap-2 font-bold animate-fadeIn">
+              <Check className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>{actionNotice}</span>
+            </div>
+          )}
+
           {/* Pending Payment Notice if currently pending */}
-          {paymentStatus === 'PENDING' && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-3 shadow-xs">
-              <div className="flex items-center gap-2 text-amber-900 font-extrabold text-[13px]">
-                <Clock className="w-4 h-4 text-amber-700 shrink-0" />
-                <span>Your previous payment request is still awaiting Admin approval.</span>
+          {hasPendingRequest && (
+            <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-3 shadow-xs text-left">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-amber-950 font-extrabold text-[13px]">
+                  <Clock className="w-4 h-4 text-amber-700 shrink-0 animate-spin" />
+                  <span>Token Request Pending Admin Review</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-extrabold text-[10px] tracking-wide">
+                  PENDING
+                </span>
               </div>
 
               <div className="p-3 bg-white border border-amber-200 rounded-lg space-y-1.5 font-mono text-[11px] text-slate-800">
-                <div className="flex justify-between border-b border-amber-100 pb-1.5 mb-1.5">
-                  <span className="text-slate-500 font-sans">Status:</span>
-                  <span className="font-bold text-amber-700">PENDING</span>
-                </div>
                 {pendingRequest && (
                   <>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500 font-sans">Requested Package:</span>
-                      <span className="font-bold">{pendingRequest.packageName}</span>
+                    <div className="flex justify-between border-b border-amber-100 pb-1.5">
+                      <span className="text-slate-500 font-sans">Current Request:</span>
+                      <span className="font-bold text-amber-900">{pendingRequest.packageName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500 font-sans">Requested Tokens:</span>
-                      <span className="font-bold">{pendingRequest.requestedUsages} Tokens</span>
+                      <span className="text-slate-500 font-sans">Tokens:</span>
+                      <span className="font-bold">{pendingRequest.requestedUsages} Usages ({pendingRequest.amount})</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-sans">Request Date:</span>
@@ -273,18 +303,28 @@ export const RechargeModal: React.FC = () => {
                 )}
               </div>
 
-              <p className="text-amber-800 leading-relaxed text-[11px]">
-                Your top-up request has been submitted. The Administrator is currently verifying your payment. Click "Refresh Status" to update once approved.
+              <p className="text-amber-900 leading-relaxed text-[11px]">
+                You can cancel this request, or choose a different package below and click <strong>"Update Token Request"</strong> to update it in the system.
               </p>
 
-              <button
-                type="button"
-                onClick={handleRefresh}
-                className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Refresh Status</span>
-              </button>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleCancelPendingRequest}
+                  className="flex-1 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-rose-300"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Cancel Request</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Refresh Status</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -297,90 +337,6 @@ export const RechargeModal: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Smart AI Payment Scanner (Prompt 22) */}
-          <div className="p-4 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl shadow-lg text-white space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-indigo-500/20 rounded-lg border border-indigo-500/40 text-indigo-300">
-                <Sparkles className="w-4 h-4 text-indigo-400" />
-              </div>
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-indigo-200">Smart AI Payment Scanner</h4>
-                <p className="text-[10px] text-indigo-300">Upload screenshot, PDF or paste SMS text for instant OCR extraction</p>
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <div className="flex gap-2">
-                <label className="flex-1 py-2 px-3 bg-white/10 hover:bg-white/15 border border-white/20 rounded-xl text-xs font-bold text-center cursor-pointer transition-all flex items-center justify-center gap-2">
-                  <span>📷 Upload Screenshot/PDF</span>
-                  <input type="file" accept="image/*,application/pdf" onChange={handleFileUpload} className="hidden" />
-                </label>
-              </div>
-
-              {ocrImage && (
-                <div className="flex items-center justify-between bg-white/5 p-2 rounded-lg text-xs">
-                  <span className="truncate max-w-[200px] text-indigo-200">Screenshot attached</span>
-                  <button type="button" onClick={() => setOcrImage('')} className="text-red-400 hover:text-red-300 text-[10px]">Remove</button>
-                </div>
-              )}
-
-              <textarea
-                value={ocrText}
-                onChange={(e) => setOcrText(e.target.value)}
-                placeholder="Or paste SMS / receipt text here (M-Pesa, Tigo Pesa, Airtel Money, HaloPesa, Mixx, Bank)..."
-                rows={2}
-                className="w-full bg-white/10 border border-white/20 rounded-xl p-2.5 text-xs text-white placeholder:text-indigo-300/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-              />
-
-              {scanError && (
-                <p className="text-[10px] font-bold text-red-300 bg-red-950/50 px-2 py-1 rounded flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {scanError}
-                </p>
-              )}
-
-              <button
-                type="button"
-                onClick={handleScanOCR}
-                disabled={isScanning || (!ocrImage && !ocrText.trim())}
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-              >
-                {isScanning ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Extracting Details with AI OCR...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Scan & Extract Details</span>
-                  </>
-                )}
-              </button>
-
-              {extractedData && (
-                <div className="p-3 bg-white/10 rounded-xl border border-white/20 space-y-2 text-xs">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-1.5 font-bold text-emerald-300">
-                    <span>✨ Extracted Transaction Record</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-200">
-                      {extractedData.status || 'Pending'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5 text-[11px] font-mono">
-                    <div><span className="text-indigo-300 font-sans">Provider:</span> {extractedData.paymentProvider || 'N/A'}</div>
-                    <div><span className="text-indigo-300 font-sans">Tx ID:</span> {extractedData.transactionId || 'N/A'}</div>
-                    <div><span className="text-indigo-300 font-sans">Amount:</span> {extractedData.currency || 'TSh'} {extractedData.amount || '0'}</div>
-                    <div><span className="text-indigo-300 font-sans">Sender:</span> {extractedData.sender || 'N/A'}</div>
-                    <div className="col-span-2 truncate"><span className="text-indigo-300 font-sans">Receiver:</span> {extractedData.receiver || 'N/A'} ({extractedData.receiverAccount || ''})</div>
-                  </div>
-                  <p className="text-[10px] text-indigo-200 italic pt-1 border-t border-white/10">
-                    Data parsed successfully. Reference filled automatically below for verification.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* Auto-Verification Section */}
           <div className="p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/20 text-white space-y-3">
@@ -417,14 +373,17 @@ export const RechargeModal: React.FC = () => {
                 type="button"
                 onClick={handleAutoVerify}
                 disabled={isVerifying || !reference.trim()}
-                className="w-full py-2.5 bg-white text-blue-600 font-black text-xs rounded-xl shadow-sm hover:bg-blue-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-2.5 bg-white text-blue-900 hover:bg-blue-50 font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 {isVerifying ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Verifying with Vodacom/Airtel/Tigo...</span>
+                  </>
                 ) : (
                   <>
-                    <ShieldCheck className="w-4 h-4" />
-                    Verify Reference
+                    <Zap className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
+                    <span>Auto-Confirm Reference</span>
                   </>
                 )}
               </button>
@@ -547,6 +506,35 @@ export const RechargeModal: React.FC = () => {
               >
                 OK
               </button>
+            ) : hasPendingRequest ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleCancelPendingRequest}
+                  className="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs sm:text-sm rounded-xl transition-all flex-1 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <X className="w-4 h-4 shrink-0" />
+                  <span>Cancel Request</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdatePendingRequest}
+                  disabled={isSubmitting || !isPendingDifferentPackage}
+                  className="py-3 px-3 sm:px-4 flex-[2] bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-1.5">
+                      <RefreshCw className="animate-spin h-4 w-4 text-white" />
+                      <span>Updating...</span>
+                    </span>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{isPendingDifferentPackage ? `Update to ${selectedPkg.name}` : 'Select Package to Update'}</span>
+                    </>
+                  )}
+                </button>
+              </>
             ) : (
               <>
                 <button
@@ -559,7 +547,7 @@ export const RechargeModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={handlePaymentSubmit}
-                  disabled={isSubmitting || paymentStatus === 'PENDING'}
+                  disabled={isSubmitting}
                   className="py-3 px-4 flex-[2] bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold text-sm rounded-xl shadow-md transition-all active:scale-95 active:shadow-inner flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:scale-100"
                 >
                   {isSubmitting ? (

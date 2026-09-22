@@ -66,17 +66,9 @@ export const PasskeyScreen: React.FC = () => {
       {/* Main Container */}
       <div className="w-full max-w-md bg-[#1C2541]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl relative z-10 flex flex-col items-center my-auto">
         
-        {/* BIGsta Logo & Header */}
+        {/* BIGsta Title Header */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1B4ED8] to-[#3B82F6] flex items-center justify-center shadow-xl shadow-blue-500/20 mb-4 border border-white/20 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.25),transparent)]" />
-            <span className="text-2xl font-black text-white tracking-tighter relative z-10">B</span>
-            <div className="absolute bottom-1.5 right-1.5 w-4 h-3 bg-white/90 rounded-xs shadow-xs flex items-center justify-center">
-              <div className="w-2.5 h-0.5 bg-blue-600 rounded-full" />
-            </div>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
             BIGsta
           </h1>
         </div>

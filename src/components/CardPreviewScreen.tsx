@@ -296,6 +296,15 @@ export const CardPreviewScreen: React.FC = () => {
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <UniversalBackButton />
+            <button
+              type="button"
+              onClick={() => setActiveScreen('home')}
+              className="p-2 sm:p-2.5 rounded-xl bg-[#1C1F26] hover:bg-[#282C37] text-slate-300 hover:text-white border border-[#4C5055]/50 transition-colors flex items-center justify-center cursor-pointer"
+              title="Return to Home Portal"
+              aria-label="Return to Home Portal"
+            >
+              <Home className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">

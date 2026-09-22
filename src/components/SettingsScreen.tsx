@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings as SettingsIcon,
   User,
@@ -56,6 +56,19 @@ export const SettingsScreen: React.FC = () => {
   const [prefsForm, setPrefsForm] = useState(userPreferences);
   const [adminForm, setAdminForm] = useState(adminSettings);
 
+  // Keep forms synced if store updates
+  useEffect(() => {
+    setProfileForm(userProfile);
+  }, [userProfile]);
+
+  useEffect(() => {
+    setPrefsForm(userPreferences);
+  }, [userPreferences]);
+
+  useEffect(() => {
+    setAdminForm(adminSettings);
+  }, [adminSettings]);
+
   // Support Form State
   const [supportMessage, setSupportMessage] = useState('');
   const [issueType, setIssueType] = useState('Payment Issue');
@@ -68,7 +81,7 @@ export const SettingsScreen: React.FC = () => {
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     updateUserProfile(profileForm);
-    triggerToast('Profile information updated successfully');
+    triggerToast('Profile information updated & saved');
   };
 
   const handleSavePreferences = (e: React.FormEvent) => {
@@ -77,10 +90,17 @@ export const SettingsScreen: React.FC = () => {
     triggerToast('Appearance & preference settings saved');
   };
 
+  const handleThemeChange = (newTheme: 'light' | 'dark') => {
+    const updated = { ...prefsForm, theme: newTheme };
+    setPrefsForm(updated);
+    updateUserPreferences(updated);
+    triggerToast(`Theme environment changed to ${newTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}`);
+  };
+
   const handleSaveAdminSettings = (e: React.FormEvent) => {
     e.preventDefault();
     updateAdminSettings(adminForm);
-    triggerToast('Admin gateway & OCR settings updated');
+    triggerToast('Admin gateway & OCR settings saved');
   };
 
   const handleSendSupport = (e: React.FormEvent) => {
@@ -91,18 +111,18 @@ export const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-16 text-[#111827]">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#14171A] pb-16 text-[#111827] dark:text-[#F3F4F6] transition-colors duration-200">
       {/* Top Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <div className="bg-white dark:bg-[#1E2328] border-b border-slate-200 dark:border-white/10 sticky top-0 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <UniversalBackButton />
             <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                <SettingsIcon className="w-5 h-5 text-[#2563EB]" />
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <SettingsIcon className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
                 Settings Control Center
               </h1>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {authRole === 'admin' ? 'CEO System Configuration, OCR Rules & User Preferences' : 'Personalize your profile, notifications, security & downloads'}
               </p>
             </div>
@@ -110,7 +130,7 @@ export const SettingsScreen: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-              authRole === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-50 text-blue-800 border border-blue-200'
+              authRole === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800' : 'bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
             }`}>
               {authRole === 'admin' ? 'CEO ADMIN ROLE' : 'USER ROLE'}
             </span>
@@ -132,13 +152,13 @@ export const SettingsScreen: React.FC = () => {
 
           {/* Left Category Sidebar Navigation */}
           <div className="space-y-1">
-            <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-xs space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1 block">Account & Preferences</span>
+            <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-slate-200 dark:border-white/10 p-3 shadow-xs space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider px-3 py-1 block">Account & Preferences</span>
 
               <button
                 onClick={() => setActiveTab('profile')}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                  activeTab === 'profile' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+                  activeTab === 'profile' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 <User className="w-4 h-4" /> User Profile
@@ -147,7 +167,7 @@ export const SettingsScreen: React.FC = () => {
               <button
                 onClick={() => setActiveTab('security')}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                  activeTab === 'security' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+                  activeTab === 'security' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 <Shield className="w-4 h-4" /> Security & Passkey
@@ -156,7 +176,7 @@ export const SettingsScreen: React.FC = () => {
               <button
                 onClick={() => setActiveTab('appearance')}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                  activeTab === 'appearance' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+                  activeTab === 'appearance' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 <Palette className="w-4 h-4" /> Appearance & Theme
@@ -165,7 +185,7 @@ export const SettingsScreen: React.FC = () => {
               <button
                 onClick={() => setActiveTab('notifications')}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                  activeTab === 'notifications' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+                  activeTab === 'notifications' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 <Bell className="w-4 h-4" /> Notifications
@@ -174,7 +194,7 @@ export const SettingsScreen: React.FC = () => {
               <button
                 onClick={() => setActiveTab('downloads')}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                  activeTab === 'downloads' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+                  activeTab === 'downloads' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 <Download className="w-4 h-4" /> Downloads Storage
@@ -183,7 +203,7 @@ export const SettingsScreen: React.FC = () => {
               <button
                 onClick={() => setActiveTab('support')}
                 className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                  activeTab === 'support' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+                  activeTab === 'support' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 <HelpCircle className="w-4 h-4" /> Support & Feedback
@@ -192,12 +212,12 @@ export const SettingsScreen: React.FC = () => {
               {/* ADMIN EXCLUSIVE CATEGORIES */}
               {authRole === 'admin' && (
                 <>
-                  <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider px-3 py-2 block pt-3 border-t border-slate-100">CEO Admin Controls</span>
+                  <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider px-3 py-2 block pt-3 border-t border-slate-100 dark:border-white/10">CEO Admin Controls</span>
 
                   <button
                     onClick={() => setActiveTab('payment_config')}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                      activeTab === 'payment_config' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 hover:bg-purple-50'
+                      activeTab === 'payment_config' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}
                   >
                     <Smartphone className="w-4 h-4" /> Payment Gateways
@@ -206,7 +226,7 @@ export const SettingsScreen: React.FC = () => {
                   <button
                     onClick={() => setActiveTab('ocr_config')}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                      activeTab === 'ocr_config' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 hover:bg-purple-50'
+                      activeTab === 'ocr_config' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}
                   >
                     <Scan className="w-4 h-4" /> OCR Engine Settings
@@ -215,7 +235,7 @@ export const SettingsScreen: React.FC = () => {
                   <button
                     onClick={() => setActiveTab('token_config')}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                      activeTab === 'token_config' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 hover:bg-purple-50'
+                      activeTab === 'token_config' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}
                   >
                     <Coins className="w-4 h-4" /> Token Pricing Rules
@@ -224,7 +244,7 @@ export const SettingsScreen: React.FC = () => {
                   <button
                     onClick={() => setActiveTab('system')}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                      activeTab === 'system' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 hover:bg-purple-50'
+                      activeTab === 'system' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}
                   >
                     <Database className="w-4 h-4" /> System Health & Logs
@@ -233,7 +253,7 @@ export const SettingsScreen: React.FC = () => {
                   <button
                     onClick={() => setActiveTab('supabase_db')}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                      activeTab === 'supabase_db' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 hover:bg-purple-50'
+                      activeTab === 'supabase_db' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}
                   >
                     <HardDrive className="w-4 h-4" /> Supabase DB Migration
@@ -248,50 +268,50 @@ export const SettingsScreen: React.FC = () => {
 
             {/* TAB: PROFILE */}
             {activeTab === 'profile' && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <h2 className="text-base font-bold text-slate-900">User Profile Information</h2>
-                  <p className="text-xs text-slate-500">Update your account name, contact numbers, and region</p>
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-xs space-y-5">
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">User Profile Information</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Update your account name, contact numbers, and region</p>
                 </div>
 
                 <form onSubmit={handleSaveProfile} className="space-y-4 max-w-lg">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
                     <input
                       type="text"
                       value={profileForm.name}
                       onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number (WhatsApp / Calls)</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone Number (WhatsApp / Calls)</label>
                     <input
                       type="text"
                       value={profileForm.phone}
                       onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
                     <input
                       type="email"
                       value={profileForm.email}
                       onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Region / Location</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Region / Location</label>
                     <input
                       type="text"
                       value={profileForm.region}
                       onChange={(e) => setProfileForm({ ...profileForm, region: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -307,35 +327,35 @@ export const SettingsScreen: React.FC = () => {
 
             {/* TAB: SECURITY */}
             {activeTab === 'security' && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <h2 className="text-base font-bold text-slate-900">Security & Passkey Gateway</h2>
-                  <p className="text-xs text-slate-500">Manage active sessions, passkey authorization & password updates</p>
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-xs space-y-5">
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Security & Passkey Gateway</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Manage active sessions, passkey authorization & password updates</p>
                 </div>
 
-                <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/60 flex items-center justify-between">
+                <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-bold text-blue-900 block">Current Active Passkey</span>
-                    <span className="text-xs font-mono font-bold text-blue-700">{currentAuthKey || 'Default Active Key'}</span>
+                    <span className="text-xs font-bold text-blue-900 dark:text-blue-300 block">Current Active Passkey</span>
+                    <span className="text-xs font-mono font-bold text-blue-700 dark:text-blue-400">{currentAuthKey || 'Default Active Key'}</span>
                   </div>
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-200 text-blue-800">AUTHENTICATED</span>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-300">AUTHENTICATED</span>
                 </div>
 
                 <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-bold text-slate-800">Active Device Sessions</h3>
-                  <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between text-xs">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">Active Device Sessions</h3>
+                  <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between text-xs">
                     <div>
-                      <p className="font-bold text-slate-800">Cloud Run Web Session (Current Device)</p>
-                      <p className="text-[11px] text-slate-400">IP: 102.164.88.12 • Active Now</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">Cloud Run Web Session (Current Device)</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-400">IP: 102.164.88.12 • Active Now</p>
                     </div>
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-100 dark:border-white/10">
                   <button
                     onClick={() => logoutPasskey()}
-                    className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-bold border border-red-200 flex items-center gap-2"
+                    className="px-4 py-2.5 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-700 dark:text-red-300 rounded-xl text-xs font-bold border border-red-200 dark:border-red-900 flex items-center gap-2"
                   >
                     <LogOut className="w-4 h-4" /> Logout All Device Sessions
                   </button>
@@ -345,30 +365,30 @@ export const SettingsScreen: React.FC = () => {
 
             {/* TAB: APPEARANCE */}
             {activeTab === 'appearance' && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <h2 className="text-base font-bold text-slate-900">Appearance & Customization</h2>
-                  <p className="text-xs text-slate-500">Set visual themes, interface language, and font density</p>
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-xs space-y-5">
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Appearance & Customization</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Set visual themes, interface language, and font density</p>
                 </div>
 
                 <form onSubmit={handleSavePreferences} className="space-y-5 max-w-lg">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-2">Theme Mode</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Theme Mode</label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
-                        onClick={() => setPrefsForm({ ...prefsForm, theme: 'light' })}
-                        className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 ${
-                          prefsForm.theme === 'light' ? 'border-[#2563EB] bg-blue-50 text-[#2563EB] ring-2 ring-blue-500/20' : 'border-slate-200 text-slate-700'
+                        onClick={() => handleThemeChange('light')}
+                        className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          prefsForm.theme === 'light' ? 'border-[#2563EB] bg-blue-50 dark:bg-blue-950/50 text-[#2563EB] dark:text-[#60A5FA] ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
                         }`}
                       >
                         <Sun className="w-4 h-4" /> Light Mode (Default)
                       </button>
                       <button
                         type="button"
-                        onClick={() => setPrefsForm({ ...prefsForm, theme: 'dark' })}
-                        className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 ${
-                          prefsForm.theme === 'dark' ? 'border-[#2563EB] bg-slate-900 text-white' : 'border-slate-200 text-slate-700'
+                        onClick={() => handleThemeChange('dark')}
+                        className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          prefsForm.theme === 'dark' ? 'border-[#2563EB] bg-slate-900 text-white ring-2 ring-blue-500/30' : 'border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
                         }`}
                       >
                         <Moon className="w-4 h-4" /> Dark Mode
@@ -377,23 +397,33 @@ export const SettingsScreen: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">System Language</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">System Language</label>
                     <select
                       value={prefsForm.language}
-                      onChange={(e) => setPrefsForm({ ...prefsForm, language: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold"
+                      onChange={(e) => {
+                        const updated = { ...prefsForm, language: e.target.value as any };
+                        setPrefsForm(updated);
+                        updateUserPreferences(updated);
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs font-semibold"
                     >
-                      <option value="en">English (US / TZ)</option>
-                      <option value="sw">Kiswahili (Tanzania)</option>
+                      <option value="en">English (Official System Language)</option>
                     </select>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                      System strictly operates in English.
+                    </p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Font Scale & Density</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Font Scale & Density</label>
                     <select
                       value={prefsForm.fontSize}
-                      onChange={(e) => setPrefsForm({ ...prefsForm, fontSize: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold"
+                      onChange={(e) => {
+                        const updated = { ...prefsForm, fontSize: e.target.value as any };
+                        setPrefsForm(updated);
+                        updateUserPreferences(updated);
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs font-semibold"
                     >
                       <option value="compact">Compact (High Information Density)</option>
                       <option value="standard">Standard (Default Balanced Scale)</option>
@@ -413,17 +443,17 @@ export const SettingsScreen: React.FC = () => {
 
             {/* TAB: NOTIFICATIONS */}
             {activeTab === 'notifications' && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <h2 className="text-base font-bold text-slate-900">Notification Alerts</h2>
-                  <p className="text-xs text-slate-500">Configure alert channels for top-ups, downloads, and system notices</p>
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-xs space-y-5">
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Notification Alerts</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Configure alert channels for top-ups, downloads, and system notices</p>
                 </div>
 
                 <div className="space-y-4 max-w-lg">
-                  <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/50">
+                  <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5">
                     <div>
-                      <p className="text-xs font-bold text-slate-800">Payment Verification Alerts</p>
-                      <p className="text-[11px] text-slate-400">Receive instant notice when Admin approves top-ups</p>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Payment Verification Alerts</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-400">Receive instant notice when Admin approves top-ups</p>
                     </div>
                     <input
                       type="checkbox"
@@ -433,14 +463,14 @@ export const SettingsScreen: React.FC = () => {
                         setPrefsForm(updated);
                         updateUserPreferences(updated);
                       }}
-                      className="w-4 h-4 text-blue-600 rounded"
+                      className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/50">
+                  <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5">
                     <div>
-                      <p className="text-xs font-bold text-slate-800">Download Ready Notifications</p>
-                      <p className="text-[11px] text-slate-400">Alert when document generation completes</p>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Download Ready Notifications</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-400">Alert when document generation completes</p>
                     </div>
                     <input
                       type="checkbox"
@@ -450,7 +480,7 @@ export const SettingsScreen: React.FC = () => {
                         setPrefsForm(updated);
                         updateUserPreferences(updated);
                       }}
-                      className="w-4 h-4 text-blue-600 rounded"
+                      className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                     />
                   </div>
                 </div>
@@ -459,26 +489,26 @@ export const SettingsScreen: React.FC = () => {
 
             {/* TAB: DOWNLOADS */}
             {activeTab === 'downloads' && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <h2 className="text-base font-bold text-slate-900">Downloads & Directory Rules</h2>
-                  <p className="text-xs text-slate-500">Configure target save folder on device and history preservation</p>
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-xs space-y-5">
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Downloads & Directory Rules</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Configure target save folder on device and history preservation</p>
                 </div>
 
                 <div className="space-y-4 max-w-lg">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Storage Directory</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Storage Directory</label>
                     <input
                       type="text"
                       value={prefsForm.downloadFolder}
                       disabled
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-100 text-xs font-mono font-bold text-slate-700"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-100 dark:bg-white/5 text-xs font-mono font-bold text-slate-700 dark:text-slate-200"
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">Files save directly to phone/device storage under <span className="font-semibold text-slate-600">Downloads/BIGsta</span>.</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-1">Files save directly to phone/device storage under <span className="font-semibold text-slate-600 dark:text-slate-300">Downloads/BIGsta</span>.</p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">History Retention Length</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">History Retention Length</label>
                     <select
                       value={prefsForm.keepHistoryDays}
                       onChange={(e) => {
@@ -486,7 +516,7 @@ export const SettingsScreen: React.FC = () => {
                         setPrefsForm(updated);
                         updateUserPreferences(updated);
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs font-semibold"
                     >
                       <option value={30}>30 Days</option>
                       <option value={60}>60 Days</option>
@@ -499,10 +529,10 @@ export const SettingsScreen: React.FC = () => {
 
             {/* TAB: SUPPORT */}
             {activeTab === 'support' && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <h2 className="text-base font-bold text-slate-900">Support & Report Issue</h2>
-                  <p className="text-xs text-slate-500">Contact admin via WhatsApp, phone, or submit a support ticket</p>
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-xs space-y-5">
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">Support & Report Issue</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Contact admin via WhatsApp, phone, or submit a support ticket</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -510,38 +540,38 @@ export const SettingsScreen: React.FC = () => {
                     href="https://wa.me/255754000111"
                     target="_blank"
                     rel="noreferrer"
-                    className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 transition-all flex items-center gap-3"
+                    className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-50 transition-all flex items-center gap-3"
                   >
                     <div className="p-2.5 bg-emerald-600 text-white rounded-xl">
                       <MessageSquare className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-emerald-900">WhatsApp Support</p>
-                      <p className="text-[11px] text-emerald-700">Chat with BIGsta CEO Admin</p>
+                      <p className="text-xs font-bold text-emerald-900 dark:text-emerald-300">WhatsApp Support</p>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400">Chat with BIGsta CEO Admin</p>
                     </div>
                   </a>
 
                   <a
                     href="tel:+255754000111"
-                    className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-all flex items-center gap-3"
+                    className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-50 transition-all flex items-center gap-3"
                   >
                     <div className="p-2.5 bg-[#2563EB] text-white rounded-xl">
                       <PhoneCall className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-blue-900">Direct Call</p>
-                      <p className="text-[11px] text-blue-700">+255 754 000 111</p>
+                      <p className="text-xs font-bold text-blue-900 dark:text-blue-300">Direct Call</p>
+                      <p className="text-[11px] text-blue-700 dark:text-blue-400">+255 754 000 111</p>
                     </div>
                   </a>
                 </div>
 
                 <form onSubmit={handleSendSupport} className="space-y-4 pt-2">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Issue Category</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Issue Category</label>
                     <select
                       value={issueType}
                       onChange={(e) => setIssueType(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs font-semibold"
                     >
                       <option>Payment Verification</option>
                       <option>NIDA Form Export</option>
@@ -551,13 +581,13 @@ export const SettingsScreen: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Message Description</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Message Description</label>
                     <textarea
                       rows={3}
                       value={supportMessage}
                       onChange={(e) => setSupportMessage(e.target.value)}
                       placeholder="Describe your question or issue..."
-                      className="w-full p-3 rounded-xl border border-slate-300 text-xs"
+                      className="w-full p-3 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs"
                     />
                   </div>
 
@@ -573,27 +603,27 @@ export const SettingsScreen: React.FC = () => {
 
             {/* ADMIN EXCLUSIVE TAB: OCR CONFIG */}
             {authRole === 'admin' && activeTab === 'ocr_config' && (
-              <div className="bg-white rounded-2xl border border-purple-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-purple-100 pb-3">
-                  <h2 className="text-base font-bold text-purple-950 flex items-center gap-2">
-                    <Scan className="w-5 h-5 text-purple-700" /> OCR Engine & Auto-Approval Settings
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-purple-200 dark:border-purple-900 p-6 shadow-xs space-y-5">
+                <div className="border-b border-purple-100 dark:border-purple-900/40 pb-3">
+                  <h2 className="text-base font-bold text-purple-950 dark:text-purple-300 flex items-center gap-2">
+                    <Scan className="w-5 h-5 text-purple-700 dark:text-purple-400" /> OCR Engine & Auto-Approval Settings
                   </h2>
-                  <p className="text-xs text-purple-700">Configure receipt parser threshold and auto-approval rules</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-400">Configure receipt parser threshold and auto-approval rules</p>
                 </div>
 
                 <form onSubmit={handleSaveAdminSettings} className="space-y-4 max-w-lg">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">OCR Engine Provider</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">OCR Engine Provider</label>
                     <input
                       type="text"
                       value={adminForm.ocrProvider}
                       onChange={(e) => setAdminForm({ ...adminForm, ocrProvider: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-bold"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs font-bold"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Confidence Threshold ({adminForm.ocrConfidenceThreshold}%)</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Confidence Threshold ({adminForm.ocrConfidenceThreshold}%)</label>
                     <input
                       type="range"
                       min={50}
@@ -605,12 +635,12 @@ export const SettingsScreen: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Auto-Approval Rule Description</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Auto-Approval Rule Description</label>
                     <textarea
                       rows={2}
                       value={adminForm.autoApprovalRules}
                       onChange={(e) => setAdminForm({ ...adminForm, autoApprovalRules: e.target.value })}
-                      className="w-full p-3 rounded-xl border border-slate-300 text-xs"
+                      className="w-full p-3 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-xs"
                     />
                   </div>
 
@@ -626,21 +656,21 @@ export const SettingsScreen: React.FC = () => {
 
             {/* ADMIN EXCLUSIVE TAB: TOKEN CONFIG */}
             {authRole === 'admin' && activeTab === 'token_config' && (
-              <div className="bg-white rounded-2xl border border-purple-200 p-6 shadow-xs space-y-5">
-                <div className="border-b border-purple-100 pb-3">
-                  <h2 className="text-base font-bold text-purple-950 flex items-center gap-2">
-                    <Coins className="w-5 h-5 text-purple-700" /> Token Pricing & Limits
+              <div className="bg-white dark:bg-[#1E2328] rounded-2xl border border-purple-200 dark:border-purple-900 p-6 shadow-xs space-y-5">
+                <div className="border-b border-purple-100 dark:border-purple-900/40 pb-3">
+                  <h2 className="text-base font-bold text-purple-950 dark:text-purple-300 flex items-center gap-2">
+                    <Coins className="w-5 h-5 text-purple-700 dark:text-purple-400" /> Token Pricing & Limits
                   </h2>
                 </div>
 
                 <form onSubmit={handleSaveAdminSettings} className="space-y-4 max-w-lg">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Token Unit Price (TSh)</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Token Unit Price (TSh)</label>
                     <input
                       type="number"
                       value={adminForm.tokenPriceTsh}
                       onChange={(e) => setAdminForm({ ...adminForm, tokenPriceTsh: parseInt(e.target.value) || 2000 })}
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-bold text-purple-800"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#14171A] text-slate-900 dark:text-white text-sm font-bold text-purple-800 dark:text-purple-300"
                     />
                   </div>
 

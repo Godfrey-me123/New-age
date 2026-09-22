@@ -1231,7 +1231,7 @@ export const PasskeyManagerModal: React.FC = () => {
                 {filteredPaymentRequests.length === 0 ? (
                   <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
                     <Receipt className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-xs text-gray-600 font-medium">Hakuna maombi ya malipo kwa sasa.</p>
+                    <p className="text-xs text-gray-600 font-medium">No payment requests at this time.</p>
                   </div>
                 ) : (
                   filteredPaymentRequests.map((req) => (

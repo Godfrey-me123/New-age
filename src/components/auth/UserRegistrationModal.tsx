@@ -146,7 +146,7 @@ export const UserRegistrationModal: React.FC<UserRegistrationModalProps> = ({
           {/* Full Name */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Majina Kamili (Full Name) <span className="text-red-400">*</span>
+              Full Name <span className="text-red-400">*</span>
             </label>
             <div className="relative flex items-center">
               <User className="w-4 h-4 text-slate-400 absolute left-3.5" />
@@ -157,7 +157,7 @@ export const UserRegistrationModal: React.FC<UserRegistrationModalProps> = ({
                   setFullName(e.target.value);
                   if (errorMessage) setErrorMessage('');
                 }}
-                placeholder="mfano: Juma Ally Rashidi"
+                placeholder="e.g. Juma Ally Rashidi"
                 className="w-full pl-10 pr-4 py-2.5 bg-[#0B132B] border border-white/15 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-[#47A5FF] focus:ring-1 focus:ring-[#47A5FF]"
                 required
               />

@@ -52,7 +52,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
   onClose,
   onSelectInfoService,
 }) => {
-  const { setActiveScreen, activeScreen, authRole, logoutPasskey, setPasskeyManagerOpen } = useTemplateStore();
+  const { setActiveScreen, activeScreen, authRole, logoutPasskey, setPasskeyManagerOpen, manualRequests } = useTemplateStore();
 
   // Close drawer on Escape key
   useEffect(() => {
@@ -198,6 +198,222 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
           },
         ]),
     {
+      id: 'nida',
+      name: 'NIDA Services',
+      authority: 'National Identification Authority',
+      category: 'identity',
+      icon: UserCheck,
+      iconColor: 'text-[#47A5FF]',
+      status: 'active',
+      badgeText: 'Active',
+      action: () => {
+        setActiveScreen('nida');
+        onClose();
+      },
+      description: 'Instant auto-fill, verification & CR80 card generation for Front & Back National IDs.',
+      features: ['20-Digit ID Verification', 'Biometric Photo Upload', 'Digital Signature Pad', 'Barcode Sync'],
+    },
+    {
+      id: 'driving_license',
+      name: 'Driving License Services',
+      authority: 'Traffic & Vehicle Inspection',
+      category: 'civil',
+      icon: Car,
+      iconColor: 'text-amber-400',
+      status: 'active',
+      badgeText: 'Active',
+      action: () => {
+        setActiveScreen('driving_license');
+        onClose();
+      },
+      description: 'Driver permit issuance, class endorsements & digital driver identification cards.',
+      features: ['Class Endorsements (A, B, C, D, E)', 'Penalty Point Tracking', 'Digital QR Validation'],
+    },
+    {
+      id: 'nhif',
+      name: 'NHIF Membership Card',
+      authority: 'National Health Insurance Fund',
+      category: 'health',
+      icon: HeartPulse,
+      iconColor: 'text-rose-400',
+      status: 'active',
+      badgeText: 'Active',
+      action: () => {
+        setActiveScreen('nhif' as any);
+        onClose();
+      },
+      description: 'Healthcare membership smart cards, dependent coverage validation & biometric health passes.',
+      features: ['Principal & Dependent Mapping', 'Hospital Tier Endorsements', 'Smart Card Chip Specs'],
+    },
+    {
+      id: 'birth_certificate',
+      name: 'Birth Certificate Services',
+      authority: 'RITA Civil Registration',
+      category: 'civil',
+      icon: ScrollText,
+      iconColor: 'text-emerald-400',
+      status: 'coming_soon',
+      badgeText: (() => {
+        const req = manualRequests.find((r) => r.serviceId === 'birth_certificate');
+        if (!req) return 'Request Manual';
+        if (req.status === 'PENDING') return 'Admin Review';
+        if (req.status === 'PROCESSING') return 'On Progress';
+        if (req.status === 'APPROVED' || req.status === 'COMPLETED') return 'Accepted';
+        if (req.status === 'REJECTED') return 'Rejected';
+        return 'Request Manual';
+      })(),
+      action: () => {
+        onSelectInfoService?.({
+          id: 'birth_certificate',
+          name: 'Birth Certificate Services',
+          authority: 'RITA (Registration Insolvency and Trusteeship Agency)',
+          description: 'Official birth certificate issuance, verification & digital civil registry documentation.',
+          features: ['Civil Registration Archiving', 'Legal Certification Verification', 'Official Watermark Validation'],
+        });
+        onClose();
+      },
+    },
+    {
+      id: 'passport',
+      name: 'Passport Services',
+      authority: 'Immigration Services Department',
+      category: 'identity',
+      icon: Globe,
+      iconColor: 'text-cyan-400',
+      status: 'coming_soon',
+      badgeText: (() => {
+        const req = manualRequests.find((r) => r.serviceId === 'passport');
+        if (!req) return 'Request Manual';
+        if (req.status === 'PENDING') return 'Admin Review';
+        if (req.status === 'PROCESSING') return 'On Progress';
+        if (req.status === 'APPROVED' || req.status === 'COMPLETED') return 'Accepted';
+        if (req.status === 'REJECTED') return 'Rejected';
+        return 'Request Manual';
+      })(),
+      action: () => {
+        onSelectInfoService?.({
+          id: 'passport',
+          name: 'Passport Services',
+          authority: 'Immigration Services Department',
+          description: 'East African e-Passport booklet formatting, bio-data pages & travel credentials.',
+          features: ['ICAO 9303 Compliant MRZ', 'Biometric Chip Layout', 'Diplomatic & Ordinary Profiles'],
+        });
+        onClose();
+      },
+    },
+    {
+      id: 'tin',
+      name: 'TIN Services',
+      authority: 'Tanzania Revenue Authority',
+      category: 'finance',
+      icon: Receipt,
+      iconColor: 'text-violet-400',
+      status: 'coming_soon',
+      badgeText: (() => {
+        const req = manualRequests.find((r) => r.serviceId === 'tin');
+        if (!req) return 'Request Manual';
+        if (req.status === 'PENDING') return 'Admin Review';
+        if (req.status === 'PROCESSING') return 'On Progress';
+        if (req.status === 'APPROVED' || req.status === 'COMPLETED') return 'Accepted';
+        if (req.status === 'REJECTED') return 'Rejected';
+        return 'Request Manual';
+      })(),
+      action: () => {
+        onSelectInfoService?.({
+          id: 'tin',
+          name: 'TIN Services',
+          authority: 'Tanzania Revenue Authority (TRA)',
+          description: 'Taxpayer Identification Number cards, tax compliance credentials & PIN certificates.',
+          features: ['Taxpayer PIN Sync', 'QR Compliance Stamp', 'Corporate & Individual Formats'],
+        });
+        onClose();
+      },
+    },
+    {
+      id: 'business_license',
+      name: 'Business License Services',
+      authority: 'BRELA & Municipal Authorities',
+      category: 'finance',
+      icon: Building2,
+      iconColor: 'text-orange-400',
+      status: 'coming_soon',
+      badgeText: (() => {
+        const req = manualRequests.find((r) => r.serviceId === 'business_license');
+        if (!req) return 'Request Manual';
+        if (req.status === 'PENDING') return 'Admin Review';
+        if (req.status === 'PROCESSING') return 'On Progress';
+        if (req.status === 'APPROVED' || req.status === 'COMPLETED') return 'Accepted';
+        if (req.status === 'REJECTED') return 'Rejected';
+        return 'Request Manual';
+      })(),
+      action: () => {
+        onSelectInfoService?.({
+          id: 'business_license',
+          name: 'Business License Services',
+          authority: 'BRELA & Municipal Authorities',
+          description: 'Commercial enterprise registration certificates, municipal trade permits & corporate IDs.',
+          features: ['BRELA Certificate Layout', 'Annual Renewal Badges', 'Sector Trade Validation'],
+        });
+        onClose();
+      },
+    },
+    {
+      id: 'heslb',
+      name: 'HESLB Student Loans Services',
+      authority: 'Higher Education Students’ Loans Board',
+      category: 'education',
+      icon: GraduationCap,
+      iconColor: 'text-indigo-400',
+      status: 'coming_soon',
+      badgeText: (() => {
+        const req = manualRequests.find((r) => r.serviceId === 'heslb');
+        if (!req) return 'Request Manual';
+        if (req.status === 'PENDING') return 'Admin Review';
+        if (req.status === 'PROCESSING') return 'On Progress';
+        if (req.status === 'APPROVED' || req.status === 'COMPLETED') return 'Accepted';
+        if (req.status === 'REJECTED') return 'Rejected';
+        return 'Request Manual';
+      })(),
+      action: () => {
+        onSelectInfoService?.({
+          id: 'heslb',
+          name: 'HESLB Student Loans Services',
+          authority: 'Higher Education Students’ Loans Board (HESLB)',
+          description: 'Student beneficiary loan allocation cards, academic verification & repayment IDs.',
+          features: ['Index Number Verification', 'Institution Allocation Status', 'Beneficiary Smart Badges'],
+        });
+        onClose();
+      },
+    },
+    {
+      id: 'ajira',
+      name: 'Ajira Portal Services',
+      authority: 'Public Service Recruitment Secretariat',
+      category: 'education',
+      icon: Briefcase,
+      iconColor: 'text-teal-400',
+      status: 'coming_soon',
+      badgeText: (() => {
+        const req = manualRequests.find((r) => r.serviceId === 'ajira');
+        if (!req) return 'Request Manual';
+        if (req.status === 'PENDING') return 'Admin Review';
+        if (req.status === 'PROCESSING') return 'On Progress';
+        if (req.status === 'APPROVED' || req.status === 'COMPLETED') return 'Accepted';
+        if (req.status === 'REJECTED') return 'Rejected';
+        return 'Request Manual';
+      })(),
+      action: () => {
+        onSelectInfoService?.({
+          id: 'ajira',
+          name: 'Ajira Portal Services',
+          authority: 'Public Service Recruitment Secretariat (PSRS)',
+          description: 'Government job application portfolios, civil service recruitment IDs & applicant profiles.',
+          features: ['Civil Service Application Sync', 'Cadre Certificate Validation', 'Interview Pass Generation'],
+        });
+        onClose();
+      },
+    },
+    {
       id: 'downloads',
       name: 'Downloads',
       authority: 'Generated Files & History',
@@ -223,174 +439,6 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
       status: 'active',
       action: () => {
         setActiveScreen('settings');
-        onClose();
-      },
-    },
-    {
-      id: 'nida',
-      name: 'NIDA Services',
-      authority: 'National Identification Authority',
-      category: 'identity',
-      icon: UserCheck,
-      iconColor: 'text-[#47A5FF]',
-      status: 'active',
-      badgeText: 'Active',
-      action: () => {
-        setActiveScreen('nida');
-        onClose();
-      },
-      description: 'Instant auto-fill, verification & CR80 card generation for Front & Back National IDs.',
-      features: ['20-Digit ID Verification', 'Biometric Photo Upload', 'Digital Signature Pad', 'Barcode Sync'],
-    },
-    {
-      id: 'birth_certificate',
-      name: 'Birth Certificate Services',
-      authority: 'RITA Civil Registration',
-      category: 'civil',
-      icon: ScrollText,
-      iconColor: 'text-emerald-400',
-      status: 'coming_soon',
-      badgeText: 'Coming Soon',
-      action: () => {
-        onSelectInfoService?.({
-          id: 'birth_certificate',
-          name: 'Birth Certificate Services',
-          authority: 'RITA (Registration Insolvency and Trusteeship Agency)',
-          description: 'Official birth certificate issuance, verification & digital civil registry documentation.',
-          features: ['Civil Registration Archiving', 'Legal Certification Verification', 'Official Watermark Validation'],
-        });
-        onClose();
-      },
-    },
-    {
-      id: 'driving_license',
-      name: 'Driving License Services',
-      authority: 'Traffic & Vehicle Inspection',
-      category: 'civil',
-      icon: Car,
-      iconColor: 'text-amber-400',
-      status: 'active',
-      badgeText: 'Active',
-      action: () => {
-        setActiveScreen('driving_license');
-        onClose();
-      },
-      description: 'Driver permit issuance, class endorsements & digital driver identification cards.',
-      features: ['Class Endorsements (A, B, C, D, E)', 'Penalty Point Tracking', 'Digital QR Validation'],
-    },
-    {
-      id: 'passport',
-      name: 'Passport Services',
-      authority: 'Immigration Services Department',
-      category: 'identity',
-      icon: Globe,
-      iconColor: 'text-cyan-400',
-      status: 'coming_soon',
-      badgeText: 'Coming Soon',
-      action: () => {
-        onSelectInfoService?.({
-          id: 'passport',
-          name: 'Passport Services',
-          authority: 'Immigration Services Department',
-          description: 'East African e-Passport booklet formatting, bio-data pages & travel credentials.',
-          features: ['ICAO 9303 Compliant MRZ', 'Biometric Chip Layout', 'Diplomatic & Ordinary Profiles'],
-        });
-        onClose();
-      },
-    },
-    {
-      id: 'tin',
-      name: 'TIN Services',
-      authority: 'Tanzania Revenue Authority',
-      category: 'finance',
-      icon: Receipt,
-      iconColor: 'text-violet-400',
-      status: 'coming_soon',
-      badgeText: 'Coming Soon',
-      action: () => {
-        onSelectInfoService?.({
-          id: 'tin',
-          name: 'TIN Services',
-          authority: 'Tanzania Revenue Authority (TRA)',
-          description: 'Taxpayer Identification Number cards, tax compliance credentials & PIN certificates.',
-          features: ['Taxpayer PIN Sync', 'QR Compliance Stamp', 'Corporate & Individual Formats'],
-        });
-        onClose();
-      },
-    },
-    {
-      id: 'business_license',
-      name: 'Business License Services',
-      authority: 'BRELA & Municipal Authorities',
-      category: 'finance',
-      icon: Building2,
-      iconColor: 'text-orange-400',
-      status: 'coming_soon',
-      badgeText: 'Coming Soon',
-      action: () => {
-        onSelectInfoService?.({
-          id: 'business_license',
-          name: 'Business License Services',
-          authority: 'BRELA & Municipal Authorities',
-          description: 'Commercial enterprise registration certificates, municipal trade permits & corporate IDs.',
-          features: ['BRELA Certificate Layout', 'Annual Renewal Badges', 'Sector Trade Validation'],
-        });
-        onClose();
-      },
-    },
-    {
-      id: 'heslb',
-      name: 'HESLB Student Loans Services',
-      authority: 'Higher Education Students’ Loans Board',
-      category: 'education',
-      icon: GraduationCap,
-      iconColor: 'text-indigo-400',
-      status: 'coming_soon',
-      badgeText: 'Coming Soon',
-      action: () => {
-        onSelectInfoService?.({
-          id: 'heslb',
-          name: 'HESLB Student Loans Services',
-          authority: 'Higher Education Students’ Loans Board (HESLB)',
-          description: 'Student beneficiary loan allocation cards, academic verification & repayment IDs.',
-          features: ['Index Number Verification', 'Institution Allocation Status', 'Beneficiary Smart Badges'],
-        });
-        onClose();
-      },
-    },
-    {
-      id: 'nhif',
-      name: 'NHIF Membership Card',
-      authority: 'National Health Insurance Fund',
-      category: 'health',
-      icon: HeartPulse,
-      iconColor: 'text-rose-400',
-      status: 'active',
-      badgeText: 'Active',
-      action: () => {
-        setActiveScreen('nhif' as any);
-        onClose();
-      },
-      description: 'Healthcare membership smart cards, dependent coverage validation & biometric health passes.',
-      features: ['Principal & Dependent Mapping', 'Hospital Tier Endorsements', 'Smart Card Chip Specs'],
-    },
-    {
-      id: 'ajira',
-      name: 'Ajira Portal Services',
-      authority: 'Public Service Recruitment Secretariat',
-      category: 'education',
-      icon: Briefcase,
-      iconColor: 'text-teal-400',
-      status: 'coming_soon',
-      badgeText: 'Coming Soon',
-      action: () => {
-        onSelectInfoService?.({
-          id: 'ajira',
-          name: 'Ajira Portal Services',
-          authority: 'Public Service Recruitment Secretariat (PSRS)',
-          description: 'Government job application portfolios, civil service recruitment IDs & applicant profiles.',
-          features: ['Civil Service Application Sync', 'Cadre Certificate Validation', 'Interview Pass Generation'],
-        });
         onClose();
       },
     },
@@ -505,7 +553,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
                 className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left hover:bg-[#E7E9EB] text-[#000000] transition-all cursor-pointer border border-[#E7E9EB] bg-[#F8F9FA]"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-1.5 rounded-lg shrink-0 bg-[#000000] text-white">
+                  <div className="p-1.5 rounded-lg shrink-0 bg-[#E7E9EB] text-[#000000]">
                     <UserCheck className="w-4 h-4" />
                   </div>
                   <div className="truncate min-w-0">
@@ -614,7 +662,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
             className="w-full py-2.5 px-3 bg-red-600 hover:bg-red-700 border border-red-700 text-white font-black text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98"
           >
             <LogOut className="w-4 h-4 shrink-0" />
-            <span>Logout / Toka (Return to Gateway) ↩</span>
+            <span>Logout (Return to Gateway) ↩</span>
           </button>
 
           <div className="text-center pt-0.5">

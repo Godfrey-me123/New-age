@@ -430,8 +430,8 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
             {/* Readonly Card Status */}
             <div className="bg-[#FAF9F6] border border-[#E7E9EB] rounded-xl p-3 flex items-center justify-between text-xs mt-2">
               <span className="text-[#606060] font-medium">Membership Status:</span>
-              <span className="font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="font-bold text-emerald-700 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 Active
               </span>
             </div>

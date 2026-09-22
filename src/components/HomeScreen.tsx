@@ -25,6 +25,9 @@ import {
   ExternalLink,
   Phone,
   DownloadCloud,
+  Settings,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { ServiceMenuDrawer } from './navigation/ServiceMenuDrawer';
@@ -42,144 +45,311 @@ export interface ServiceItem {
   icon: React.ComponentType<{ className?: string }>;
   iconBg: string;
   iconColor: string;
-  status: 'active' | 'coming_soon';
+  status: 'active' | 'manual_request';
   badgeText: string;
   action: () => void;
   primaryActionLabel?: string;
   features?: string[];
+  isPinned?: boolean;
 }
 
 export const HomeScreen: React.FC = () => {
-  const { setActiveScreen, navigateSafely, loadSavedTemplates, authRole, logoutPasskey, setPasskeyManagerOpen, setManualAppModalOpen, submitManualRequest } = useTemplateStore();
+  const {
+    setActiveScreen,
+    navigateSafely,
+    loadSavedTemplates,
+    authRole,
+    setManualAppModalOpen,
+    manualRequests,
+  } = useTemplateStore();
 
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ServiceCategory>('all');
-  const [comingSoonService, setComingSoonService] = useState<ServiceItem | null>(null);
-  const [manualRequestService, setManualRequestService] = useState<ServiceItem | null>(null);
-  const [manualFullName, setManualFullName] = useState('');
-  const [manualWhatsapp, setManualWhatsapp] = useState('');
-  const [manualNormalPhone, setManualNormalPhone] = useState('');
-  const [manualSubmitSuccess, setManualSubmitSuccess] = useState(false);
   const [savedCount, setSavedCount] = useState<number>(0);
 
   // Load saved count on mount
   React.useEffect(() => {
-    loadSavedTemplates().then((list) => setSavedCount(list.length)).catch(() => {});
+    loadSavedTemplates()
+      .then((list) => setSavedCount(list.length))
+      .catch(() => {});
   }, [loadSavedTemplates]);
-
-  // Escape key listener for coming soon modal
-  React.useEffect(() => {
-    if (!comingSoonService) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setComingSoonService(null);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [comingSoonService]);
 
   const storeServices = useTemplateStore((state) => state.services);
 
   // Icon mapping for dynamic loading
-  const iconMap: Record<string, React.ComponentType<any>> = useMemo(() => ({
-    UserCheck,
-    ScrollText,
-    Car,
-    Globe,
-    Receipt,
-    Building2,
-    GraduationCap,
-    HeartPulse,
-    Briefcase,
-    Layers,
-  }), []);
+  const iconMap: Record<string, React.ComponentType<any>> = useMemo(
+    () => ({
+      UserCheck,
+      ScrollText,
+      Car,
+      Globe,
+      Receipt,
+      Building2,
+      GraduationCap,
+      HeartPulse,
+      Briefcase,
+      Layers,
+    }),
+    []
+  );
 
   // Color configurations for services
-  const colorMap: Record<string, { iconBg: string; iconColor: string }> = useMemo(() => ({
-    nida: { iconBg: 'bg-blue-500/15 border-blue-500/30', iconColor: 'text-[#47A5FF]' },
-    driving_license: { iconBg: 'bg-amber-500/15 border-amber-500/30', iconColor: 'text-amber-400' },
-    birth_certificate: { iconBg: 'bg-emerald-500/15 border-emerald-500/30', iconColor: 'text-emerald-400' },
-    passport: { iconBg: 'bg-cyan-500/15 border-cyan-500/30', iconColor: 'text-cyan-400' },
-    tin: { iconBg: 'bg-violet-500/15 border-violet-500/30', iconColor: 'text-violet-400' },
-    business_license: { iconBg: 'bg-orange-500/15 border-orange-500/30', iconColor: 'text-orange-400' },
-    heslb: { iconBg: 'bg-indigo-500/15 border-indigo-500/30', iconColor: 'text-indigo-400' },
-    nhif: { iconBg: 'bg-rose-500/15 border-rose-500/30', iconColor: 'text-rose-400' },
-    ajira: { iconBg: 'bg-teal-500/15 border-teal-500/30', iconColor: 'text-teal-400' },
-    custom_studio: { iconBg: 'bg-blue-600/20 border-blue-500/40', iconColor: 'text-blue-400' },
-  }), []);
-
-  // Define services according to instructions
-  const services: ServiceItem[] = useMemo(
-    () => {
-      const list: ServiceItem[] = storeServices.map((s) => {
-        const colors = colorMap[s.id] || { iconBg: 'bg-gray-500/15 border-gray-500/30', iconColor: 'text-gray-400' };
-        const IconComp = iconMap[s.iconName] || ScrollText;
-
-        const action = s.id === 'nida'
-          ? () => navigateSafely('nida', 'nida')
-          : s.id === 'driving_license'
-          ? () => navigateSafely('driving_license', 'driving_license')
-          : s.id === 'nhif'
-          ? () => navigateSafely('nhif', 'nhif')
-          : () => navigateSafely('nida', s.id);
-
-        return {
-          id: s.id,
-          name: s.name,
-          authority: s.authority,
-          description: s.description,
-          category: s.category as ServiceCategory,
-          icon: IconComp,
-          iconBg: colors.iconBg,
-          iconColor: colors.iconColor,
-          status: s.active ? ('active' as const) : ('coming_soon' as const),
-          badgeText: s.active ? `Active • Cost: ${s.tokenCost ?? 1} Token${(s.tokenCost ?? 1) > 1 ? 's' : ''}` : 'Coming Soon',
-          action,
-          primaryActionLabel: s.active ? 'Open' : undefined,
-          features: s.features,
-        };
-      });
-
-      // Append Custom Card Studio or Request Manual Application for standard users
-      if (authRole === 'admin') {
-        list.push({
-          id: 'custom_studio',
-          name: 'Custom Card Studio',
-          authority: 'ID Template Designer',
-          description: 'Create custom employee badges, student cards, event passes or upload existing card backgrounds.',
-          category: 'all',
-          icon: Layers,
-          iconBg: 'bg-blue-600/20 border-blue-500/40',
-          iconColor: 'text-blue-400',
-          status: 'active',
-          badgeText: 'Active • Millimeter Canvas',
-          action: () => setActiveScreen('upload'),
-          primaryActionLabel: 'Open Card Studio',
-          features: ['Millimeter Precision (CR80)', 'Custom Image Backgrounds', 'Smart Magnetic Snap', 'PDF & SVG Export'],
-        });
-      } else {
-        const manualService: ServiceItem = {
-          id: 'custom_studio',
-          name: 'Request Manual Application',
-          authority: 'Support & Assistance',
-          description: 'Request help from our staff for complex applications or custom card designs not available in the automated portal.',
-          category: 'all',
-          icon: Phone,
-          iconBg: 'bg-blue-600/20 border-blue-500/40',
-          iconColor: 'text-blue-400',
-          status: 'active',
-          badgeText: 'Active • Manual Support',
-          action: () => setManualRequestService(manualService),
-          primaryActionLabel: 'Request Assistance',
-          features: ['Direct Staff Support', 'Custom Document Design', 'Application Review', 'WhatsApp Support'],
-        };
-        list.push(manualService);
-      }
-
-      return list;
-    },
-    [storeServices, setActiveScreen, colorMap, iconMap, authRole]
+  const colorMap: Record<string, { iconBg: string; iconColor: string }> = useMemo(
+    () => ({
+      nida: { iconBg: 'bg-blue-500/15 border-blue-500/30', iconColor: 'text-[#47A5FF]' },
+      driving_license: { iconBg: 'bg-amber-500/15 border-amber-500/30', iconColor: 'text-amber-400' },
+      nhif: { iconBg: 'bg-rose-500/15 border-rose-500/30', iconColor: 'text-rose-400' },
+      custom_studio: { iconBg: 'bg-blue-600/20 border-blue-500/40', iconColor: 'text-blue-400' },
+      birth_certificate: { iconBg: 'bg-emerald-500/15 border-emerald-500/30', iconColor: 'text-emerald-400' },
+      passport: { iconBg: 'bg-cyan-500/15 border-cyan-500/30', iconColor: 'text-cyan-400' },
+      tin: { iconBg: 'bg-violet-500/15 border-violet-500/30', iconColor: 'text-violet-400' },
+      business_license: { iconBg: 'bg-orange-500/15 border-orange-500/30', iconColor: 'text-orange-400' },
+      heslb: { iconBg: 'bg-indigo-500/15 border-indigo-500/30', iconColor: 'text-indigo-400' },
+      ajira: { iconBg: 'bg-teal-500/15 border-teal-500/30', iconColor: 'text-teal-400' },
+    }),
+    []
   );
+
+  // Helper to get manual request state for a service
+  const getManualRequestInfo = (serviceId: string) => {
+    const req = manualRequests.find((r) => r.serviceId === serviceId);
+    if (!req) {
+      return {
+        hasRequest: false,
+        status: null,
+        badgeText: 'Request Manual Application',
+        badgeBg: 'bg-[#101010]/10 text-[#101010]',
+        actionLabel: 'Request Application',
+        stateText: 'Assistance Available',
+      };
+    }
+
+    switch (req.status) {
+      case 'PENDING':
+        return {
+          hasRequest: true,
+          status: 'PENDING',
+          badgeText: 'Under Admin Review',
+          badgeBg: 'bg-amber-500/15 text-amber-900 border border-amber-500/30',
+          actionLabel: 'Check State',
+          stateText: 'State: Under Admin Review',
+        };
+      case 'PROCESSING':
+        return {
+          hasRequest: true,
+          status: 'PROCESSING',
+          badgeText: 'On Progress',
+          badgeBg: 'bg-blue-500/15 text-blue-900 border border-blue-500/30',
+          actionLabel: 'Check State',
+          stateText: 'State: On Progress',
+        };
+      case 'APPROVED':
+      case 'COMPLETED':
+        return {
+          hasRequest: true,
+          status: 'APPROVED',
+          badgeText: 'Accepted • Get Ready',
+          badgeBg: 'bg-emerald-500/15 text-emerald-900 border border-emerald-500/30',
+          actionLabel: 'View Details',
+          stateText: 'State: Accepted • Get Ready for Call/WhatsApp',
+        };
+      case 'REJECTED':
+        return {
+          hasRequest: true,
+          status: 'REJECTED',
+          badgeText: 'Rejected',
+          badgeBg: 'bg-rose-500/15 text-rose-900 border border-rose-500/30',
+          actionLabel: 'Review / Resubmit',
+          stateText: 'State: Rejected',
+        };
+      default:
+        return {
+          hasRequest: true,
+          status: 'PENDING',
+          badgeText: 'Under Admin Review',
+          badgeBg: 'bg-amber-500/15 text-amber-900 border border-amber-500/30',
+          actionLabel: 'Check State',
+          stateText: 'State: Under Admin Review',
+        };
+    }
+  };
+
+  // Build the complete list of services
+  const services: ServiceItem[] = useMemo(() => {
+    // 1. PINNED & READY SERVICES (Active)
+    const pinnedReady: ServiceItem[] = [
+      {
+        id: 'nida',
+        name: 'NIDA Services',
+        authority: 'National Identification Authority',
+        description:
+          'Instant auto-fill, verification & CR80 card generation for Front & Back National IDs.',
+        category: 'identity',
+        icon: UserCheck,
+        iconBg: colorMap.nida.iconBg,
+        iconColor: colorMap.nida.iconColor,
+        status: 'active',
+        badgeText: 'Pinned • Ready (1 Token)',
+        action: () => navigateSafely('nida', 'nida'),
+        primaryActionLabel: 'Open Service',
+        features: ['20-Digit ID Verification', 'Biometric Photo Upload', 'Digital Signature Pad', 'Barcode Sync'],
+        isPinned: true,
+      },
+      {
+        id: 'driving_license',
+        name: 'Driving License Services',
+        authority: 'Traffic & Vehicle Inspection',
+        description:
+          'Driver permit issuance, class endorsements & digital driver identification cards.',
+        category: 'civil',
+        icon: Car,
+        iconBg: colorMap.driving_license.iconBg,
+        iconColor: colorMap.driving_license.iconColor,
+        status: 'active',
+        badgeText: 'Pinned • Ready (1 Token)',
+        action: () => navigateSafely('driving_license', 'driving_license'),
+        primaryActionLabel: 'Open Service',
+        features: ['Class Endorsements (A, B, C, D, E)', 'Penalty Point Tracking', 'Digital QR Validation'],
+        isPinned: true,
+      },
+      {
+        id: 'nhif',
+        name: 'NHIF Membership Card',
+        authority: 'National Health Insurance Fund',
+        description:
+          'Healthcare membership smart cards, dependent coverage validation & biometric health passes.',
+        category: 'health',
+        icon: HeartPulse,
+        iconBg: colorMap.nhif.iconBg,
+        iconColor: colorMap.nhif.iconColor,
+        status: 'active',
+        badgeText: 'Pinned • Ready (1 Token)',
+        action: () => navigateSafely('nhif', 'nhif'),
+        primaryActionLabel: 'Open Service',
+        features: ['Principal & Dependent Mapping', 'Hospital Tier Endorsements', 'Smart Card Chip Specs'],
+        isPinned: true,
+      },
+    ];
+
+    if (authRole === 'admin') {
+      pinnedReady.push({
+        id: 'custom_studio',
+        name: 'Custom Card Studio',
+        authority: 'ID Template Designer',
+        description:
+          'Create custom employee badges, student cards, event passes or upload existing card backgrounds.',
+        category: 'all',
+        icon: Layers,
+        iconBg: colorMap.custom_studio.iconBg,
+        iconColor: colorMap.custom_studio.iconColor,
+        status: 'active',
+        badgeText: 'Pinned • Card Studio',
+        action: () => setActiveScreen('upload'),
+        primaryActionLabel: 'Open Studio',
+        features: ['Millimeter Precision (CR80)', 'Custom Image Backgrounds', 'Smart Magnetic Snap', 'PDF & SVG Export'],
+        isPinned: true,
+      });
+    }
+
+    // 2. MANUAL APPLICATION SERVICES (formerly "Coming Soon")
+    const manualServicesRaw = [
+      {
+        id: 'birth_certificate',
+        name: 'Birth Certificate Services',
+        authority: 'RITA Civil Registration',
+        description:
+          'Birth certificate issuance, verification & digital civil registry documentation assistance.',
+        category: 'civil' as ServiceCategory,
+        icon: ScrollText,
+        iconBg: colorMap.birth_certificate.iconBg,
+        iconColor: colorMap.birth_certificate.iconColor,
+        features: ['Birth Certificate Archiving', 'Legal Certification', 'Official Civil Registry Sync'],
+      },
+      {
+        id: 'passport',
+        name: 'Passport Services',
+        authority: 'Immigration Services Department',
+        description:
+          'East African e-Passport booklet formatting, bio-data pages & travel credentials assistance.',
+        category: 'identity' as ServiceCategory,
+        icon: Globe,
+        iconBg: colorMap.passport.iconBg,
+        iconColor: colorMap.passport.iconColor,
+        features: ['ICAO 9303 Compliant MRZ', 'Biometric Chip Layout', 'Diplomatic & Ordinary Profiles'],
+      },
+      {
+        id: 'tin',
+        name: 'TIN Services',
+        authority: 'Tanzania Revenue Authority',
+        description:
+          'Taxpayer Identification Number cards, tax compliance credentials & PIN certificates assistance.',
+        category: 'finance' as ServiceCategory,
+        icon: Receipt,
+        iconBg: colorMap.tin.iconBg,
+        iconColor: colorMap.tin.iconColor,
+        features: ['Taxpayer PIN Sync', 'QR Compliance Stamp', 'Corporate & Individual Formats'],
+      },
+      {
+        id: 'business_license',
+        name: 'Business License Services',
+        authority: 'BRELA & Municipal Authorities',
+        description:
+          'Commercial enterprise registration certificates, municipal trade permits & corporate IDs assistance.',
+        category: 'finance' as ServiceCategory,
+        icon: Building2,
+        iconBg: colorMap.business_license.iconBg,
+        iconColor: colorMap.business_license.iconColor,
+        features: ['BRELA Certificate Layout', 'Annual Renewal Badges', 'Sector Trade Validation'],
+      },
+      {
+        id: 'heslb',
+        name: 'HESLB Student Loans Services',
+        authority: 'Higher Education Students’ Loans Board',
+        description:
+          'Student beneficiary loan allocation cards, academic verification & repayment IDs assistance.',
+        category: 'education' as ServiceCategory,
+        icon: GraduationCap,
+        iconBg: colorMap.heslb.iconBg,
+        iconColor: colorMap.heslb.iconColor,
+        features: ['Index Number Verification', 'Institution Allocation Status', 'Beneficiary Smart Badges'],
+      },
+      {
+        id: 'ajira',
+        name: 'Ajira Portal Services',
+        authority: 'Public Service Recruitment Secretariat',
+        description:
+          'Government job application portfolios, civil service recruitment IDs & applicant profiles assistance.',
+        category: 'education' as ServiceCategory,
+        icon: Briefcase,
+        iconBg: colorMap.ajira.iconBg,
+        iconColor: colorMap.ajira.iconColor,
+        features: ['Civil Service Application Sync', 'Cadre Certificate Validation', 'Interview Pass Generation'],
+      },
+    ];
+
+    const manualItems: ServiceItem[] = manualServicesRaw.map((s) => {
+      const info = getManualRequestInfo(s.id);
+      return {
+        id: s.id,
+        name: s.name,
+        authority: s.authority,
+        description: s.description,
+        category: s.category,
+        icon: s.icon,
+        iconBg: s.iconBg,
+        iconColor: s.iconColor,
+        status: 'manual_request',
+        badgeText: info.badgeText,
+        action: () => setManualAppModalOpen(true, s),
+        primaryActionLabel: info.actionLabel,
+        features: s.features,
+        isPinned: false,
+      };
+    });
+
+    return [...pinnedReady, ...manualItems];
+  }, [authRole, colorMap, manualRequests, navigateSafely, setActiveScreen, setManualAppModalOpen]);
 
   // Filtered services
   const filteredServices = useMemo(() => {
@@ -189,15 +359,13 @@ export const HomeScreen: React.FC = () => {
         service.category === selectedCategory ||
         service.id === 'custom_studio';
 
-      const isReady = service.status === 'active';
-
       const matchesSearch =
         searchQuery.trim() === '' ||
         service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.authority.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesCategory && matchesSearch && isReady;
+      return matchesCategory && matchesSearch;
     });
   }, [services, selectedCategory, searchQuery]);
 
@@ -208,14 +376,6 @@ export const HomeScreen: React.FC = () => {
     { key: 'finance', label: 'Revenue & Business' },
     { key: 'health', label: 'Health & Medical' },
   ];
-
-  const handleCardClick = (service: ServiceItem) => {
-    if (service.status === 'active') {
-      service.action();
-    } else {
-      setComingSoonService(service);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#D8D2CE] text-[#101010] flex flex-col selection:bg-[#B5A5FF] selection:text-[#101010]">
@@ -253,14 +413,14 @@ export const HomeScreen: React.FC = () => {
         {/* Header Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
-              type="button"
-              onClick={() => setActiveScreen('downloads')}
-              className="p-2 sm:p-2.5 rounded-xl bg-[#E7E2DE] hover:bg-[#dad5d0] text-[#101010] border border-[#dad5d0] transition-colors flex items-center justify-center cursor-pointer"
-              title="Downloads Center"
-            >
-              <DownloadCloud className="w-5 h-5 text-blue-600" />
-            </button>
-          
+            type="button"
+            onClick={() => setActiveScreen('downloads')}
+            className="p-2 sm:p-2.5 rounded-xl bg-[#E7E2DE] hover:bg-[#dad5d0] text-[#101010] border border-[#dad5d0] transition-colors flex items-center justify-center cursor-pointer"
+            title="Downloads Center"
+          >
+            <DownloadCloud className="w-5 h-5 text-blue-600" />
+          </button>
+
           {/* Custom Designer Direct Button (Admin Only) */}
           {authRole === 'admin' && (
             <button
@@ -299,44 +459,26 @@ export const HomeScreen: React.FC = () => {
         isOpen={isMenuDrawerOpen}
         onClose={() => setIsMenuDrawerOpen(false)}
         onSelectInfoService={(srv) => {
-          const matched = services.find((s) => s.id === srv.id);
-          if (matched) {
-            setComingSoonService(matched);
-          } else {
-            setComingSoonService({
-              id: srv.id,
-              name: srv.name,
-              authority: srv.authority,
-              description: srv.description,
-              category: 'all',
-              icon: CreditCard,
-              iconBg: 'bg-[#B5A5FF]',
-              iconColor: 'text-[#101010]',
-              status: 'coming_soon',
-              badgeText: 'Coming Soon',
-              action: () => {},
-              features: srv.features,
-            });
-          }
+          setManualAppModalOpen(true, srv);
         }}
       />
 
       {/* MAIN CONTAINER */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-8 py-4 sm:py-10 flex flex-col pb-20 sm:pb-10">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-8 flex flex-col pb-20 sm:pb-12">
         {/* 2. WELCOME SECTION */}
-        <div className="mb-4 sm:mb-10 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-[#E7E2DE]">
+        <div className="mb-4 sm:mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-[#E7E2DE]">
           <div className="space-y-1 sm:space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-[#E7E2DE] border border-[#dad5d0] text-[#101010] text-[11px] sm:text-xs font-bold tracking-wide mb-0.5 sm:mb-1">
               <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#101010]" />
               <span>Official Document Services</span>
             </div>
 
-            <h1 className="text-xl sm:text-4xl font-extrabold text-[#101010] tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-[#101010] tracking-tight">
               Choose a Service
             </h1>
 
             <p className="text-[#101010]/80 text-sm sm:text-base max-w-2xl leading-relaxed font-medium hidden sm:block">
-              Select the service you want to continue with. Auto-fill verified credentials, generate compliant ID templates, or customize credentials with precision.
+              Select an active verified service, or request manual document application support from our administration desk.
             </p>
           </div>
 
@@ -363,8 +505,8 @@ export const HomeScreen: React.FC = () => {
         </div>
 
         {/* Category Filters (Horizontal Action Row) */}
-        <div className="mb-6">
-          <HorizontalActionRow className="gap-2.5 pb-1">
+        <div className="mb-5 sm:mb-6">
+          <HorizontalActionRow className="gap-2 pb-1">
             {categories.map((cat) => {
               const isActive = selectedCategory === cat.key;
               return (
@@ -372,7 +514,9 @@ export const HomeScreen: React.FC = () => {
                   key={cat.key}
                   type="button"
                   onClick={() => setSelectedCategory(cat.key)}
-                  className={`filter-chip cursor-pointer transition-all ${isActive ? 'active shadow-sm font-bold' : 'font-semibold hover:bg-[#dad5d0]'}`}
+                  className={`filter-chip cursor-pointer transition-all ${
+                    isActive ? 'active shadow-sm font-bold' : 'font-semibold hover:bg-[#dad5d0]'
+                  }`}
                 >
                   {cat.label}
                 </button>
@@ -381,7 +525,7 @@ export const HomeScreen: React.FC = () => {
           </HorizontalActionRow>
         </div>
 
-        {/* 3. SERVICE SELECTION GRID */}
+        {/* 3. VERTICAL SERVICES LIST (ONE BELOW THE OTHER) */}
         {filteredServices.length === 0 ? (
           <div className="py-16 text-center bg-[#E7E2DE] rounded-[28px] border-none p-8 shadow-xs">
             <Search className="w-8 h-8 text-[#101010]/60 mx-auto mb-3" />
@@ -401,345 +545,110 @@ export const HomeScreen: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 pb-8 sm:pb-12">
+          <div className="flex flex-col gap-3.5 sm:gap-4 pb-6">
             {filteredServices.map((service, idx) => {
               const IconComponent = service.icon;
-              const isActive = service.status === 'active';
+              const isPinnedReady = service.status === 'active';
+              const manualInfo = getManualRequestInfo(service.id);
 
-              // Determine card class mapping according to instructions:
-              // - NIDA Services -> #B5A5FF (.card-nida)
-              // - Custom Studio -> #FF9A5A (.card-highlight)
-              // - Birth Certificate / Urgent -> #FF6839 (.card-urgent)
-              // - Others -> #E7E2DE (.card-default)
+              // Background theme based on service type
               let cardBgClass = 'card-default';
               if (service.id === 'nida') {
                 cardBgClass = 'card-nida';
-              } else if (service.id === 'custom_studio') {
+              } else if (service.id === 'driving_license') {
                 cardBgClass = 'card-highlight';
-              } else if (service.id === 'birth_certificate') {
+              } else if (service.id === 'nhif') {
                 cardBgClass = 'card-urgent';
               }
 
               return (
                 <div
                   key={`${service.id}-${idx}`}
-                  onClick={() => handleCardClick(service)}
+                  id={`service-card-${service.id}`}
+                  onClick={() => service.action()}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      handleCardClick(service);
+                      service.action();
                     }
                   }}
-                  className={`card ${cardBgClass} transition-all duration-200 hover:-translate-y-1 active:scale-[0.99] cursor-pointer select-none group min-h-0 sm:min-h-[220px] w-full max-w-full`}
+                  className={`card ${cardBgClass} transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer select-none group w-full p-4 sm:p-5 flex flex-col justify-between`}
                 >
-                  {/* Top Card Row: Icon & Status Badge */}
-                  <div>
-                    <div className="flex items-center sm:items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-4">
-                      {/* Icon */}
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#101010] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="flex items-start justify-between gap-3 sm:gap-4">
+                    {/* Icon & Details */}
+                    <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#E7E2DE] text-[#101010] border border-[#dad5d0] flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                         <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
                       </div>
 
-                      {/* Status Badge */}
-                      <div className="shrink-0">
-                        {isActive ? (
-                          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-extrabold bg-[#101010] text-white shadow-xs">
-                            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#B5A5FF] animate-pulse" />
-                            <span className="hidden sm:inline">{service.badgeText}</span>
-                            <span className="sm:hidden">Active</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#101010]/10 text-[#101010]">
-                            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#101010]" />
-                            <span className="hidden sm:inline">Coming Soon</span>
-                            <span className="sm:hidden">Soon</span>
-                          </span>
-                        )}
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="card-title text-sm sm:text-base font-bold text-[#101010] truncate">
+                            {service.name}
+                          </h3>
+
+                          {/* Pinned Ready or Manual Status Badge */}
+                          {isPinnedReady ? (
+                            <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#101010] text-white shadow-xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#B5A5FF] animate-pulse" />
+                              <span>{service.badgeText}</span>
+                            </span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${manualInfo.badgeBg}`}
+                            >
+                              {manualInfo.status === 'PENDING' ? (
+                                <Clock className="w-3 h-3 text-amber-600 animate-spin" />
+                              ) : manualInfo.status === 'PROCESSING' ? (
+                                <RefreshCw className="w-3 h-3 text-blue-600 animate-spin" />
+                              ) : manualInfo.status === 'APPROVED' ? (
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              ) : manualInfo.status === 'REJECTED' ? (
+                                <AlertCircle className="w-3 h-3 text-rose-600" />
+                              ) : (
+                                <Phone className="w-3 h-3 text-[#101010]" />
+                              )}
+                              <span>{manualInfo.badgeText}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-xs font-semibold text-[#101010]/70 mt-0.5">
+                          {service.authority}
+                        </p>
+
+                        <p className="card-description text-xs text-[#101010]/80 mt-1 line-clamp-2">
+                          {service.description}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Service Name & Authority (Authority hidden on mobile for Title-Only cards) */}
-                    <div className="mb-1 sm:mb-2">
-                      <h3 className="card-title text-sm sm:text-lg font-bold text-[#101010] truncate sm:whitespace-normal">
-                        {service.name}
-                      </h3>
-                      <p className="text-xs font-bold text-[#101010]/70 hidden sm:block">
-                        {service.authority}
-                      </p>
+                    {/* Action Arrow Button */}
+                    <div className="flex items-center gap-2 shrink-0 self-center">
+                      <span className="text-xs font-extrabold text-[#101010] hidden sm:inline">
+                        {service.primaryActionLabel || 'Open'}
+                      </span>
+                      <button
+                        type="button"
+                        className="card-arrow-btn w-8 h-8 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform shadow-md shrink-0 flex items-center justify-center"
+                        title={service.name}
+                      >
+                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
                     </div>
-
-                    {/* Short Description (Hidden on mobile for Title-Only cards) */}
-                    <p className="card-description line-clamp-2 hidden sm:block">
-                      {service.description}
-                    </p>
-                  </div>
-
-                  {/* Circular Action Arrow Button */}
-                  <div className="mt-2.5 sm:mt-4 pt-2 sm:pt-3 border-t border-black/10 flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-[#101010]">
-                      {isActive ? (service.primaryActionLabel || 'Open') : 'Info'}
-                    </span>
-
-                    <button
-                      type="button"
-                      className="card-arrow-btn w-8 h-8 sm:w-11 sm:h-11 group-hover:scale-110 transition-transform shadow-md shrink-0 flex items-center justify-center"
-                      title={isActive ? service.name : 'Coming Soon'}
-                    >
-                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
                   </div>
                 </div>
               );
             })}
+
           </div>
         )}
-
-        {/* FOOTER QUICK ACTIONS / SYSTEM CAPABILITIES */}
-        <div className="mt-auto pt-6 border-t border-[#E7E2DE] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#101010]/70 font-medium">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#101010]" />
-            <span>CR80 Millimeter Precision Engine • Tanzania Standards Compliant</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setActiveScreen('upload')}
-              className="text-[#101010] hover:underline font-bold cursor-pointer"
-            >
-              Upload Card Background
-            </button>
-            <span>•</span>
-          {authRole === 'admin' && (
-            <button
-              type="button"
-              onClick={() => setActiveScreen('templates')}
-              className="text-[#101010] hover:underline font-bold cursor-pointer"
-            >
-              Preset Templates
-            </button>
-          )}
-          </div>
-        </div>
 
         {/* Global Footer */}
         <AppFooter />
       </main>
-
-      {/* COMING SOON MODAL */}
-      {comingSoonService && (
-        <div
-          onClick={() => setComingSoonService(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-[#E7E2DE] border-none rounded-[28px] max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-left text-[#101010] cursor-default"
-          >
-            <button
-              type="button"
-              onClick={() => setComingSoonService(null)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-[#101010]/10 text-[#101010] hover:bg-[#101010] hover:text-white transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#101010] text-white shadow-xs">
-                {React.createElement(comingSoonService.icon, {
-                  className: 'w-6 h-6 stroke-[2.2]',
-                })}
-              </div>
-
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#101010]/10 text-[#101010]">
-                  Feature In Development
-                </span>
-                <h3 className="text-lg font-bold text-[#101010] mt-1">
-                  {comingSoonService.name}
-                </h3>
-              </div>
-            </div>
-
-            <p className="text-xs sm:text-sm text-[#101010]/80 leading-relaxed mb-4 font-medium">
-              {comingSoonService.description}
-            </p>
-
-            <div className="p-4 bg-[#D8D2CE] rounded-2xl mb-5 space-y-2">
-              <span className="text-[11px] font-extrabold text-[#101010] block uppercase tracking-wider">
-                Planned Features:
-              </span>
-              <ul className="space-y-1.5 text-xs text-[#101010]">
-                {comingSoonService.features?.map((feat, idx) => (
-                  <li key={idx} className="flex items-center gap-2 font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#101010] shrink-0" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const srv = comingSoonService;
-                  setComingSoonService(null);
-                  setManualAppModalOpen(true, srv);
-                }}
-                className="w-full sm:flex-1 py-3 px-5 bg-[#101010] hover:bg-[#222222] text-white rounded-2xl text-xs font-extrabold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Phone className="w-4 h-4" />
-                <span>Request Manual Application</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setComingSoonService(null)}
-                className="w-full sm:w-auto py-3 px-5 bg-[#D8D2CE] hover:bg-[#dad5d0] text-[#101010] rounded-2xl text-xs font-bold transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MANUAL APPLICATION REQUEST FORM MODAL */}
-      {manualRequestService && (
-        <div
-          onClick={() => setManualRequestService(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-[#E7E2DE] border-none rounded-[28px] max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-left text-[#101010] cursor-default"
-          >
-            <button
-              type="button"
-              onClick={() => setManualRequestService(null)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-[#101010]/10 text-[#101010] hover:bg-[#101010] hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#101010] text-white shadow-xs">
-                {React.createElement(manualRequestService.icon, {
-                  className: 'w-6 h-6 stroke-[2.2]',
-                })}
-              </div>
-
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#101010]/10 text-[#101010]">
-                  Manual Assistance Form
-                </span>
-                <h3 className="text-lg font-bold text-[#101010] mt-1">
-                  {manualRequestService.name}
-                </h3>
-              </div>
-            </div>
-
-            {manualSubmitSuccess ? (
-              <div className="py-8 text-center space-y-4">
-                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h4 className="text-base font-extrabold text-[#101010]">Request Submitted Successfully!</h4>
-                <p className="text-xs text-[#101010]/70 max-w-xs mx-auto">
-                  Your manual application has been received. Our administrators will review your details and contact you via WhatsApp or phone call.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setManualRequestService(null)}
-                  className="w-full py-3 bg-[#101010] text-white text-xs font-bold rounded-2xl hover:bg-[#252525] transition-colors cursor-pointer"
-                >
-                  Done
-                </button>
-              </div>
-            ) : (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!manualFullName.trim() || !manualWhatsapp.trim()) {
-                    alert('Please enter your full name and WhatsApp contact number.');
-                    return;
-                  }
-                  submitManualRequest({
-                    serviceId: manualRequestService.id,
-                    serviceName: manualRequestService.name,
-                    fullName: manualFullName,
-                    whatsappNumber: manualWhatsapp,
-                    normalNumber: manualNormalPhone || manualWhatsapp,
-                  });
-                  setManualSubmitSuccess(true);
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-[#101010]/80 mb-1.5">
-                    Applicant Full Names *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={manualFullName}
-                    onChange={(e) => setManualFullName(e.target.value)}
-                    placeholder="e.g. Juma Ally Rashidi"
-                    className="w-full px-4 py-3 bg-white border border-[#C8C2BE] rounded-xl text-xs font-semibold text-[#101010] focus:outline-none focus:border-[#101010]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-[#101010]/80 mb-1.5">
-                    WhatsApp Contact Number *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={manualWhatsapp}
-                    onChange={(e) => setManualWhatsapp(e.target.value)}
-                    placeholder="e.g. +255 712 345 678"
-                    className="w-full px-4 py-3 bg-white border border-[#C8C2BE] rounded-xl text-xs font-semibold text-[#101010] focus:outline-none focus:border-[#101010]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-[#101010]/80 mb-1.5">
-                    Normal Call Contact Number
-                  </label>
-                  <input
-                    type="text"
-                    value={manualNormalPhone}
-                    onChange={(e) => setManualNormalPhone(e.target.value)}
-                    placeholder="e.g. 0712 345 678 (Optional if same as WhatsApp)"
-                    className="w-full px-4 py-3 bg-white border border-[#C8C2BE] rounded-xl text-xs font-semibold text-[#101010] focus:outline-none focus:border-[#101010]"
-                  />
-                </div>
-
-                <div className="pt-2 flex items-center gap-3">
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 bg-[#101010] hover:bg-[#222222] text-white rounded-2xl text-xs font-extrabold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <ScrollText className="w-4 h-4" />
-                    <span>Submit Application</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setManualRequestService(null)}
-                    className="py-3 px-5 bg-[#D8D2CE] hover:bg-[#dad5d0] text-[#101010] rounded-2xl text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -33,11 +33,25 @@ import { UnsavedChangesModal } from './components/common/UnsavedChangesModal';
 import { StartupDisclaimerModal } from './components/common/StartupDisclaimerModal';
 
 export default function App() {
-  const { activeScreen, setActiveScreen, authRole, fetchPasskeysFromSupabase } = useTemplateStore();
+  const { activeScreen, setActiveScreen, authRole, fetchPasskeysFromSupabase, userPreferences } = useTemplateStore();
 
   useEffect(() => {
     fetchPasskeysFromSupabase();
   }, [fetchPasskeysFromSupabase]);
+
+  // Synchronize system and user theme with DOM
+  useEffect(() => {
+    const isDark = userPreferences?.theme === 'dark';
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.body.classList.remove('dark');
+    }
+  }, [userPreferences?.theme]);
 
   // PASSKEY GATEWAY SYSTEM: Must enter valid passkey first
   if (!authRole) {

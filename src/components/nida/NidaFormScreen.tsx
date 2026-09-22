@@ -542,19 +542,9 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                       </h2>
                     </div>
 
-                    {/* Progress counter badge */}
-                    <div className="flex items-center gap-1.5 text-[11px] font-mono">
-                      <span
-                        className={`px-2 py-0.5 rounded-md border font-bold ${
-                          nidaValidation.isValid
-                            ? 'bg-emerald-100 border-emerald-400 text-emerald-800'
-                            : formData.nidaNumber.length > 0
-                            ? 'bg-amber-100 border-amber-400 text-amber-800'
-                            : 'bg-[#E7E2DE] border-[#C8C2BE] text-[#101010]/70'
-                        }`}
-                      >
-                        {nidaValidation.digitCount}/20 Digits
-                      </span>
+                    {/* Progress counter text alone (no badge box) */}
+                    <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#101010]/80">
+                      <span>{nidaValidation.digitCount}/20 Digits</span>
                     </div>
                   </div>
 
@@ -574,20 +564,11 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                     successMessage={nidaValidation.isValid ? "Valid NIDA format (20/20 digits verified)" : undefined}
                     badge={
                       nidaValidation.isValid ? (
-                        <div className="flex items-center gap-1 text-emerald-700 text-xs font-bold px-2 py-0.5 bg-emerald-100 rounded-full border border-emerald-300">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Valid Format</span>
-                        </div>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                       ) : nidaValidation.warning && formData.nidaNumber.length > 0 ? (
-                        <div className="flex items-center gap-1 text-amber-800 text-xs font-bold px-2 py-0.5 bg-amber-100 rounded-full border border-amber-300">
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          <span>Incomplete</span>
-                        </div>
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                       ) : nidaValidation.error ? (
-                        <div className="flex items-center gap-1 text-rose-700 text-xs font-bold px-2 py-0.5 bg-rose-100 rounded-full border border-rose-300">
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          <span>Invalid Format</span>
-                        </div>
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                       ) : null
                     }
                     helperText={formData.nidaNumber.length === 0 ? "Required pattern: 8-digit birthdate (YYYYMMDD), 5-digit district, 5-digit sequence, 2-digit check" : undefined}

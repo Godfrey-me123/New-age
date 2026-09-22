@@ -665,7 +665,7 @@ export const Toolbar: React.FC = () => {
             <button
               onClick={logoutPasskey}
               className="h-8 px-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold text-xs rounded-lg transition-colors flex items-center gap-1 cursor-pointer shrink-0"
-              title="Toka / Logout"
+              title="Logout"
             >
               <LogOut className="w-3.5 h-3.5 shrink-0" />
               <span className="hidden sm:inline">Logout</span>

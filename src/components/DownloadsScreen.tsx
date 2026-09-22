@@ -20,7 +20,8 @@ import {
   HardDrive,
   BarChart3,
   ShieldCheck,
-  Filter
+  Filter,
+  Home
 } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { DownloadRecord, getAllDownloadRecordsDB, deleteDownloadRecordDB, saveDownloadRecordDB } from '../utils/idb';
@@ -47,56 +48,14 @@ export const DownloadsScreen: React.FC = () => {
   const loadDownloads = async () => {
     try {
       const records = await getAllDownloadRecordsDB();
-      if (records.length === 0) {
-        // Seed sample records for realistic experience if empty
-        const sampleRecords: DownloadRecord[] = [
-          {
-            id: 'dl_sample_1',
-            fileName: 'NIDA_ID_Card_Export.pdf',
-            service: 'NIDA Card Services',
-            format: 'PDF',
-            date: new Date().toLocaleDateString(),
-            timestamp: Date.now() - 3600000,
-            dataUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
-            status: 'READY',
-            sizeBytes: 1240000,
-            userId: 'pk_user_1'
-          },
-          {
-            id: 'dl_sample_2',
-            fileName: 'Driving_License_Front_Back.png',
-            service: 'Driving License Services',
-            format: 'PNG',
-            date: new Date().toLocaleDateString(),
-            timestamp: Date.now() - 7200000,
-            dataUrl: 'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=800&q=80',
-            status: 'READY',
-            sizeBytes: 2450000,
-            userId: 'pk_user_1'
-          },
-          {
-            id: 'dl_sample_3',
-            fileName: 'Birth_Certificate_HQ.pdf',
-            service: 'Birth Certificate Services',
-            format: 'PDF',
-            date: new Date().toLocaleDateString(),
-            timestamp: Date.now() - 300000,
-            dataUrl: '',
-            status: 'GENERATING',
-            progressPercent: 78,
-            queuePosition: 1,
-            sizeBytes: 980000,
-            userId: 'pk_user_1'
-          }
-        ];
-
-        for (const r of sampleRecords) {
-          await saveDownloadRecordDB(r);
+      // Remove any previously seeded fake samples from DB
+      for (const r of records) {
+        if (r.id.startsWith('dl_sample_')) {
+          await deleteDownloadRecordDB(r.id);
         }
-        setDownloads(sampleRecords);
-      } else {
-        setDownloads(records);
       }
+      const realRecords = records.filter((r) => !r.id.startsWith('dl_sample_'));
+      setDownloads(realRecords);
     } catch (e) {
       console.error('Error loading downloads', e);
     } finally {
@@ -205,6 +164,15 @@ export const DownloadsScreen: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <UniversalBackButton />
+            <button
+              type="button"
+              onClick={() => setActiveScreen('home')}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition-colors flex items-center justify-center cursor-pointer"
+              title="Return to Home Portal"
+              aria-label="Return to Home Portal"
+            >
+              <Home className="w-4 h-4 text-slate-700" />
+            </button>
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 <DownloadCloud className="w-5 h-5 text-[#2563EB]" />
@@ -458,11 +426,19 @@ export const DownloadsScreen: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700 space-y-1">
                 <span className="text-slate-400">Total System File Renders</span>
-                <p className="text-2xl font-extrabold text-blue-400">{downloads.length * 14 + 120}</p>
+                <p className="text-2xl font-extrabold text-blue-400">{downloads.length}</p>
               </div>
               <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700 space-y-1">
                 <span className="text-slate-400">Export Success Rate</span>
-                <p className="text-2xl font-extrabold text-emerald-400">99.4%</p>
+                <p className="text-2xl font-extrabold text-emerald-400">
+                  {downloads.length > 0
+                    ? `${Math.round(
+                        (downloads.filter((d) => d.status === 'READY' || d.status === 'DOWNLOADED').length /
+                          downloads.length) *
+                          100
+                      )}%`
+                    : '100%'}
+                </p>
               </div>
               <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700 space-y-1">
                 <span className="text-slate-400">Default Target Directory</span>

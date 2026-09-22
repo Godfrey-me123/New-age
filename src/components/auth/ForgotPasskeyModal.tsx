@@ -107,10 +107,10 @@ export const ForgotPasskeyModal: React.FC<ForgotPasskeyModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-white tracking-tight">
-                Urejeshaji wa Passkey (Forgot Passkey)
+                Reset Passkey
               </h2>
               <p className="text-xs text-slate-300">
-                Weka nambari yako ya simu iliyosajiliwa kuweka Passkey mpya
+                Enter your registered phone number to set a new Passkey
               </p>
             </div>
           </div>
@@ -150,7 +150,7 @@ export const ForgotPasskeyModal: React.FC<ForgotPasskeyModalProps> = ({
           {/* New Passkey */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Passkey Mpya (New Passkey) <span className="text-red-400">*</span>
+              New Passkey <span className="text-red-400">*</span>
             </label>
             <div className="relative flex items-center">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5" />
@@ -161,7 +161,7 @@ export const ForgotPasskeyModal: React.FC<ForgotPasskeyModalProps> = ({
                   setNewPasskey(e.target.value);
                   if (errorMessage) setErrorMessage('');
                 }}
-                placeholder="Ingiza Passkey mpya (angalau herufi 4)"
+                placeholder="Enter new passkey (at least 4 characters)"
                 className="w-full pl-10 pr-10 py-3 bg-[#0B132B] border border-white/15 rounded-xl text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-[#47A5FF] focus:ring-2 focus:ring-[#47A5FF]/20 transition-all"
                 required
               />
@@ -171,7 +171,7 @@ export const ForgotPasskeyModal: React.FC<ForgotPasskeyModalProps> = ({
           {/* Confirm New Passkey */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Thibitisha Passkey (Confirm Passkey) <span className="text-red-400">*</span>
+              Confirm Passkey <span className="text-red-400">*</span>
             </label>
             <div className="relative flex items-center">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5" />
@@ -182,7 +182,7 @@ export const ForgotPasskeyModal: React.FC<ForgotPasskeyModalProps> = ({
                   setConfirmPasskey(e.target.value);
                   if (errorMessage) setErrorMessage('');
                 }}
-                placeholder="Rudia Passkey mpya"
+                placeholder="Re-enter new passkey"
                 className="w-full pl-10 pr-10 py-3 bg-[#0B132B] border border-white/15 rounded-xl text-white placeholder-slate-500 text-sm font-mono focus:outline-none focus:border-[#47A5FF] focus:ring-2 focus:ring-[#47A5FF]/20 transition-all"
                 required
               />
@@ -216,11 +216,11 @@ export const ForgotPasskeyModal: React.FC<ForgotPasskeyModalProps> = ({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Inasasisha Passkey...
+                Updating Passkey...
               </span>
             ) : (
               <>
-                <span>Badili Passkey / Reset Passkey</span>
+                <span>Reset Passkey</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

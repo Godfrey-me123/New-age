@@ -14,9 +14,20 @@
   --bg-primary: #D8D2CE;
   --bg-secondary: #E7E2DE;
   --text-primary: #101010;
+  --text-secondary: rgba(16, 16, 16, 0.75);
   --accent-nida: #B5A5FF;
   --accent-urgent: #FF6839;
   --accent-highlight: #FF9A5A;
+}
+
+.dark, [data-theme="dark"] {
+  --bg-primary: #14171A;
+  --bg-secondary: #1E2328;
+  --text-primary: #F3F4F6;
+  --text-secondary: rgba(243, 244, 246, 0.75);
+  --accent-nida: #8B78EA;
+  --accent-urgent: #EA580C;
+  --accent-highlight: #F97316;
 }
 
 *, *::before, *::after {
@@ -42,11 +53,16 @@ body {
   padding: 0;
   overflow-x: hidden !important;
   overflow-y: auto;
-  background-color: #D8D2CE;
-  color: #101010;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   -webkit-overflow-scrolling: touch;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   box-sizing: border-box;
+}
+
+.dark body, body.dark {
+  background-color: #14171A;
+  color: #F3F4F6;
 }
 
 #root {
@@ -55,9 +71,14 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #D8D2CE;
-  color: #101010;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   overflow-x: hidden !important;
+}
+
+.dark #root {
+  background-color: #14171A;
+  color: #F3F4F6;
 }
 
 /* Prevent double-tap browser zoom on canvas buttons */
@@ -81,17 +102,28 @@ button, select, input, textarea {
 
 /* Search & Filter Bar Styling */
 .search-input, .filter-chip {
-  background-color: #E7E2DE;
-  border: none;
+  background-color: var(--bg-secondary);
+  border: 1px solid rgba(16, 16, 16, 0.08);
   border-radius: 20px;
   padding: 12px 18px;
   font-size: 1rem;
-  color: #101010;
+  color: var(--text-primary);
+}
+
+.dark .search-input, .dark .filter-chip {
+  border-color: rgba(255, 255, 255, 0.12);
+  background-color: #1E2328;
+  color: #F3F4F6;
 }
 
 .filter-chip.active {
   background-color: #101010;
   color: #FFFFFF;
+}
+
+.dark .filter-chip.active {
+  background-color: #F3F4F6;
+  color: #101010;
 }
 
 /* Base Card Styling */
@@ -113,17 +145,37 @@ button, select, input, textarea {
   background-color: #E7E2DE;
 }
 
+.dark .card-default {
+  background-color: #1E2328;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 /* Featured Service Cards (Color Variations) */
 .card-nida {
   background-color: #B5A5FF; /* Soft Lavender/Periwinkle */
+}
+
+.dark .card-nida {
+  background-color: #2D2845;
+  border: 1px solid #4D4178;
 }
 
 .card-urgent {
   background-color: #FF6839; /* Coral Orange */
 }
 
+.dark .card-urgent {
+  background-color: #381F17;
+  border: 1px solid #6E2D1B;
+}
+
 .card-highlight {
   background-color: #FF9A5A; /* Soft Peach/Orange */
+}
+
+.dark .card-highlight {
+  background-color: #3B2416;
+  border: 1px solid #733E1D;
 }
 
 /* Typography Scale Up */
@@ -134,10 +186,18 @@ button, select, input, textarea {
   margin-bottom: 6px;
 }
 
+.dark .card-title {
+  color: #F3F4F6;
+}
+
 .card-description {
   font-size: 0.95rem;
   color: rgba(16, 16, 16, 0.8);
   line-height: 1.4;
+}
+
+.dark .card-description {
+  color: rgba(243, 244, 246, 0.8);
 }
 
 /* Circular Action Button (Arrow Icon) */
@@ -153,6 +213,11 @@ button, select, input, textarea {
   border: none;
   cursor: pointer;
   align-self: flex-end;
+}
+
+.dark .card-arrow-btn {
+  background-color: #F3F4F6;
+  color: #101010;
 }
 
 /* Responsive Mobile Tweaks: Mobile-First Compact Mode */
