@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 
 export const StartupDisclaimerModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,32 +49,32 @@ export const StartupDisclaimerModal: React.FC = () => {
     <div className="fixed inset-0 z-50 bg-[#08090B]/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
       <div className="max-w-lg w-full bg-[#14171D] border border-[#2D3139] rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
         {/* Header */}
-        <div className="p-6 bg-[#1A1F26] border-b border-[#2D3139] flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
-            <ShieldAlert className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider block">Legal & Compliance Notice</span>
-            <h2 className="text-lg font-bold text-white tracking-tight">Important Notice</h2>
-          </div>
+        <div className="p-6 bg-[#1A1F26] border-b border-[#2D3139]">
+          <h2 className="text-xl font-bold text-white tracking-tight">Important Notice</h2>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed max-h-[60vh] overflow-y-auto">
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-200 font-medium space-y-2">
-            <p className="font-bold">
-              This platform is not a government website or government system. Services, templates and generated documents available through this application are independent and unofficial. Please read and agree to the Terms of Use before proceeding.
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-200 font-medium leading-relaxed">
+            <p>
+              This platform is independent and is not affiliated with any government entity or official system. All templates, cards, and generated outputs are unofficial and intended solely for personal reference, memory keeping, demonstration, design, testing, or educational purposes.
             </p>
           </div>
 
-          <p>
-            Documents, templates, cards and generated outputs provided through this platform are unofficial and intended only for personal reference, memory keeping, demonstration, design, testing or educational purposes.
-          </p>
-
-          <div className="space-y-1.5 text-slate-400 text-xs">
-            <p>• BIGsta does not connect to, access, or verify records from government databases.</p>
-            <p>• Generated outputs must not be used for official identity verification, legal transactions, or government submissions.</p>
+          <div className="space-y-2 text-slate-300 text-xs sm:text-sm">
+            <p className="flex items-start gap-2">
+              <span className="text-amber-400 font-bold">•</span>
+              <span>BIGsta does not connect to, access, or verify records from government databases.</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-amber-400 font-bold">•</span>
+              <span>Generated outputs must not be used for official identity verification, legal transactions, or government submissions.</span>
+            </p>
           </div>
+
+          <p className="text-xs text-slate-400 pt-1">
+            Please read and agree to the Terms of Use before proceeding.
+          </p>
         </div>
 
         {/* Footer */}

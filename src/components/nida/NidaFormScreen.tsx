@@ -173,14 +173,10 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
 
   // Load and resolve Front and Back templates
   useEffect(() => {
-    loadSavedTemplates().then((saved) => {
-      const pool = saved;
-
-      const targetFrontId = selectedFrontTemplateId || defaultNidaFrontTemplateId || 'sample_tanzania_nida';
-      const foundFront = pool.find((t) => t.id === targetFrontId) || pool.find((t) => !t.id.includes('back')) || pool[0];
-
-      const targetBackId = selectedBackTemplateId || defaultNidaBackTemplateId || 'sample_tanzania_nida_back';
-      const foundBack = pool.find((t) => t.id === targetBackId) || pool.find((t) => t.id.includes('back')) || pool[1] || pool[0];
+    loadSavedTemplates().then(() => {
+      const { getUniversalFrontTemplate, getUniversalBackTemplate } = useTemplateStore.getState();
+      const foundFront = getUniversalFrontTemplate('nida');
+      const foundBack = getUniversalBackTemplate('nida');
 
       setResolvedFrontTpl(foundFront);
       setResolvedBackTpl(foundBack);

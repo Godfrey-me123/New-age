@@ -33,11 +33,12 @@ import { UnsavedChangesModal } from './components/common/UnsavedChangesModal';
 import { StartupDisclaimerModal } from './components/common/StartupDisclaimerModal';
 
 export default function App() {
-  const { activeScreen, setActiveScreen, authRole, fetchPasskeysFromSupabase, userPreferences } = useTemplateStore();
+  const { activeScreen, setActiveScreen, authRole, fetchPasskeysFromSupabase, userPreferences, loadSavedTemplates } = useTemplateStore();
 
   useEffect(() => {
     fetchPasskeysFromSupabase();
-  }, [fetchPasskeysFromSupabase]);
+    loadSavedTemplates();
+  }, [fetchPasskeysFromSupabase, loadSavedTemplates]);
 
   // Native Android APK JS Bridges
   useEffect(() => {

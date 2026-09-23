@@ -66,11 +66,19 @@ export const SaveTemplateModal: React.FC = () => {
   const handleUniversalSave = async () => {
     updateTemplateMeta({ cardType, side, serviceId: activeServiceId });
     
-    if (side === 'Back Side' || currentTemplate.id.includes('back')) {
-      await saveUniversalBackTemplate(activeServiceId, currentTemplate);
+    const tplToSave = {
+      ...currentTemplate,
+      cardType,
+      side,
+      serviceId: activeServiceId,
+      templateName: templateName.trim() || currentTemplate.templateName,
+    };
+
+    if (side === 'Back Side') {
+      await saveUniversalBackTemplate(activeServiceId, tplToSave);
       setSuccessMessage(`Universal Back Template Saved for ${activeServiceId.replace('_', ' ').toUpperCase()}!`);
     } else {
-      await saveUniversalFrontTemplate(activeServiceId, currentTemplate);
+      await saveUniversalFrontTemplate(activeServiceId, tplToSave);
       setSuccessMessage(`Universal Front Template Saved for ${activeServiceId.replace('_', ' ').toUpperCase()}!`);
     }
 

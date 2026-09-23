@@ -149,15 +149,9 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
   }, []);
 
   useEffect(() => {
-    // 1. Prefer custom universal templates saved by Admin if present
-    const customFront = customTemplates.find((t) => t.cardType === 'Driving License' && (t.side === 'Front Side' || !t.side?.toLowerCase().includes('back')));
-    const customBack = customTemplates.find((t) => t.cardType === 'Driving License' && (t.side === 'Back Side' || t.side?.toLowerCase().includes('back')));
-
-    const defaultFront = SAMPLE_TEMPLATES.find((t) => t.id === 'sample_driving_license_front') || SAMPLE_TEMPLATES[0];
-    const defaultBack = SAMPLE_TEMPLATES.find((t) => t.id === 'sample_driving_license_back') || SAMPLE_TEMPLATES[1];
-
-    const targetFront = customFront || defaultFront;
-    const targetBack = customBack || defaultBack;
+    const { getUniversalFrontTemplate, getUniversalBackTemplate } = useTemplateStore.getState();
+    const targetFront = getUniversalFrontTemplate('driving_license');
+    const targetBack = getUniversalBackTemplate('driving_license');
 
     if (targetFront) {
       setResolvedFrontTpl(targetFront);
@@ -347,11 +341,17 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
       issueDate: formatToDdMmYyyy(formData.dateOfIssue),
       dateOfExpiry: formatToDdMmYyyy(formData.dateOfExpiry),
       expiryDate: formatToDdMmYyyy(formData.dateOfExpiry),
-      classes: formData.classes.map((cls) => ({
-        ...cls,
-        issueDate: cls.issueDate ? formatToDdMmYyyy(cls.issueDate) : '',
-        expiryDate: cls.expiryDate ? formatToDdMmYyyy(cls.expiryDate) : '',
-      })),
+      classes: formData.classes.map((cls) => {
+        const isEnabled = !!(cls.enabled || (cls as any).selected || (cls as any).checked);
+        const resolvedIssue = cls.issueDate ? formatToDdMmYyyy(cls.issueDate) : (isEnabled && formData.dateOfIssue ? formatToDdMmYyyy(formData.dateOfIssue) : '');
+        const resolvedExpiry = cls.expiryDate ? formatToDdMmYyyy(cls.expiryDate) : (isEnabled && formData.dateOfExpiry ? formatToDdMmYyyy(formData.dateOfExpiry) : '');
+        return {
+          ...cls,
+          enabled: isEnabled,
+          issueDate: resolvedIssue,
+          expiryDate: resolvedExpiry,
+        };
+      }),
       // Binding mappings
       firstName: formData.firstName.trim(),
       middleName: formData.secondName.trim(),

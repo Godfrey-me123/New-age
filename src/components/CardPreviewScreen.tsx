@@ -108,13 +108,12 @@ export const CardPreviewScreen: React.FC = () => {
     } else if (side === 'back' && backPopulatedTemplate) {
       setCurrentTemplate(backPopulatedTemplate);
     } else if (side === 'back' && !backPopulatedTemplate && (lastDrivingLicenseFormData || lastNidaFormData)) {
+      const { getUniversalBackTemplate } = useTemplateStore.getState();
+      const resolvedBack = getUniversalBackTemplate(activeServiceId);
       const isDL = activeServiceId === 'driving_license' || currentTemplate.cardType === 'Driving License';
-      const sampleBack = isDL
-        ? (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tz_dl_back') || SAMPLE_TEMPLATES[3])
-        : (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1]);
       const activeData = (isDL ? lastDrivingLicenseFormData : lastNidaFormData) as any;
-      if (sampleBack && activeData) {
-        const result = applyTemplateMapping(sampleBack, activeData);
+      if (resolvedBack && activeData) {
+        const result = applyTemplateMapping(resolvedBack, activeData);
         setPopulatedCardPair(frontPopulatedTemplate || currentTemplate, result.populatedTemplate, activeData);
         setCurrentTemplate(result.populatedTemplate);
       }
@@ -131,10 +130,9 @@ export const CardPreviewScreen: React.FC = () => {
 
   const bTpl = React.useMemo(() => {
     if (backPopulatedTemplate) return backPopulatedTemplate;
-    return isDL
-      ? (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_driving_license_back') || SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tz_dl_back') || SAMPLE_TEMPLATES[1])
-      : (SAMPLE_TEMPLATES.find((t) => t.id === 'sample_tanzania_nida_back') || SAMPLE_TEMPLATES[1]);
-  }, [backPopulatedTemplate, isDL]);
+    const { getUniversalBackTemplate } = useTemplateStore.getState();
+    return getUniversalBackTemplate(activeServiceId);
+  }, [backPopulatedTemplate, activeServiceId]);
 
   // Render high-res card canvas to data URL for smooth interactive display
   useEffect(() => {

@@ -1464,7 +1464,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         if (rawObj) {
           try {
             const parsed = JSON.parse(rawObj);
-            if (parsed && parsed.layers) {
+            if (parsed && parsed.layers && !isBackSideTemplate(parsed)) {
               return ensureTemplateFieldIds(parsed);
             }
           } catch (e) {
@@ -1476,9 +1476,9 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       // 2. Check for saved ID in localStorage
       const savedId = typeof window !== 'undefined' ? localStorage.getItem(`universal_front_${serviceId}`) : null;
       if (savedId) {
-        const foundCustom = customTemplates.find((t) => t.id === savedId);
+        const foundCustom = customTemplates.find((t) => t.id === savedId && !isBackSideTemplate(t));
         if (foundCustom) return ensureTemplateFieldIds(foundCustom);
-        const foundSample = SAMPLE_TEMPLATES.find((t) => t.id === savedId);
+        const foundSample = SAMPLE_TEMPLATES.find((t) => t.id === savedId && !isBackSideTemplate(t));
         if (foundSample) return ensureTemplateFieldIds(foundSample);
       }
 
@@ -1508,7 +1508,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         if (rawObj) {
           try {
             const parsed = JSON.parse(rawObj);
-            if (parsed && parsed.layers) {
+            if (parsed && parsed.layers && isBackSideTemplate(parsed)) {
               return ensureTemplateFieldIds(parsed);
             }
           } catch (e) {
@@ -1520,9 +1520,9 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       // 2. Check for saved ID in localStorage
       const savedId = typeof window !== 'undefined' ? localStorage.getItem(`universal_back_${serviceId}`) : null;
       if (savedId) {
-        const foundCustom = customTemplates.find((t) => t.id === savedId);
+        const foundCustom = customTemplates.find((t) => t.id === savedId && isBackSideTemplate(t));
         if (foundCustom) return ensureTemplateFieldIds(foundCustom);
-        const foundSample = SAMPLE_TEMPLATES.find((t) => t.id === savedId);
+        const foundSample = SAMPLE_TEMPLATES.find((t) => t.id === savedId && isBackSideTemplate(t));
         if (foundSample) return ensureTemplateFieldIds(foundSample);
       }
 
@@ -1553,12 +1553,18 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       const nowIso = new Date().toISOString();
+      const uniqueFrontId = template.id.endsWith('_front')
+        ? template.id
+        : `${template.id.replace(/_back$/, '')}_front`;
+
       const updatedTpl: CardTemplate = {
         ...template,
+        id: uniqueFrontId,
         serviceId,
         side: 'Front Side',
         isUniversal: true,
         isUniversalFront: true,
+        isUniversalBack: false,
         visibility: 'universal',
         status: 'published',
         publishedAt: nowIso,
@@ -1570,7 +1576,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       await saveTemplateDB(sanitized);
 
       if (typeof window !== 'undefined') {
-        safeLocalStorageSetItem(`universal_front_${serviceId}`, updatedTpl.id);
+        safeLocalStorageSetItem(`universal_front_${serviceId}`, sanitized.id);
         safeLocalStorageSetItem(`universal_front_obj_${serviceId}`, JSON.stringify(sanitized));
       }
 
@@ -1583,11 +1589,11 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       await get().loadSavedTemplates();
-      set({ currentTemplate: updatedTpl, hasUnsavedChanges: false });
+      set({ currentTemplate: sanitized, hasUnsavedChanges: false });
       get().saveStudioDraft();
 
       // Post-save verification check
-      const retrieved = await getTemplateByIdDB(updatedTpl.id);
+      const retrieved = await getTemplateByIdDB(sanitized.id);
       if (!retrieved || retrieved.background?.type !== sanitized.background?.type) {
         console.error('Post-save verification failed for universal front template:', { expected: sanitized, got: retrieved });
       }
@@ -1603,11 +1609,17 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       const nowIsoBack = new Date().toISOString();
+      const uniqueBackId = template.id.endsWith('_back')
+        ? template.id
+        : `${template.id.replace(/_front$/, '')}_back`;
+
       const updatedTpl: CardTemplate = {
         ...template,
+        id: uniqueBackId,
         serviceId,
         side: 'Back Side',
         isUniversal: true,
+        isUniversalFront: false,
         isUniversalBack: true,
         visibility: 'universal',
         status: 'published',
@@ -1620,7 +1632,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       await saveTemplateDB(sanitized);
 
       if (typeof window !== 'undefined') {
-        safeLocalStorageSetItem(`universal_back_${serviceId}`, updatedTpl.id);
+        safeLocalStorageSetItem(`universal_back_${serviceId}`, sanitized.id);
         safeLocalStorageSetItem(`universal_back_obj_${serviceId}`, JSON.stringify(sanitized));
       }
 
@@ -1633,11 +1645,11 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       await get().loadSavedTemplates();
-      set({ currentTemplate: updatedTpl, hasUnsavedChanges: false });
+      set({ currentTemplate: sanitized, hasUnsavedChanges: false });
       get().saveStudioDraft();
 
       // Post-save verification check
-      const retrieved = await getTemplateByIdDB(updatedTpl.id);
+      const retrieved = await getTemplateByIdDB(sanitized.id);
       if (!retrieved || retrieved.background?.type !== sanitized.background?.type) {
         console.error('Post-save verification failed for universal back template:', { expected: sanitized, got: retrieved });
       }
@@ -4008,25 +4020,33 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       console.warn('Failed to fetch/sync templates or manual requests from Supabase:', e);
     }
 
-    // 3. Detect which serviceIds have custom/admin made templates
-    const servicesWithCustom = new Set<string>();
+    // 3. Detect which serviceIds have custom/admin made templates for front and back separately
+    const servicesWithCustomFront = new Set<string>();
+    const servicesWithCustomBack = new Set<string>();
     map.forEach((t) => {
       if (t.serviceId && !t.id.startsWith('sample_')) {
-        servicesWithCustom.add(t.serviceId);
+        if (isBackSideTemplate(t)) {
+          servicesWithCustomBack.add(t.serviceId);
+        } else {
+          servicesWithCustomFront.add(t.serviceId);
+        }
       }
     });
 
-    // 4. Ensure SAMPLE_TEMPLATES are only present for services that don't have custom ones
+    // 4. Ensure SAMPLE_TEMPLATES are kept for whichever side lacks custom templates
     for (const sample of SAMPLE_TEMPLATES) {
       const serviceId = sample.serviceId || '';
-      if (!servicesWithCustom.has(serviceId)) {
+      const isBack = isBackSideTemplate(sample);
+      const hasCustomForSide = isBack ? servicesWithCustomBack.has(serviceId) : servicesWithCustomFront.has(serviceId);
+
+      if (!hasCustomForSide) {
         if (!map.has(sample.id)) {
           const sanitized = ensureTemplateFieldIds(sample);
           map.set(sanitized.id, sanitized);
           await saveTemplateDB(sanitized);
         }
       } else {
-        // Remove sample template since there is a custom/admin made template for this service
+        // Only remove sample if custom for that side exists
         if (map.has(sample.id)) {
           map.delete(sample.id);
         }

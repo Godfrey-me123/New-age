@@ -104,14 +104,18 @@ export interface PopulatedTemplateResult {
  */
 export function isBackSideTemplate(template: CardTemplate | null | undefined): boolean {
   if (!template) return false;
+  if (template.isUniversalBack) return true;
+  if (template.isUniversalFront) return false;
   const side = (template.side || '').toLowerCase();
   const name = (template.templateName || '').toLowerCase();
+  const id = (template.id || '').toLowerCase();
   return (
     side.includes('back') ||
     name.includes('back side') ||
     name.includes('back-side') ||
     name.includes('(back)') ||
-    name.includes('backside')
+    name.includes('backside') ||
+    id.endsWith('_back')
   );
 }
 
@@ -222,6 +226,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/\{\{(?:issuing_authority|authority)\}\}/i.test(text)) return 'ISSUING_AUTHORITY';
     if (/\{\{(?:region|residence|place_of_residence)\}\}/i.test(text)) return 'REGION';
     if (/\{\{(?:pin_number|pin)\}\}/i.test(text)) return 'PIN_NUMBER';
+    if (/\{\{(?:licence_number|license_number|licence_no|license_no|licence|license|dl_no)\}\}/i.test(text)) return 'LICENCE_NUMBER';
   }
 
   // 3. Explicit Layer Attribute Checks (fieldName, fieldId, fieldType)
@@ -246,6 +251,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/last_?name|lname|surname|family_?name/i.test(explicitField)) return 'LAST_NAME';
     if (/dob|date_?of_?birth|birth_?date|birthdate/i.test(explicitField)) return 'DOB';
     if (/gender|sex|jinsi|jinsia/i.test(explicitField)) return 'GENDER';
+    if (/licence_?number|license_?number|licence_?no|license_?no|dl_?no/i.test(explicitField)) return 'LICENCE_NUMBER';
     if (/nida_?number|nida|id_?number|national_?id|nin/i.test(explicitField)) return 'NIDA_NUMBER';
     if (/photo|portrait|avatar|picture/i.test(explicitField)) return 'PHOTO';
     if (/signature|sign|specimen|sahihi/i.test(explicitField)) return 'SIGNATURE';
@@ -270,6 +276,9 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
   // 5. Barcode / QR Code Layers
   if (layer.type === 'barcode') {
     const b = layer as BarcodeLayer;
+    if (/\{\{(?:licence_number|license_number|licence_no|license_no|licence|license|dl_no)\}\}/i.test(b.data) || /licence|license|dl_barcode|barcode_dl/i.test(layer.id) || /licence|license/i.test(layer.name)) {
+      return 'LICENCE_NUMBER';
+    }
     if (/\{\{(?:card_no|card_number|cardno|cardnumber)\}\}/i.test(b.data) || /nhif|card_no|barcode_nhif/i.test(layer.id)) {
       return 'CARD_NO';
     }
@@ -280,6 +289,9 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
 
   if (layer.type === 'qrcode') {
     const q = layer as QRCodeLayer;
+    if (/\{\{(?:licence_number|license_number|licence_no|license_no|licence|license|dl_no)\}\}/i.test(q.data) || /licence|license|dl_qr|qr_dl/i.test(layer.id) || /licence|license/i.test(layer.name)) {
+      return 'LICENCE_NUMBER';
+    }
     if (/\{\{(?:card_no|card_number|cardno|cardnumber)\}\}/i.test(q.data) || /nhif|card_no|qr_nhif/i.test(layer.id)) {
       return 'CARD_NO';
     }
@@ -319,6 +331,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:last[_\s-]*name|surname|family[_\s-]*name|lastname|familyname|lname)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'LAST_NAME';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:dob|date[_\s-]*of[_\s-]*birth|birth[_\s-]*date|birthdate)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'DOB';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:gender|sex|jinsi|jinsia)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'GENDER';
+    if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:licence[_\s-]*number|license[_\s-]*number|licence[_\s-]*no|license[_\s-]*no|dl[_\s-]*no|licence|license)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'LICENCE_NUMBER';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:nida[_\s-]*number|nida|id[_\s-]*number|national[_\s-]*id|nin|id[_\s-]*no|namba[_\s-]*nida|barcode)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'NIDA_NUMBER';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:categories_field9|field_9|categories|classes_front)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'CATEGORIES_FIELD9';
     if (/(?:^|[_\s-])(?:var|txt)?[_\s-]*(?:driving_licence_categories|classes_table|classes_list|categories_back)(?:[_\s-]*var)?/i.test(layerIdentifier)) return 'DRIVING_LICENCE_CATEGORIES';
@@ -337,6 +350,7 @@ export function getLayerBinding(layer: Layer, _allLayers: Layer[] = []): Support
     if (/^(?:tarehe\s+ya\s+kutolewa|date\s+of\s+issue|issue\s*date|issued\s*date)\s*[:：\-]?\s*/i.test(text)) return 'ISSUE_DATE';
     if (/^(?:tarehe\s+ya\s+mwisho|tarehe\s+ya\s+kuisha|date\s+of\s+expiry|expiry\s*date|expiration\s*date|expires)\s*[:：\-]?\s*/i.test(text)) return 'EXPIRY_DATE';
     if (/^(?:jinsi|jinsia|sex|gender)\s*[:：\-]?\s*/i.test(text)) return 'GENDER';
+    if (/^(?:licence\s*no|licence\s*number|license\s*no|license\s*number)\s*[:：\-]?\s*/i.test(text)) return 'LICENCE_NUMBER';
     if (/^(?:national\s*id\s*no|nambari\s*ya\s*nida|nida\s*no)\s*[:：\-]?\s*/i.test(text)) return 'NIDA_NUMBER';
   }
 
@@ -891,16 +905,46 @@ export function injectValueIntoLayer(
     return { ...textLayer, text, hidden: false };
   }
 
-  if (layer.type === 'barcode' && (binding === 'NIDA_NUMBER' || binding === 'CARD_NO')) {
+  if (layer.type === 'barcode') {
     const b = layer as BarcodeLayer;
-    const val = ((formData as any).cardNumber || (formData as any).card_no || formData.nidaNumber || '').replace(/-/g, '');
-    return { ...b, data: val };
+    if (binding === 'LICENCE_NUMBER' || /\{\{(?:licence_number|license_number|licence_no|license_no|licence|license|dl_no)\}\}/i.test(b.data) || /licence|license|dl_barcode|barcode_dl/i.test(layer.id) || /licence|license/i.test(layer.name)) {
+      const val = ((formData as any).licenceNumber || (formData as any).licenseNumber || formData.nidaNumber || '').trim();
+      return { ...b, data: val };
+    }
+    if (binding === 'NIDA_NUMBER' || /\{\{(?:id_number|nida_number|nida)\}\}/i.test(b.data) || /nida|id_no|barcode_nida/i.test(layer.id)) {
+      const val = (formData.nidaNumber || (formData as any).licenceNumber || '').replace(/-/g, '');
+      return { ...b, data: val };
+    }
+    if (binding === 'CARD_NO' || /\{\{(?:card_no|card_number|cardno|cardnumber)\}\}/i.test(b.data) || /nhif|card_no|barcode_nhif/i.test(layer.id)) {
+      const val = ((formData as any).cardNumber || (formData as any).card_no || '').replace(/-/g, '');
+      return { ...b, data: val };
+    }
+    if (b.data && b.data.includes('{{')) {
+      const replaced = replaceTextTokens(b.data, formData);
+      return { ...b, data: replaced };
+    }
+    return b;
   }
 
-  if (layer.type === 'qrcode' && (binding === 'NIDA_NUMBER' || binding === 'CARD_NO')) {
+  if (layer.type === 'qrcode') {
     const q = layer as QRCodeLayer;
-    const val = (formData as any).cardNumber || (formData as any).card_no || formData.nidaNumber || '';
-    return { ...q, data: val };
+    if (binding === 'LICENCE_NUMBER' || /\{\{(?:licence_number|license_number|licence_no|license_no|licence|license|dl_no)\}\}/i.test(q.data) || /licence|license|dl_qr|qr_dl/i.test(layer.id) || /licence|license/i.test(layer.name)) {
+      const val = ((formData as any).licenceNumber || (formData as any).licenseNumber || formData.nidaNumber || '').trim();
+      return { ...q, data: val };
+    }
+    if (binding === 'NIDA_NUMBER' || /\{\{(?:id_number|nida_number|nida)\}\}/i.test(q.data) || /qr_nida/i.test(layer.id)) {
+      const val = formData.nidaNumber || (formData as any).licenceNumber || '';
+      return { ...q, data: val };
+    }
+    if (binding === 'CARD_NO' || /\{\{(?:card_no|card_number|cardno|cardnumber)\}\}/i.test(q.data) || /nhif|card_no|qr_nhif/i.test(layer.id)) {
+      const val = (formData as any).cardNumber || (formData as any).card_no || '';
+      return { ...q, data: val };
+    }
+    if (q.data && q.data.includes('{{')) {
+      const replaced = replaceTextTokens(q.data, formData);
+      return { ...q, data: replaced };
+    }
+    return q;
   }
 
   return layer;
@@ -967,7 +1011,7 @@ export function formatDrivingLicenceCategoriesBack(
   if (Array.isArray(classes)) {
     classes.forEach((c: any) => {
       if (c && c.classCode) {
-        classMap.set(c.classCode, c);
+        classMap.set(String(c.classCode).trim().toUpperCase(), c);
       }
     });
   }
@@ -975,7 +1019,7 @@ export function formatDrivingLicenceCategoriesBack(
   const lines: string[] = [];
   ALL_CLASS_CODES.forEach((code) => {
     const item = classMap.get(code);
-    const isEnabled = !!(item && item.enabled);
+    const isEnabled = !!(item && (item.enabled || item.selected || item.checked));
     let issueStr = '';
     let expiryStr = '';
 
@@ -1305,6 +1349,69 @@ export function replaceTextTokens(text: string, formData: NidaFormData): string 
   if (formData.nidaNumber) {
     result = result.replace(/\{\{(?:nida_number|nida|id_number|national_id|nin|id_no|namba_nida)\}\}/gi, formData.nidaNumber);
   }
+
+  const licenceNo = ((formData as any).licenceNumber || (formData as any).licenseNumber || formData.nidaNumber || '').trim();
+  if (licenceNo) {
+    result = result.replace(/\{\{(?:licence_number|license_number|licence_no|license_no|licence|license|dl_no)\}\}/gi, licenceNo);
+  }
+
+  if ((formData as any).dateOfIssue || (formData as any).issueDate) {
+    const rawIssue = ((formData as any).dateOfIssue || (formData as any).issueDate || '').trim();
+    result = result.replace(/\{\{(?:issue_date|date_of_issue|issued_date|valid_from|date_issued)\}\}/gi, formatToDdMmYyyy(rawIssue));
+  }
+
+  if ((formData as any).dateOfExpiry || (formData as any).expiryDate) {
+    const rawExpiry = ((formData as any).dateOfExpiry || (formData as any).expiryDate || '').trim();
+    result = result.replace(/\{\{(?:expiry_date|date_of_expiry|expirydate|valid_to|valid_until|date_expired)\}\}/gi, formatToDdMmYyyy(rawExpiry));
+  }
+
+  if ((formData as any).issuingAuthority) {
+    result = result.replace(/\{\{(?:issuing_authority|authority)\}\}/gi, (formData as any).issuingAuthority);
+  }
+
+  if ((formData as any).region) {
+    result = result.replace(/\{\{(?:region|residence|place_of_residence)\}\}/gi, (formData as any).region);
+  }
+
+  if ((formData as any).pinNumber) {
+    result = result.replace(/\{\{(?:pin_number|pin)\}\}/gi, (formData as any).pinNumber);
+  }
+
+  const rawClasses = (formData as any).classes || (formData as any).categories;
+  if (rawClasses) {
+    if (result.includes('{{categories_field9}}') || result.includes('{{field_9}}') || result.includes('{{categories_of_vehicles}}') || result.includes('{{categories}}') || result.includes('{{classes_front}}')) {
+      result = result.replace(/\{\{(?:categories_field9|field_9|categories_of_vehicles|categories|classes_front)\}\}/gi, formatDrivingLicenceCategoriesFront(rawClasses));
+    }
+    if (result.includes('{{driving_licence_categories}}') || result.includes('{{classes_table}}') || result.includes('{{classes_list}}') || result.includes('{{categories_table}}') || result.includes('{{categories_back}}')) {
+      result = result.replace(
+        /\{\{(?:driving_licence_categories|classes_table|classes_list|categories_table|categories_back)\}\}/gi,
+        formatDrivingLicenceCategoriesBack(
+          rawClasses,
+          (formData as any).dateOfIssue || (formData as any).issueDate,
+          (formData as any).dateOfExpiry || (formData as any).expiryDate
+        )
+      );
+    }
+
+    // Individual category token replacements (e.g. {{class_c_issue}}, {{class_c_expiry}}, {{class_e_issue}}, {{class_e_expiry}})
+    if (Array.isArray(rawClasses)) {
+      const ALL_CODES = ['A', 'A1', 'A2', 'A3', 'B', 'C', 'C1', 'C2', 'C3', 'D', 'E', 'F', 'G'];
+      ALL_CODES.forEach((code) => {
+        const lowerCode = code.toLowerCase();
+        const found = rawClasses.find((c: any) => c && String(c.classCode || '').trim().toUpperCase() === code);
+        const isEnabled = !!(found && (found.enabled || found.selected || found.checked));
+        const issueStr = isEnabled ? formatToDdMmYyyy(found?.issueDate || (formData as any).dateOfIssue || (formData as any).issueDate || '') : '';
+        const expiryStr = isEnabled ? formatToDdMmYyyy(found?.expiryDate || (formData as any).dateOfExpiry || (formData as any).expiryDate || '') : '';
+
+        const issuePattern = new RegExp(`\\{\\{(?:class_${lowerCode}_issue|category_${lowerCode}_issue|cat_${lowerCode}_issue|${lowerCode}_issue|issue_${lowerCode})\\}\\}`, 'gi');
+        const expiryPattern = new RegExp(`\\{\\{(?:class_${lowerCode}_expiry|category_${lowerCode}_expiry|cat_${lowerCode}_expiry|${lowerCode}_expiry|expiry_${lowerCode})\\}\\}`, 'gi');
+
+        result = result.replace(issuePattern, issueStr);
+        result = result.replace(expiryPattern, expiryStr);
+      });
+    }
+  }
+
   return result;
 }
 

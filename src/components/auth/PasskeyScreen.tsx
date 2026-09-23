@@ -173,13 +173,6 @@ export const PasskeyScreen: React.FC = () => {
             <span>Register Now</span>
           </button>
         </div>
-
-        {/* Footer Note */}
-        <div className="mt-6 text-center border-t border-white/10 pt-4 w-full">
-          <span className="text-[11px] text-slate-400">
-            BIGsta Passkey Architecture • Built for Tanzania Official ID Cards
-          </span>
-        </div>
       </div>
 
       {/* User Registration Modal */}
