@@ -191,6 +191,7 @@ export interface CardTemplate {
   isUniversal?: boolean;
   isUniversalFront?: boolean; // Keep for backward compatibility
   isUniversalBack?: boolean; // Keep for backward compatibility
+  isActive?: boolean; // PROMPT 50.4: Admin controlled active status
   cardType?: CardType;
   side?: CardSide;
   cardWidth: number; // mm (e.g., 85.60 for standard CR80)

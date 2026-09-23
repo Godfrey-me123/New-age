@@ -335,6 +335,7 @@ export interface RegisteredUser {
   passkey: string;
   passkeyId: string;
   role: 'user';
+  tokens: number;
   status: 'ACTIVE' | 'DISABLED' | 'PENDING';
   registeredDate: string;
   createdAtTimestamp: number;
@@ -429,6 +430,7 @@ interface TemplateState {
   getUniversalBackTemplate: (serviceId: string) => CardTemplate;
   saveUniversalFrontTemplate: (serviceId: string, template: CardTemplate) => Promise<void>;
   saveUniversalBackTemplate: (serviceId: string, template: CardTemplate) => Promise<void>;
+  toggleTemplateActive: (templateId: string, isActive: boolean) => Promise<void>;
 
   // Studio Working Mode & Universal Navigation
   studioMode: boolean;
@@ -1460,7 +1462,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const sId = (serviceId || '').toLowerCase();
       const sClean = sId.replace('_', ' ');
       
-      // 1. First check localStorage for explicit JSON object override
+      // 1. PRIMARY RULE: Fetch exactly where isActive = true for this service and side
+      const activeCustom = customTemplates.find((t) => 
+        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        t.isActive === true && 
+        !isBackSideTemplate(t)
+      );
+      if (activeCustom) return ensureTemplateFieldIds(activeCustom);
+
+      // 2. Fallback to localStorage for explicit JSON object override (Legacy support)
       if (typeof window !== 'undefined') {
         const rawObj = localStorage.getItem(`universal_front_obj_${serviceId}`);
         if (rawObj) {
@@ -1475,7 +1485,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         }
       }
 
-      // 2. Check for saved ID in localStorage
+      // 3. Fallback to saved ID in localStorage (Legacy support)
       const savedId = typeof window !== 'undefined' ? localStorage.getItem(`universal_front_${serviceId}`) : null;
       if (savedId) {
         const foundCustom = customTemplates.find((t) => t.id === savedId && !isBackSideTemplate(t));
@@ -1484,30 +1494,14 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         if (foundSample) return ensureTemplateFieldIds(foundSample);
       }
 
-      // 3. Check custom templates for universal front matching serviceId
-      const universalCustom = customTemplates.find((t) => 
-        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
-        (t.isUniversalFront || t.isUniversal) && 
-        !isBackSideTemplate(t)
-      );
-      if (universalCustom) return ensureTemplateFieldIds(universalCustom);
-
-      // 3.5 Fallback to any custom admin-made front template for this serviceId
-      const anyCustom = customTemplates.find((t) => 
-        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
-        !t.id.startsWith('sample_') && 
-        !isBackSideTemplate(t)
-      );
-      if (anyCustom) return ensureTemplateFieldIds(anyCustom);
-
-      // 4. Check sample templates specifically matching serviceId
+      // 4. Fallback to sample templates specifically matching serviceId
       const sampleMatch = SAMPLE_TEMPLATES.find((t) => 
         (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
         !isBackSideTemplate(t)
       );
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
-      // 5. Fallback ONLY to default front template if serviceId match is not found
+      // 5. Final Fallback ONLY to default front template if serviceId match is not found
       const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && !isBackSideTemplate(t)) || SAMPLE_TEMPLATES[0];
       return ensureTemplateFieldIds(fallbackSample);
     },
@@ -1517,7 +1511,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const sId = (serviceId || '').toLowerCase();
       const sClean = sId.replace('_', ' ');
       
-      // 1. First check localStorage for explicit JSON object override
+      // 1. PRIMARY RULE: Fetch exactly where isActive = true for this service and side
+      const activeCustom = customTemplates.find((t) => 
+        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        t.isActive === true && 
+        isBackSideTemplate(t)
+      );
+      if (activeCustom) return ensureTemplateFieldIds(activeCustom);
+
+      // 2. Fallback to localStorage for explicit JSON object override (Legacy support)
       if (typeof window !== 'undefined') {
         const rawObj = localStorage.getItem(`universal_back_obj_${serviceId}`);
         if (rawObj) {
@@ -1532,7 +1534,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         }
       }
 
-      // 2. Check for saved ID in localStorage
+      // 3. Fallback to saved ID in localStorage (Legacy support)
       const savedId = typeof window !== 'undefined' ? localStorage.getItem(`universal_back_${serviceId}`) : null;
       if (savedId) {
         const foundCustom = customTemplates.find((t) => t.id === savedId && isBackSideTemplate(t));
@@ -1541,30 +1543,14 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         if (foundSample) return ensureTemplateFieldIds(foundSample);
       }
 
-      // 3. Check custom templates for universal back matching serviceId
-      const universalCustom = customTemplates.find((t) => 
-        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
-        (t.isUniversalBack || t.isUniversal) && 
-        isBackSideTemplate(t)
-      );
-      if (universalCustom) return ensureTemplateFieldIds(universalCustom);
-
-      // 3.5 Fallback to any custom admin-made back template for this serviceId
-      const anyCustom = customTemplates.find((t) => 
-        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
-        !t.id.startsWith('sample_') && 
-        isBackSideTemplate(t)
-      );
-      if (anyCustom) return ensureTemplateFieldIds(anyCustom);
-
-      // 4. Check sample templates specifically matching serviceId
+      // 4. Fallback to sample templates specifically matching serviceId
       const sampleMatch = SAMPLE_TEMPLATES.find((t) => 
         (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
         isBackSideTemplate(t)
       );
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
-      // 5. Fallback ONLY to default back template if serviceId match is not found
+      // 5. Final Fallback ONLY to default back template if serviceId match is not found
       const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && isBackSideTemplate(t)) || SAMPLE_TEMPLATES[1];
       return ensureTemplateFieldIds(fallbackSample);
     },
@@ -1583,6 +1569,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         ? template.id
         : `${template.id.replace(/_back$/, '')}_front`;
 
+      // Admin decides active status. By default when saving/publishing a new universal, we make it active.
       const updatedTpl: CardTemplate = {
         ...template,
         id: uniqueFrontId,
@@ -1591,6 +1578,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         isUniversal: true,
         isUniversalFront: true,
         isUniversalBack: false,
+        isActive: true, // New requirement: Admin controlled, but new saves start as active
         visibility: 'universal',
         status: 'published',
         publishedAt: nowIso,
@@ -1598,6 +1586,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         version: (template.version || 0) + 1,
         updatedAt: nowIso,
       };
+
+      // Auto-Deactivate logic for local state
+      const updatedCustoms = get().customTemplates.map((t) => {
+        if (t.serviceId === serviceId && !isBackSideTemplate(t) && t.id !== uniqueFrontId) {
+          return { ...t, isActive: false };
+        }
+        return t;
+      });
+
       const sanitized = sanitizeTemplateForSaving(updatedTpl);
       await saveTemplateDB(sanitized);
 
@@ -1609,20 +1606,20 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       // Supabase Universal Template Sync (PROMPT 50.4)
       try {
         const { saveUniversalTemplateSupabase } = await import('../services/supabase');
+        // Note: saveUniversalTemplateSupabase already handles server-side auto-deactivation
         await saveUniversalTemplateSupabase(serviceId, sanitized, true, false);
       } catch (e) {
         console.warn('Supabase sync for universal front template skipped:', e);
       }
 
+      set({ 
+        customTemplates: [...updatedCustoms.filter(t => t.id !== sanitized.id), sanitized],
+        currentTemplate: sanitized, 
+        hasUnsavedChanges: false 
+      });
+      
       await get().loadSavedTemplates();
-      set({ currentTemplate: sanitized, hasUnsavedChanges: false });
       get().saveStudioDraft();
-
-      // Post-save verification check
-      const retrieved = await getTemplateByIdDB(sanitized.id);
-      if (!retrieved || retrieved.background?.type !== sanitized.background?.type) {
-        console.error('Post-save verification failed for universal front template:', { expected: sanitized, got: retrieved });
-      }
     },
 
     saveUniversalBackTemplate: async (serviceId: string, template: CardTemplate) => {
@@ -1647,6 +1644,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         isUniversal: true,
         isUniversalFront: false,
         isUniversalBack: true,
+        isActive: true, // New requirement: Admin controlled, but new saves start as active
         visibility: 'universal',
         status: 'published',
         publishedAt: nowIsoBack,
@@ -1654,6 +1652,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         version: (template.version || 0) + 1,
         updatedAt: nowIsoBack,
       };
+
+      // Auto-Deactivate logic for local state
+      const updatedCustoms = get().customTemplates.map((t) => {
+        if (t.serviceId === serviceId && isBackSideTemplate(t) && t.id !== uniqueBackId) {
+          return { ...t, isActive: false };
+        }
+        return t;
+      });
+
       const sanitized = sanitizeTemplateForSaving(updatedTpl);
       await saveTemplateDB(sanitized);
 
@@ -1665,20 +1672,65 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       // Supabase Universal Template Sync (PROMPT 50.4)
       try {
         const { saveUniversalTemplateSupabase } = await import('../services/supabase');
+        // Note: saveUniversalTemplateSupabase already handles server-side auto-deactivation
         await saveUniversalTemplateSupabase(serviceId, sanitized, false, true);
       } catch (e) {
         console.warn('Supabase sync for universal back template skipped:', e);
       }
 
-      await get().loadSavedTemplates();
-      set({ currentTemplate: sanitized, hasUnsavedChanges: false });
-      get().saveStudioDraft();
+      set({ 
+        customTemplates: [...updatedCustoms.filter(t => t.id !== sanitized.id), sanitized],
+        currentTemplate: sanitized, 
+        hasUnsavedChanges: false 
+      });
 
-      // Post-save verification check
-      const retrieved = await getTemplateByIdDB(sanitized.id);
-      if (!retrieved || retrieved.background?.type !== sanitized.background?.type) {
-        console.error('Post-save verification failed for universal back template:', { expected: sanitized, got: retrieved });
+      await get().loadSavedTemplates();
+      get().saveStudioDraft();
+    },
+
+    toggleTemplateActive: async (templateId: string, isActive: boolean) => {
+      const { customTemplates } = get();
+      const target = customTemplates.find(t => t.id === templateId);
+      if (!target) return;
+
+      const serviceId = target.serviceId;
+      const isBack = isBackSideTemplate(target);
+
+      // Auto-Deactivate rule: only one can be active per service/side
+      const updatedCustoms = customTemplates.map(t => {
+        if (isActive && t.serviceId === serviceId && isBackSideTemplate(t) === isBack && t.id !== templateId) {
+          return { ...t, isActive: false };
+        }
+        if (t.id === templateId) {
+          return { ...t, isActive };
+        }
+        return t;
+      });
+
+      set({ customTemplates: updatedCustoms });
+
+      // If we are editing the toggled template, sync currentTemplate
+      if (get().currentTemplate.id === templateId) {
+        set({ currentTemplate: { ...get().currentTemplate, isActive } });
       }
+
+      // Persist to local DB
+      const updatedTarget = updatedCustoms.find(t => t.id === templateId)!;
+      await saveTemplateDB(sanitizeTemplateForSaving(updatedTarget));
+
+      // Persist to Supabase
+      try {
+        const { saveTemplateSupabase, saveUniversalTemplateSupabase } = await import('../services/supabase');
+        if (updatedTarget.isUniversal) {
+          await saveUniversalTemplateSupabase(serviceId || 'custom', updatedTarget, !isBack, isBack);
+        } else {
+          await saveTemplateSupabase(updatedTarget);
+        }
+      } catch (e) {
+        console.warn('Supabase sync for isActive toggle failed:', e);
+      }
+      
+      await get().loadSavedTemplates();
     },
 
     tokenPackages: initialTokenPackages,
@@ -1885,6 +1937,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         passkey,
         passkeyId: newPasskeyItem.id,
         role: 'user',
+        tokens: grantedTokens,
         status: 'ACTIVE',
         registeredDate: dateStr,
         createdAtTimestamp: nowTs,

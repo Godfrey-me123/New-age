@@ -402,22 +402,21 @@ export async function saveUniversalTemplateSupabase(
 ): Promise<boolean> {
   if (!supabase) return false;
   try {
-    // 1. Deactivate previous active version for this service_type & orientation
-    const orientationTag = isUniversalBack ? 'back' : 'front';
+    // 1. Deactivate previous active version for this service_type & specific side (PROMPT 50.4)
     const sideValue = isUniversalBack ? 'Back Side' : 'Front Side';
 
     await supabase
       .from('templates')
       .update({ is_active: false })
       .eq('service_type', serviceType)
-      .eq('is_universal', true)
-      .eq('template_json->>side', sideValue);
+      .eq('is_active', true)
+      .or(`template_json->>side.eq."${sideValue}",template_json->>side.eq."${sideValue.toLowerCase()}"`);
 
     // 2. Insert new active template record
     const { error } = await supabase.from('templates').upsert({
       id: template.id,
       service_type: serviceType,
-      template_name: template.templateName || `${serviceType} ${orientationTag.toUpperCase()} Universal`,
+      template_name: template.templateName || `${serviceType} ${sideValue.split(' ')[0].toUpperCase()} Universal`,
       template_json: template,
       background_url: template.background?.src || null,
       is_universal: true,

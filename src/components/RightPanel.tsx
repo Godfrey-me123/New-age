@@ -118,6 +118,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
     setExportModalOpen,
     setActiveMobileSheet,
     selectLayer,
+    toggleTemplateActive,
   } = useTemplateStore();
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
@@ -527,6 +528,40 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
                 <span className="font-mono text-[#000000] text-xs uppercase font-bold">
                   {currentTemplate.background?.color || '#ffffff'}
                 </span>
+              </div>
+            </div>
+
+            {/* Active Status Control (PROMPT 50.4) */}
+            <div className="pt-2 border-t border-[#E7E9EB] mt-2">
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div className="flex flex-col">
+                  <span className="text-[#000000] font-bold text-[11px] group-hover:text-blue-700 transition-colors">
+                    Template Active Status
+                  </span>
+                  <span className="text-[9px] text-[#555555]">
+                    {currentTemplate.isActive ? 'Visible to users for generation' : 'Hidden from user generation engine'}
+                  </span>
+                </div>
+                <div 
+                  onClick={() => toggleTemplateActive(currentTemplate.id, !currentTemplate.isActive)}
+                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all duration-300 ${
+                    currentTemplate.isActive ? 'bg-blue-600 shadow-sm shadow-blue-600/30' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300 ${
+                      currentTemplate.isActive ? 'translate-x-5.5' : 'translate-x-1'
+                    }`}
+                  />
+                </div>
+              </label>
+              <div className="mt-2 p-1.5 bg-amber-50 border border-amber-100 rounded-md">
+                <p className="text-[9px] text-amber-800 leading-tight">
+                  <AlertTriangle className="w-2.5 h-2.5 inline-block mr-1 -mt-0.5" />
+                  <strong>Rule:</strong> Activating this will automatically deactivate any previous active 
+                  {currentTemplate.side?.toLowerCase().includes('back') ? ' BACK ' : ' FRONT '} 
+                  template for <strong>{currentTemplate.serviceId?.toUpperCase()}</strong>.
+                </p>
               </div>
             </div>
           </CollapsibleSection>
