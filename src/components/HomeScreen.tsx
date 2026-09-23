@@ -468,11 +468,6 @@ export const HomeScreen: React.FC = () => {
         {/* 2. WELCOME SECTION */}
         <div className="mb-4 sm:mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-[#E7E2DE]">
           <div className="space-y-1 sm:space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-[#E7E2DE] border border-[#dad5d0] text-[#101010] text-[11px] sm:text-xs font-bold tracking-wide mb-0.5 sm:mb-1">
-              <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#101010]" />
-              <span>Official Document Services</span>
-            </div>
-
             <h1 className="text-2xl sm:text-4xl font-extrabold text-[#101010] tracking-tight">
               Choose a Service
             </h1>
@@ -583,19 +578,14 @@ export const HomeScreen: React.FC = () => {
                         <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
                       </div>
 
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="card-title text-sm sm:text-base font-bold text-[#101010] truncate">
                             {service.name}
                           </h3>
 
-                          {/* Pinned Ready or Manual Status Badge */}
-                          {isPinnedReady ? (
-                            <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#101010] text-white shadow-xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#B5A5FF] animate-pulse" />
-                              <span>{service.badgeText}</span>
-                            </span>
-                          ) : (
+                          {/* Manual Status Badge if applicable */}
+                          {!isPinnedReady && (
                             <span
                               className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${manualInfo.badgeBg}`}
                             >
@@ -625,8 +615,8 @@ export const HomeScreen: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Action Arrow Button */}
-                    <div className="flex items-center gap-2 shrink-0 self-center">
+                    {/* Action Arrow Button - Positioned a bit below */}
+                    <div className="flex items-center gap-2 shrink-0 self-center mt-3 sm:mt-2.5">
                       <span className="text-xs font-extrabold text-[#101010] hidden sm:inline">
                         {service.primaryActionLabel || 'Open'}
                       </span>

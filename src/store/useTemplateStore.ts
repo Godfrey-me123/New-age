@@ -1457,6 +1457,8 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
     getUniversalFrontTemplate: (serviceId: string) => {
       const customTemplates = get().customTemplates;
+      const sId = (serviceId || '').toLowerCase();
+      const sClean = sId.replace('_', ' ');
       
       // 1. First check localStorage for explicit JSON object override
       if (typeof window !== 'undefined') {
@@ -1483,15 +1485,26 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       // 3. Check custom templates for universal front matching serviceId
-      const universalCustom = customTemplates.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && t.isUniversalFront && !isBackSideTemplate(t));
+      const universalCustom = customTemplates.find((t) => 
+        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        (t.isUniversalFront || t.isUniversal) && 
+        !isBackSideTemplate(t)
+      );
       if (universalCustom) return ensureTemplateFieldIds(universalCustom);
 
       // 3.5 Fallback to any custom admin-made front template for this serviceId
-      const anyCustom = customTemplates.find((t) => t.serviceId === serviceId && !t.id.startsWith('sample_') && !isBackSideTemplate(t));
+      const anyCustom = customTemplates.find((t) => 
+        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        !t.id.startsWith('sample_') && 
+        !isBackSideTemplate(t)
+      );
       if (anyCustom) return ensureTemplateFieldIds(anyCustom);
 
       // 4. Check sample templates specifically matching serviceId
-      const sampleMatch = SAMPLE_TEMPLATES.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && !isBackSideTemplate(t));
+      const sampleMatch = SAMPLE_TEMPLATES.find((t) => 
+        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        !isBackSideTemplate(t)
+      );
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
       // 5. Fallback ONLY to default front template if serviceId match is not found
@@ -1501,6 +1514,8 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
     getUniversalBackTemplate: (serviceId: string) => {
       const customTemplates = get().customTemplates;
+      const sId = (serviceId || '').toLowerCase();
+      const sClean = sId.replace('_', ' ');
       
       // 1. First check localStorage for explicit JSON object override
       if (typeof window !== 'undefined') {
@@ -1527,15 +1542,26 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
 
       // 3. Check custom templates for universal back matching serviceId
-      const universalCustom = customTemplates.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && t.isUniversalBack && isBackSideTemplate(t));
+      const universalCustom = customTemplates.find((t) => 
+        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        (t.isUniversalBack || t.isUniversal) && 
+        isBackSideTemplate(t)
+      );
       if (universalCustom) return ensureTemplateFieldIds(universalCustom);
 
       // 3.5 Fallback to any custom admin-made back template for this serviceId
-      const anyCustom = customTemplates.find((t) => t.serviceId === serviceId && !t.id.startsWith('sample_') && isBackSideTemplate(t));
+      const anyCustom = customTemplates.find((t) => 
+        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        !t.id.startsWith('sample_') && 
+        isBackSideTemplate(t)
+      );
       if (anyCustom) return ensureTemplateFieldIds(anyCustom);
 
       // 4. Check sample templates specifically matching serviceId
-      const sampleMatch = SAMPLE_TEMPLATES.find((t) => (t.serviceId === serviceId || t.cardType?.toLowerCase().includes(serviceId.replace('_', ' '))) && isBackSideTemplate(t));
+      const sampleMatch = SAMPLE_TEMPLATES.find((t) => 
+        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        isBackSideTemplate(t)
+      );
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
       // 5. Fallback ONLY to default back template if serviceId match is not found
@@ -2499,11 +2525,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
           supabaseProfiles.forEach((p) => {
             const mappedUser: RegisteredUser = {
               id: p.id,
-              fullName: p.name || 'Anonymous User',
+              fullName: p.name || p.fullName || 'Anonymous User',
               phone: p.phone || '',
               passkey: p.passkey || '',
-              passkeyId: 'pk_user_' + p.id.split('_')[1] || p.id,
+              passkeyId: p.passkeyId || p.passkey_id || p.id,
               role: (p.role || 'user') as 'user',
+              tokens: typeof p.tokens === 'number' ? p.tokens : 0,
               status: (p.status || 'ACTIVE') as 'ACTIVE' | 'DISABLED' | 'PENDING',
               registeredDate: p.created_at ? new Date(p.created_at).toISOString().replace('T', ' ').substring(0, 16) : new Date().toISOString().replace('T', ' ').substring(0, 16),
               createdAtTimestamp: p.created_at ? new Date(p.created_at).getTime() : Date.now(),

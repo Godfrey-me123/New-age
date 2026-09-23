@@ -504,18 +504,39 @@ export async function fetchActiveUniversalTemplateSupabase(serviceType: string, 
   }
 }
 
-// Helper: Fetch All Active Templates from Supabase
+// Helper: Fetch All Templates from Supabase (Universal + Custom Admin Templates)
 export async function fetchAllActiveTemplatesSupabase(): Promise<any[]> {
   if (!supabase) return [];
   try {
     const { data, error } = await supabase
       .from('templates')
       .select('*')
-      .eq('is_active', true);
-    if (error || !data) return [];
-    return data.map((d: any) => d.template_json);
+      .order('updated_at', { ascending: false });
+
+    if (error || !data || !Array.isArray(data)) return [];
+
+    return data.map((d: any) => {
+      let parsed = d.template_json;
+      if (typeof parsed === 'string') {
+        try {
+          parsed = JSON.parse(parsed);
+        } catch (e) {}
+      }
+      if (!parsed || typeof parsed !== 'object') {
+        parsed = {};
+      }
+      return {
+        ...parsed,
+        id: d.id || parsed.id,
+        serviceId: d.service_type || parsed.serviceId,
+        templateName: d.template_name || parsed.templateName,
+        isUniversal: d.is_universal !== undefined ? d.is_universal : parsed.isUniversal,
+        isActive: d.is_active !== undefined ? d.is_active : parsed.isActive,
+        updatedAt: d.updated_at || parsed.updatedAt,
+      };
+    });
   } catch (e) {
-    console.error('Error fetching all active templates from Supabase:', e);
+    console.error('Error fetching all templates from Supabase:', e);
     return [];
   }
 }
@@ -600,12 +621,56 @@ export async function saveAdminSettingsSupabase(settings: any): Promise<boolean>
 export async function fetchAllProfilesSupabase(): Promise<any[]> {
   if (!supabase) return [];
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error || !data) return [];
-    return data;
+    const combined: any[] = [];
+    const seen = new Set<string>();
+
+    // 1. Try public.profiles
+    try {
+      const { data: pData, error: pError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!pError && pData && Array.isArray(pData)) {
+        pData.forEach((p) => {
+          const key = p.id || p.phone || p.passkey;
+          if (key && !seen.has(key)) {
+            seen.add(key);
+            combined.push(p);
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 2. Try public.user_profiles
+    try {
+      const { data: uData, error: uError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!uError && uData && Array.isArray(uData)) {
+        uData.forEach((u) => {
+          const key = u.id || u.phone || u.passkey;
+          if (key && !seen.has(key)) {
+            seen.add(key);
+            combined.push({
+              id: u.id || u.user_id,
+              name: u.name || u.full_name,
+              phone: u.phone || u.phone_number,
+              email: u.email,
+              passkey: u.passkey,
+              role: u.role || 'user',
+              tokens: u.tokens || u.token_balance || 0,
+              created_at: u.created_at,
+              status: u.status || 'ACTIVE',
+            });
+          }
+        });
+      }
+    } catch (e) {}
+
+    return combined;
   } catch (e) {
     console.error('Failed to fetch profiles from Supabase:', e);
     return [];
@@ -789,30 +854,67 @@ export async function syncPasskeySupabase(passkey: {
 export async function fetchPasskeysSupabase(): Promise<any[]> {
   if (!supabase) return [];
   try {
-    const { data: passkeyData, error } = await supabase.from('passkeys').select('*');
-    if (error || !passkeyData) return [];
-
     const list: any[] = [];
-    passkeyData.forEach((p) => {
-      list.push({
-        id: p.id,
-        key: p.key,
-        role: p.role || 'user',
-        active: p.active !== false && p.payment_status !== 'DISABLED',
-        createdDate: p.created_date || new Date(p.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
-        createdAtTimestamp: p.created_at_timestamp || Date.now(),
-        createdBy: p.created_by || 'Supabase',
-        description: p.description || 'Supabase Passkey',
-        lastUsed: p.last_used,
-        totalUsages: p.total_usages ?? (p.role === 'admin' ? 99999 : 1),
-        usedUsages: p.used_usages ?? 0,
-        remainingUsages: p.remaining_usages ?? (p.role === 'admin' ? 99999 : 1),
-        paymentStatus: p.payment_status || 'ACTIVE',
-        packageName: p.package_name || (p.role === 'admin' ? 'Unlimited Admin' : '1 Usage Package'),
-        packagePrice: p.package_price || 'Free',
-        usageHistory: [],
-      });
-    });
+    const seenKeys = new Set<string>();
+
+    // 1. Fetch from passkeys table
+    try {
+      const { data: passkeyData } = await supabase.from('passkeys').select('*');
+      if (passkeyData && Array.isArray(passkeyData)) {
+        passkeyData.forEach((p) => {
+          if (p.key) {
+            seenKeys.add(p.key.toLowerCase());
+            list.push({
+              id: p.id,
+              key: p.key,
+              role: p.role || 'user',
+              active: p.active !== false && p.payment_status !== 'DISABLED',
+              createdDate: p.created_date || new Date(p.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
+              createdAtTimestamp: p.created_at_timestamp || Date.now(),
+              createdBy: p.created_by || 'Supabase',
+              description: p.description || 'Supabase Passkey',
+              lastUsed: p.last_used,
+              totalUsages: p.total_usages ?? (p.role === 'admin' ? 99999 : 1),
+              usedUsages: p.used_usages ?? 0,
+              remainingUsages: p.remaining_usages ?? (p.role === 'admin' ? 99999 : 1),
+              paymentStatus: p.payment_status || 'ACTIVE',
+              packageName: p.package_name || (p.role === 'admin' ? 'Unlimited Admin' : '1 Usage Package'),
+              packagePrice: p.package_price || 'Free',
+              usageHistory: [],
+            });
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 2. Fetch from profiles table for registered user passkeys
+    try {
+      const { data: profileData } = await supabase.from('profiles').select('*');
+      if (profileData && Array.isArray(profileData)) {
+        profileData.forEach((p) => {
+          if (p.passkey && !seenKeys.has(p.passkey.toLowerCase())) {
+            seenKeys.add(p.passkey.toLowerCase());
+            list.push({
+              id: p.id || 'pk_' + p.passkey,
+              key: p.passkey,
+              role: p.role || 'user',
+              active: p.status !== 'DISABLED',
+              createdDate: p.created_at ? new Date(p.created_at).toISOString().replace('T', ' ').substring(0, 16) : new Date().toISOString().replace('T', ' ').substring(0, 16),
+              createdAtTimestamp: p.created_at ? new Date(p.created_at).getTime() : Date.now(),
+              createdBy: 'User Self-Registration',
+              description: `${p.name || 'Registered User'} (${p.phone || 'No Phone'})`,
+              totalUsages: typeof p.tokens === 'number' ? p.tokens : 1,
+              usedUsages: 0,
+              remainingUsages: typeof p.tokens === 'number' ? p.tokens : 1,
+              paymentStatus: 'ACTIVE',
+              packageName: 'Registered User',
+              packagePrice: 'Free',
+              usageHistory: [],
+            });
+          }
+        });
+      }
+    } catch (e) {}
 
     return list;
   } catch (e) {
