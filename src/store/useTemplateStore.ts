@@ -442,6 +442,10 @@ interface TemplateState {
   hasUnsavedChanges: boolean;
   isUnsavedModalOpen: boolean;
   pendingNavigation: (() => void) | null;
+  isSaving: boolean; // PROMPT 51: Global saving state for UI feedback
+  setIsSaving: (saving: boolean) => void;
+  loadingTemplates: boolean;
+  loadingPasskeys: boolean;
 
   setStudioMode: (enabled: boolean) => void;
   setHasUnsavedChanges: (dirty: boolean) => void;
@@ -1195,6 +1199,10 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     hasUnsavedChanges: false,
     isUnsavedModalOpen: false,
     pendingNavigation: null,
+    isSaving: false,
+    setIsSaving: (saving) => set({ isSaving: saving }),
+    loadingTemplates: false,
+    loadingPasskeys: false,
 
     setStudioMode: (enabled: boolean) => set({ studioMode: enabled }),
     setHasUnsavedChanges: (dirty: boolean) => set({ hasUnsavedChanges: dirty }),
@@ -1502,8 +1510,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
       // 5. Final Fallback ONLY to default front template if serviceId match is not found
-      const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && !isBackSideTemplate(t)) || SAMPLE_TEMPLATES[0];
-      return ensureTemplateFieldIds(fallbackSample);
+      // PROMPT 51: Strict isolation. Do not return NIDA if serviceId is NHIF.
+      const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && !isBackSideTemplate(t));
+      if (fallbackSample) return ensureTemplateFieldIds(fallbackSample);
+      
+      // If still nothing, return a blank template with proper dimensions for the service
+      return ensureTemplateFieldIds(SAMPLE_TEMPLATES[0]);
     },
 
     getUniversalBackTemplate: (serviceId: string) => {
@@ -1551,141 +1563,154 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
       // 5. Final Fallback ONLY to default back template if serviceId match is not found
-      const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && isBackSideTemplate(t)) || SAMPLE_TEMPLATES[1];
-      return ensureTemplateFieldIds(fallbackSample);
+      // PROMPT 51: Strict isolation. Do not return NIDA if serviceId is NHIF.
+      const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && isBackSideTemplate(t));
+      if (fallbackSample) return ensureTemplateFieldIds(fallbackSample);
+
+      return ensureTemplateFieldIds(SAMPLE_TEMPLATES[1]);
     },
 
     saveUniversalFrontTemplate: async (serviceId: string, template: CardTemplate) => {
-      // Pre-save integrity check
-      if (!template || !template.background) {
-        throw new Error('Pre-save validation error: Template background or layer state is missing.');
-      }
-      if (template.background.type === 'image' && !template.background.src) {
-        throw new Error('Pre-save validation error: Background image source URL is missing or empty.');
-      }
-
-      const nowIso = new Date().toISOString();
-      const uniqueFrontId = template.id.endsWith('_front')
-        ? template.id
-        : `${template.id.replace(/_back$/, '')}_front`;
-
-      // Admin decides active status. By default when saving/publishing a new universal, we make it active.
-      const updatedTpl: CardTemplate = {
-        ...template,
-        id: uniqueFrontId,
-        serviceId,
-        side: 'Front Side',
-        isUniversal: true,
-        isUniversalFront: true,
-        isUniversalBack: false,
-        isActive: true, // New requirement: Admin controlled, but new saves start as active
-        visibility: 'universal',
-        status: 'published',
-        publishedAt: nowIso,
-        publishedBy: 'Admin',
-        version: (template.version || 0) + 1,
-        updatedAt: nowIso,
-      };
-
-      // Auto-Deactivate logic for local state
-      const updatedCustoms = get().customTemplates.map((t) => {
-        if (t.serviceId === serviceId && !isBackSideTemplate(t) && t.id !== uniqueFrontId) {
-          return { ...t, isActive: false };
-        }
-        return t;
-      });
-
-      const sanitized = sanitizeTemplateForSaving(updatedTpl);
-      await saveTemplateDB(sanitized);
-
-      if (typeof window !== 'undefined') {
-        safeLocalStorageSetItem(`universal_front_${serviceId}`, sanitized.id);
-        safeLocalStorageSetItem(`universal_front_obj_${serviceId}`, JSON.stringify(sanitized));
-      }
-
-      // Supabase Universal Template Sync (PROMPT 50.4)
+      set({ isSaving: true });
       try {
-        const { saveUniversalTemplateSupabase } = await import('../services/supabase');
-        // Note: saveUniversalTemplateSupabase already handles server-side auto-deactivation
-        await saveUniversalTemplateSupabase(serviceId, sanitized, true, false);
-      } catch (e) {
-        console.warn('Supabase sync for universal front template skipped:', e);
-      }
+        // Pre-save integrity check
+        if (!template || !template.background) {
+          throw new Error('Pre-save validation error: Template background or layer state is missing.');
+        }
+        if (template.background.type === 'image' && !template.background.src) {
+          throw new Error('Pre-save validation error: Background image source URL is missing or empty.');
+        }
 
-      set({ 
-        customTemplates: [...updatedCustoms.filter(t => t.id !== sanitized.id), sanitized],
-        currentTemplate: sanitized, 
-        hasUnsavedChanges: false 
-      });
-      
-      await get().loadSavedTemplates();
-      get().saveStudioDraft();
+        const nowIso = new Date().toISOString();
+        const uniqueFrontId = template.id.endsWith('_front')
+          ? template.id
+          : `${template.id.replace(/_back$/, '')}_front`;
+
+        // Admin decides active status. By default when saving/publishing a new universal, we make it active.
+        const updatedTpl: CardTemplate = {
+          ...template,
+          id: uniqueFrontId,
+          serviceId,
+          side: 'Front Side',
+          isUniversal: true,
+          isUniversalFront: true,
+          isUniversalBack: false,
+          isActive: true, // New requirement: Admin controlled, but new saves start as active
+          visibility: 'universal',
+          status: 'published',
+          publishedAt: nowIso,
+          publishedBy: 'Admin',
+          version: (template.version || 0) + 1,
+          updatedAt: nowIso,
+        };
+
+        // Auto-Deactivate logic for local state
+        const updatedCustoms = get().customTemplates.map((t) => {
+          if (t.serviceId === serviceId && !isBackSideTemplate(t) && t.id !== uniqueFrontId) {
+            return { ...t, isActive: false };
+          }
+          return t;
+        });
+
+        const sanitized = sanitizeTemplateForSaving(updatedTpl);
+        await saveTemplateDB(sanitized);
+
+        if (typeof window !== 'undefined') {
+          safeLocalStorageSetItem(`universal_front_${serviceId}`, sanitized.id);
+          safeLocalStorageSetItem(`universal_front_obj_${serviceId}`, JSON.stringify(sanitized));
+        }
+
+        // Supabase Universal Template Sync (PROMPT 50.4)
+        try {
+          const { saveUniversalTemplateSupabase } = await import('../services/supabase');
+          // Note: saveUniversalTemplateSupabase already handles server-side auto-deactivation
+          await saveUniversalTemplateSupabase(serviceId, sanitized, true, false);
+        } catch (e) {
+          console.warn('Supabase sync for universal front template skipped:', e);
+        }
+
+        set({ 
+          customTemplates: [...updatedCustoms.filter(t => t.id !== sanitized.id), sanitized],
+          currentTemplate: sanitized, 
+          hasUnsavedChanges: false 
+        });
+        
+        await get().loadSavedTemplates();
+        get().saveStudioDraft();
+      } finally {
+        set({ isSaving: false });
+      }
     },
 
     saveUniversalBackTemplate: async (serviceId: string, template: CardTemplate) => {
-      // Pre-save integrity check
-      if (!template || !template.background) {
-        throw new Error('Pre-save validation error: Template background or layer state is missing.');
-      }
-      if (template.background.type === 'image' && !template.background.src) {
-        throw new Error('Pre-save validation error: Background image source URL is missing or empty.');
-      }
-
-      const nowIsoBack = new Date().toISOString();
-      const uniqueBackId = template.id.endsWith('_back')
-        ? template.id
-        : `${template.id.replace(/_front$/, '')}_back`;
-
-      const updatedTpl: CardTemplate = {
-        ...template,
-        id: uniqueBackId,
-        serviceId,
-        side: 'Back Side',
-        isUniversal: true,
-        isUniversalFront: false,
-        isUniversalBack: true,
-        isActive: true, // New requirement: Admin controlled, but new saves start as active
-        visibility: 'universal',
-        status: 'published',
-        publishedAt: nowIsoBack,
-        publishedBy: 'Admin',
-        version: (template.version || 0) + 1,
-        updatedAt: nowIsoBack,
-      };
-
-      // Auto-Deactivate logic for local state
-      const updatedCustoms = get().customTemplates.map((t) => {
-        if (t.serviceId === serviceId && isBackSideTemplate(t) && t.id !== uniqueBackId) {
-          return { ...t, isActive: false };
-        }
-        return t;
-      });
-
-      const sanitized = sanitizeTemplateForSaving(updatedTpl);
-      await saveTemplateDB(sanitized);
-
-      if (typeof window !== 'undefined') {
-        safeLocalStorageSetItem(`universal_back_${serviceId}`, sanitized.id);
-        safeLocalStorageSetItem(`universal_back_obj_${serviceId}`, JSON.stringify(sanitized));
-      }
-
-      // Supabase Universal Template Sync (PROMPT 50.4)
+      set({ isSaving: true });
       try {
-        const { saveUniversalTemplateSupabase } = await import('../services/supabase');
-        // Note: saveUniversalTemplateSupabase already handles server-side auto-deactivation
-        await saveUniversalTemplateSupabase(serviceId, sanitized, false, true);
-      } catch (e) {
-        console.warn('Supabase sync for universal back template skipped:', e);
+        // Pre-save integrity check
+        if (!template || !template.background) {
+          throw new Error('Pre-save validation error: Template background or layer state is missing.');
+        }
+        if (template.background.type === 'image' && !template.background.src) {
+          throw new Error('Pre-save validation error: Background image source URL is missing or empty.');
+        }
+
+        const nowIsoBack = new Date().toISOString();
+        const uniqueBackId = template.id.endsWith('_back')
+          ? template.id
+          : `${template.id.replace(/_front$/, '')}_back`;
+
+        const updatedTpl: CardTemplate = {
+          ...template,
+          id: uniqueBackId,
+          serviceId,
+          side: 'Back Side',
+          isUniversal: true,
+          isUniversalFront: false,
+          isUniversalBack: true,
+          isActive: true, // New requirement: Admin controlled, but new saves start as active
+          visibility: 'universal',
+          status: 'published',
+          publishedAt: nowIsoBack,
+          publishedBy: 'Admin',
+          version: (template.version || 0) + 1,
+          updatedAt: nowIsoBack,
+        };
+
+        // Auto-Deactivate logic for local state
+        const updatedCustoms = get().customTemplates.map((t) => {
+          if (t.serviceId === serviceId && isBackSideTemplate(t) && t.id !== uniqueBackId) {
+            return { ...t, isActive: false };
+          }
+          return t;
+        });
+
+        const sanitized = sanitizeTemplateForSaving(updatedTpl);
+        await saveTemplateDB(sanitized);
+
+        if (typeof window !== 'undefined') {
+          safeLocalStorageSetItem(`universal_back_${serviceId}`, sanitized.id);
+          safeLocalStorageSetItem(`universal_back_obj_${serviceId}`, JSON.stringify(sanitized));
+        }
+
+        // Supabase Universal Template Sync (PROMPT 50.4)
+        try {
+          const { saveUniversalTemplateSupabase } = await import('../services/supabase');
+          // Note: saveUniversalTemplateSupabase already handles server-side auto-deactivation
+          await saveUniversalTemplateSupabase(serviceId, sanitized, false, true);
+        } catch (e) {
+          console.warn('Supabase sync for universal back template skipped:', e);
+        }
+
+        set({ 
+          customTemplates: [...updatedCustoms.filter(t => t.id !== sanitized.id), sanitized],
+          currentTemplate: sanitized, 
+          hasUnsavedChanges: false 
+        });
+
+        await get().loadSavedTemplates();
+        get().saveStudioDraft();
+      } finally {
+        set({ isSaving: false });
       }
-
-      set({ 
-        customTemplates: [...updatedCustoms.filter(t => t.id !== sanitized.id), sanitized],
-        currentTemplate: sanitized, 
-        hasUnsavedChanges: false 
-      });
-
-      await get().loadSavedTemplates();
-      get().saveStudioDraft();
     },
 
     toggleTemplateActive: async (templateId: string, isActive: boolean) => {
@@ -2545,6 +2570,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     },
 
     fetchPasskeysFromSupabase: async () => {
+      set({ loadingPasskeys: true });
       try {
         const { 
           fetchPasskeysSupabase, 
@@ -2553,8 +2579,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
           fetchAdminSettingsSupabase 
         } = await import('../services/supabase');
 
+        // Parallel fetch for speed
+        const [supabasePasskeys, supabaseProfiles, dbPaymentMethods, dbAdminSettings] = await Promise.all([
+          fetchPasskeysSupabase().catch(() => []),
+          fetchAllProfilesSupabase().catch(() => []),
+          fetchPaymentMethodsSupabase().catch(() => []),
+          fetchAdminSettingsSupabase().catch(() => null)
+        ]);
+
         // 1. Fetch Passkeys
-        const supabasePasskeys = await fetchPasskeysSupabase();
         if (supabasePasskeys && supabasePasskeys.length > 0) {
           const currentLocal = get().activePasskeys;
           const merged = [...currentLocal];
@@ -2570,7 +2603,6 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         }
 
         // 2. Fetch Profiles (Registered Users)
-        const supabaseProfiles = await fetchAllProfilesSupabase();
         if (supabaseProfiles && supabaseProfiles.length > 0) {
           const currentLocalUsers = get().registeredUsers;
           const mergedUsers = [...currentLocalUsers];
@@ -2610,7 +2642,6 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         }
 
         // 3. Fetch Payment Methods
-        const dbPaymentMethods = await fetchPaymentMethodsSupabase();
         if (dbPaymentMethods && dbPaymentMethods.length > 0) {
           set({ paymentMethods: dbPaymentMethods });
           try {
@@ -2619,7 +2650,6 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         }
 
         // 4. Fetch Admin Settings
-        const dbAdminSettings = await fetchAdminSettingsSupabase();
         if (dbAdminSettings) {
           const currentSettings = get().adminSettings;
           set({ adminSettings: { ...currentSettings, ...dbAdminSettings } });
@@ -2633,6 +2663,8 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         }
       } catch (e) {
         console.warn('Failed to fetch passkeys and profiles from Supabase:', e);
+      } finally {
+        set({ loadingPasskeys: false });
       }
     },
 
@@ -4006,60 +4038,72 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   setActiveMobileSheet: (sheet) => set({ activeMobileSheet: sheet }),
 
   saveCurrentTemplate: async () => {
-    const template = {
-      ...get().currentTemplate,
-      visibility: 'private' as const,
-      isUniversal: false,
-      status: 'draft' as const,
-      updatedAt: new Date().toISOString(),
-    };
-    const sanitized = sanitizeTemplateForSaving(template);
-    await saveTemplateDB(sanitized);
-
-    // Sync to Supabase
+    set({ isSaving: true });
     try {
-      const { saveTemplateSupabase } = await import('../services/supabase');
-      await saveTemplateSupabase(sanitized);
-    } catch (e) {
-      console.warn('Failed to sync current draft template to Supabase:', e);
-    }
+      const template = {
+        ...get().currentTemplate,
+        visibility: 'private' as const,
+        isUniversal: false,
+        status: 'draft' as const,
+        updatedAt: new Date().toISOString(),
+      };
+      const sanitized = sanitizeTemplateForSaving(template);
+      await saveTemplateDB(sanitized);
 
-    set({ currentTemplate: template, hasUnsavedChanges: false });
-    get().saveStudioDraft();
-    await get().loadSavedTemplates();
+      // Sync to Supabase
+      try {
+        const { saveTemplateSupabase } = await import('../services/supabase');
+        await saveTemplateSupabase(sanitized);
+      } catch (e) {
+        console.warn('Failed to sync current draft template to Supabase:', e);
+      }
+
+      set({ currentTemplate: template, hasUnsavedChanges: false });
+      get().saveStudioDraft();
+      await get().loadSavedTemplates();
+    } finally {
+      set({ isSaving: false });
+    }
   },
 
   saveAsNewTemplate: async (newName: string, cardType?: any, side?: any) => {
-    const current = get().currentTemplate;
-    const sanitizedCurrent = sanitizeTemplateForSaving(current);
-    const newTpl: CardTemplate = {
-      ...JSON.parse(JSON.stringify(sanitizedCurrent)),
-      id: 'template_' + Date.now(),
-      templateName: newName,
-      cardType: cardType || current.cardType || 'National ID',
-      side: side || current.side || 'Front Side',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    await saveTemplateDB(newTpl);
-
-    // Sync to Supabase
+    set({ isSaving: true });
     try {
-      const { saveTemplateSupabase } = await import('../services/supabase');
-      await saveTemplateSupabase(newTpl);
-    } catch (e) {
-      console.warn('Failed to sync new template to Supabase:', e);
-    }
+      const current = get().currentTemplate;
+      const sanitizedCurrent = sanitizeTemplateForSaving(current);
+      const newTpl: CardTemplate = {
+        ...JSON.parse(JSON.stringify(sanitizedCurrent)),
+        id: 'template_' + Date.now(),
+        templateName: newName,
+        cardType: cardType || current.cardType || 'National ID',
+        side: side || current.side || 'Front Side',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await saveTemplateDB(newTpl);
 
-    set({ currentTemplate: newTpl, hasUnsavedChanges: false });
-    get().saveStudioDraft();
-    await get().loadSavedTemplates();
-    return newTpl;
+      // Sync to Supabase
+      try {
+        const { saveTemplateSupabase } = await import('../services/supabase');
+        await saveTemplateSupabase(newTpl);
+      } catch (e) {
+        console.warn('Failed to sync new template to Supabase:', e);
+      }
+
+      set({ currentTemplate: newTpl, hasUnsavedChanges: false });
+      get().saveStudioDraft();
+      await get().loadSavedTemplates();
+      return newTpl;
+    } finally {
+      set({ isSaving: false });
+    }
   },
 
   loadSavedTemplates: async () => {
-    // 1. Fetch locally saved templates from IndexedDB
-    const dbTemplates = await getAllTemplatesDB();
+    set({ loadingTemplates: true });
+    try {
+      // 1. Fetch locally saved templates from IndexedDB
+      const dbTemplates = await getAllTemplatesDB();
     const map = new Map<string, CardTemplate>();
 
     dbTemplates.forEach((t) => {
@@ -4141,6 +4185,9 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     });
     set({ customTemplates: sorted });
     return sorted;
+    } finally {
+      set({ loadingTemplates: false });
+    }
   },
 
   deleteSavedTemplate: async (id) => {

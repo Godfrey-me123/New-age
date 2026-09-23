@@ -38,9 +38,12 @@ export const TemplatesScreen: React.FC = () => {
     setActiveScreen,
     setCardGeneratorOpen,
     setExportModalOpen,
+    isSaving,
+    loadingTemplates,
   } = useTemplateStore();
 
   const [templates, setTemplates] = useState<CardTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'modified' | 'type'>('modified');
@@ -56,20 +59,25 @@ export const TemplatesScreen: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchTemplates = async () => {
-    const list = await loadSavedTemplates();
-    setTemplates(list);
+    setIsLoading(true);
+    try {
+      const list = await loadSavedTemplates();
+      setTemplates(list);
 
-    // Generate thumbnails for each template
-    const previewMap: Record<string, string> = {};
-    for (const tpl of list) {
-      try {
-        const canvas = await renderTemplateToCanvas(tpl, {}, 100);
-        previewMap[tpl.id] = canvas.toDataURL('image/png');
-      } catch {
-        // Fallback
+      // Generate thumbnails for each template
+      const previewMap: Record<string, string> = {};
+      for (const tpl of list) {
+        try {
+          const canvas = await renderTemplateToCanvas(tpl, {}, 100);
+          previewMap[tpl.id] = canvas.toDataURL('image/png');
+        } catch {
+          // Fallback
+        }
       }
+      setPreviews(previewMap);
+    } finally {
+      setIsLoading(false);
     }
-    setPreviews(previewMap);
   };
 
   useEffect(() => {
@@ -126,7 +134,7 @@ export const TemplatesScreen: React.FC = () => {
 
   const saveRename = async (tpl: CardTemplate, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!editName.trim()) return;
+    if (!editName.trim() || isSaving) return;
     const updated: CardTemplate = {
       ...tpl,
       templateName: editName.trim(),
@@ -288,8 +296,20 @@ export const TemplatesScreen: React.FC = () => {
       </div>
 
       {/* Main Grid Section */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {sorted.length === 0 ? (
+      <div className="flex-1 overflow-y-auto p-6 relative">
+        {(isLoading || loadingTemplates) && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                <div className="w-12 h-12 border-4 border-slate-100 rounded-full"></div>
+                <div className="absolute top-0 left-0 w-12 h-12 border-4 border-[#000000] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <span className="text-sm font-bold text-[#000000]">Fetching Templates...</span>
+            </div>
+          </div>
+        )}
+
+        {sorted.length === 0 && !(isLoading || loadingTemplates) ? (
           <div className="py-20 text-center flex flex-col items-center justify-center space-y-3">
             <div className="p-4 rounded-full bg-[#E7E9EB] text-[#000000]">
               <FolderOpen className="w-8 h-8" />
@@ -375,9 +395,11 @@ export const TemplatesScreen: React.FC = () => {
                         </button>
                         <button
                           onClick={(e) => saveRename(tpl, e)}
-                          className="px-2.5 py-1 bg-[#000000] text-white rounded text-[10px] font-bold"
+                          disabled={isSaving}
+                          className="px-2.5 py-1 bg-[#000000] text-white rounded text-[10px] font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         >
-                          Save
+                          {isSaving && <div className="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                          {isSaving ? 'Saving...' : 'Save'}
                         </button>
                       </div>
                     </div>

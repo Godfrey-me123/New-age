@@ -5,7 +5,7 @@ import { UserRegistrationModal } from './UserRegistrationModal';
 import { ForgotPasskeyModal } from './ForgotPasskeyModal';
 
 export const PasskeyScreen: React.FC = () => {
-  const { loginWithPasskey } = useTemplateStore();
+  const { loginWithPasskey, loadingPasskeys } = useTemplateStore();
   const [passkeyInput, setPasskeyInput] = useState('');
   const [showPasskey, setShowPasskey] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -59,6 +59,13 @@ export const PasskeyScreen: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#0B132B] text-white flex flex-col items-center justify-center p-4 py-8 sm:py-12 relative overflow-y-auto font-sans">
+      {/* Loading Overlay for Background Sync */}
+      {loadingPasskeys && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-[#1C2541] border border-white/10 px-3 py-1.5 rounded-full shadow-xl">
+          <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-[10px] font-bold text-blue-200">Syncing System Data...</span>
+        </div>
+      )}
       {/* Background Decorative Glow Effect */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#47A5FF]/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -151,7 +158,8 @@ export const PasskeyScreen: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsForgotOpen(true)}
-              className="text-xs text-[#47A5FF] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
+              disabled={isLoading}
+              className="text-xs text-[#47A5FF] hover:underline font-medium cursor-pointer inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <HelpCircle className="w-3.5 h-3.5" />
               <span>Forgot Passkey?</span>
@@ -167,7 +175,8 @@ export const PasskeyScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsRegisterOpen(true)}
-            className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 text-[#47A5FF] font-bold text-xs sm:text-sm rounded-xl border border-[#47A5FF]/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            disabled={isLoading}
+            className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 text-[#47A5FF] font-bold text-xs sm:text-sm rounded-xl border border-[#47A5FF]/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus className="w-4 h-4 text-[#47A5FF]" />
             <span>Register Now</span>

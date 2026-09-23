@@ -15,6 +15,7 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
     addUploadedBackground,
     updateUploadedBackground,
     deleteUploadedBackground,
+    setIsSaving,
   } = useTemplateStore();
 
   const [editingBgId, setEditingBgId] = useState<string | null>(null);
@@ -28,30 +29,35 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsSaving(true);
     const reader = new FileReader();
     reader.onload = async (event) => {
       const src = event.target?.result as string;
       const img = new Image();
       img.onload = async () => {
-        const orientation = img.height > img.width ? 'portrait' : 'landscape';
-        await addUploadedBackground({
-          name: file.name.split('.')[0] || 'Card Background',
-          src,
-          originalWidthPx: img.width,
-          originalHeightPx: img.height,
-          orientation,
-        });
-
-        // Set as active background
-        updateTemplateMeta({
-          background: {
-            type: 'image',
+        try {
+          const orientation = img.height > img.width ? 'portrait' : 'landscape';
+          await addUploadedBackground({
+            name: file.name.split('.')[0] || 'Card Background',
             src,
             originalWidthPx: img.width,
             originalHeightPx: img.height,
-          },
-        });
-        onBackgroundSelected?.();
+            orientation,
+          });
+
+          // Set as active background
+          updateTemplateMeta({
+            background: {
+              type: 'image',
+              src,
+              originalWidthPx: img.width,
+              originalHeightPx: img.height,
+            },
+          });
+          onBackgroundSelected?.();
+        } finally {
+          setIsSaving(false);
+        }
       };
       img.src = src;
     };
@@ -63,28 +69,33 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsSaving(true);
     const reader = new FileReader();
     reader.onload = async (event) => {
       const src = event.target?.result as string;
       const img = new Image();
       img.onload = async () => {
-        const orientation = img.height > img.width ? 'portrait' : 'landscape';
-        await updateUploadedBackground(id, {
-          src,
-          originalWidthPx: img.width,
-          originalHeightPx: img.height,
-          orientation,
-        });
-
-        if (currentTemplate.background.src) {
-          updateTemplateMeta({
-            background: {
-              type: 'image',
-              src,
-              originalWidthPx: img.width,
-              originalHeightPx: img.height,
-            },
+        try {
+          const orientation = img.height > img.width ? 'portrait' : 'landscape';
+          await updateUploadedBackground(id, {
+            src,
+            originalWidthPx: img.width,
+            originalHeightPx: img.height,
+            orientation,
           });
+
+          if (currentTemplate.background.src) {
+            updateTemplateMeta({
+              background: {
+                type: 'image',
+                src,
+                originalWidthPx: img.width,
+                originalHeightPx: img.height,
+              },
+            });
+          }
+        } finally {
+          setIsSaving(false);
         }
       };
       img.src = src;

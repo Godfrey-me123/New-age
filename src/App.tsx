@@ -33,7 +33,7 @@ import { UnsavedChangesModal } from './components/common/UnsavedChangesModal';
 import { StartupDisclaimerModal } from './components/common/StartupDisclaimerModal';
 
 export default function App() {
-  const { activeScreen, setActiveScreen, authRole, fetchPasskeysFromSupabase, userPreferences, loadSavedTemplates } = useTemplateStore();
+  const { activeScreen, setActiveScreen, authRole, fetchPasskeysFromSupabase, userPreferences, loadSavedTemplates, isSaving } = useTemplateStore();
 
   useEffect(() => {
     fetchPasskeysFromSupabase();
@@ -371,6 +371,22 @@ export default function App() {
       <ExportModal />
       <SaveTemplateModal />
       <MergeCardModal />
+
+      {/* Global Saving Indicator (PROMPT 51) */}
+      {isSaving && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-slate-100 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-12 h-12 border-4 border-[#000000] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-bold text-[#000000]">Saving Changes...</span>
+              <span className="text-[10px] text-[#555555]">Syncing with Supabase database</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

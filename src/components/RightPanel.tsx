@@ -119,12 +119,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
     setActiveMobileSheet,
     selectLayer,
     toggleTemplateActive,
+    isSaving,
   } = useTemplateStore();
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [isValidationExpanded, setIsValidationExpanded] = useState(true);
 
   const handleSave = async () => {
+    if (isSaving) return;
     await saveCurrentTemplate();
     setIsSavedNotice(true);
     setTimeout(() => setIsSavedNotice(false), 2000);
@@ -207,15 +209,22 @@ export const RightPanel: React.FC<RightPanelProps> = ({ isMobileDrawer = false }
     <div className="flex items-center gap-1.5 p-1.5 bg-[#E7E9EB] rounded-xl border border-[#dadcdc] shrink-0 mb-3 shadow-xs">
       <button
         onClick={handleSave}
-        className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 border shadow-xs cursor-pointer ${
-          isSavedNotice
-            ? 'bg-[#CEE9B9] border-[#CEE9B9] text-[#000000] font-bold'
-            : 'bg-[#FFFFFF] hover:bg-[#dadcdc] border-[#dadcdc] text-[#000000]'
+        disabled={isSaving}
+        className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 border shadow-xs ${
+          isSaving 
+            ? 'bg-[#E7E9EB] border-[#dadcdc] text-[#888888] cursor-not-allowed'
+            : isSavedNotice
+            ? 'bg-[#CEE9B9] border-[#CEE9B9] text-[#000000] font-bold cursor-pointer'
+            : 'bg-[#FFFFFF] hover:bg-[#dadcdc] border-[#dadcdc] text-[#000000] cursor-pointer'
         }`}
         title="Save Template"
       >
-        <Save className="w-3.5 h-3.5 text-[#000000] shrink-0" />
-        <span>{isSavedNotice ? 'Saved!' : 'Save'}</span>
+        {isSaving ? (
+          <div className="w-3.5 h-3.5 border-2 border-[#555555] border-t-transparent rounded-full animate-spin shrink-0" />
+        ) : (
+          <Save className="w-3.5 h-3.5 text-[#000000] shrink-0" />
+        )}
+        <span>{isSaving ? 'Saving...' : isSavedNotice ? 'Saved!' : 'Save'}</span>
       </button>
 
       <button
