@@ -661,7 +661,7 @@ interface TemplateState {
   // Storage / Persistence
   saveCurrentTemplate: () => Promise<void>;
   saveAsNewTemplate: (newName: string, cardType?: any, side?: any) => Promise<CardTemplate>;
-  loadSavedTemplates: () => Promise<CardTemplate[]>;
+  loadSavedTemplates: (force?: boolean) => Promise<CardTemplate[]>;
   deleteSavedTemplate: (id: string) => Promise<void>;
 
   // NIDA Template Selection & Universal Default Actions
@@ -1614,7 +1614,11 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
           return t;
         });
 
-        const sanitized = sanitizeTemplateForSaving(updatedTpl);
+        let sanitized = sanitizeTemplateForSaving(updatedTpl);
+        try {
+          const { sanitizeAndUploadTemplateBackground } = await import('../services/supabase');
+          sanitized = await sanitizeAndUploadTemplateBackground(sanitized);
+        } catch {}
         await saveTemplateDB(sanitized);
 
         if (typeof window !== 'undefined') {
@@ -1685,7 +1689,11 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
           return t;
         });
 
-        const sanitized = sanitizeTemplateForSaving(updatedTpl);
+        let sanitized = sanitizeTemplateForSaving(updatedTpl);
+        try {
+          const { sanitizeAndUploadTemplateBackground } = await import('../services/supabase');
+          sanitized = await sanitizeAndUploadTemplateBackground(sanitized);
+        } catch {}
         await saveTemplateDB(sanitized);
 
         if (typeof window !== 'undefined') {
@@ -3397,11 +3405,20 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
   setPopulatedCardPair: (front, back, formData) => {
     const activeService = get().activeServiceId;
-    if (activeService === 'driving_license') {
+    const isDL = activeService === 'driving_license' || front?.cardType === 'Driving License' || (formData && ('licenceNumber' in formData || 'pinNumber' in formData));
+    const isNHIF = activeService === 'nhif' || (front?.cardType as string) === 'NHIF Card' || front?.cardType === 'NHIF Membership Card' || front?.serviceId === 'nhif' || (formData && ('cardNumber' in formData || 'cardStatus' in formData || 'card_no' in formData));
+
+    if (isDL) {
       set({
         frontPopulatedTemplate: front,
         backPopulatedTemplate: back,
         lastDrivingLicenseFormData: formData !== undefined ? formData : get().lastDrivingLicenseFormData,
+      });
+    } else if (isNHIF) {
+      set({
+        frontPopulatedTemplate: front,
+        backPopulatedTemplate: back,
+        lastNhifFormData: formData !== undefined ? formData : get().lastNhifFormData,
       });
     } else {
       set({
@@ -4049,7 +4066,11 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         status: 'draft' as const,
         updatedAt: new Date().toISOString(),
       };
-      const sanitized = sanitizeTemplateForSaving(template);
+      let sanitized = sanitizeTemplateForSaving(template);
+      try {
+        const { sanitizeAndUploadTemplateBackground } = await import('../services/supabase');
+        sanitized = await sanitizeAndUploadTemplateBackground(sanitized);
+      } catch {}
       await saveTemplateDB(sanitized);
 
       // Sync to Supabase
@@ -4060,7 +4081,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         console.warn('Failed to sync current draft template to Supabase:', e);
       }
 
-      set({ currentTemplate: template, hasUnsavedChanges: false });
+      set({ currentTemplate: sanitized, hasUnsavedChanges: false });
       get().saveStudioDraft();
       await get().loadSavedTemplates();
     } finally {
@@ -4073,7 +4094,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     try {
       const current = get().currentTemplate;
       const sanitizedCurrent = sanitizeTemplateForSaving(current);
-      const newTpl: CardTemplate = {
+      let newTpl: CardTemplate = {
         ...JSON.parse(JSON.stringify(sanitizedCurrent)),
         id: 'template_' + Date.now(),
         templateName: newName,
@@ -4082,6 +4103,10 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      try {
+        const { sanitizeAndUploadTemplateBackground } = await import('../services/supabase');
+        newTpl = await sanitizeAndUploadTemplateBackground(newTpl);
+      } catch {}
       await saveTemplateDB(newTpl);
 
       // Sync to Supabase
@@ -4101,13 +4126,13 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     }
   },
 
-  loadSavedTemplates: async () => {
+  loadSavedTemplates: async (force = false) => {
     const nowSync = Date.now();
     const lastSync = get().lastTemplateSync || 0;
-    const TEN_MINS = 10 * 60 * 1000;
+    const CACHE_TTL = 60 * 1000; // 60-second cache TTL for template syncing to prevent redundant network requests during repeated form submissions
     
-    // Only skip remote fetch if we already have data and it's fresh (< 10 mins)
-    if (get().customTemplates.length > 0 && (nowSync - lastSync < TEN_MINS)) {
+    // Only skip remote fetch if we already have data and it's fresh (< 60 seconds)
+    if (!force && get().customTemplates.length > 0 && (nowSync - lastSync < CACHE_TTL)) {
       return get().customTemplates;
     }
 

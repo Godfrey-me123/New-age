@@ -20,6 +20,7 @@ interface SubmissionProgressModalProps {
   error: string | null;
   onRetry?: () => void;
   onClose?: () => void;
+  title?: string;
 }
 
 export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = ({
@@ -30,6 +31,7 @@ export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = (
   error,
   onRetry,
   onClose,
+  title = 'Form Submission Workflow',
 }) => {
   if (!isOpen) return null;
 
@@ -61,7 +63,7 @@ export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = (
                 id="submission-progress-title"
                 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2"
               >
-                <span>Driving Form Submission Workflow</span>
+                <span>{title}</span>
               </h2>
             </div>
           </div>

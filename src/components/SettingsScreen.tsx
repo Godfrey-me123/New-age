@@ -109,7 +109,7 @@ export const SettingsScreen: React.FC = () => {
       updatePaymentMethod(pm.id, pm);
     });
 
-    // Publish to Supabase
+    // Publish to Cloud Storage
     const success = await publishPaymentMethodsToSupabase();
     if (success) {
       triggerToast('Payment Gateways successfully published & synced to Cloud!');
@@ -292,7 +292,7 @@ export const SettingsScreen: React.FC = () => {
                       activeTab === 'cloud_db' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}
                   >
-                    <HardDrive className="w-4 h-4" /> Cloud DB Migration
+                    <HardDrive className="w-4 h-4" /> Cloud Sync Management
                   </button>
                 </>
               )}

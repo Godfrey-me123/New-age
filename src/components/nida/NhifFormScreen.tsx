@@ -497,6 +497,7 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
         isCompleted={isWorkflowCompleted}
         error={workflowError}
         onClose={() => setShowProgressModal(false)}
+        title="NHIF Membership Form Workflow"
       />
     </div>
   );

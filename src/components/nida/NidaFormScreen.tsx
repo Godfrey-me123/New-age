@@ -375,21 +375,12 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     await delay(200);
 
     // Resolve templates pool
-    const pool = await loadSavedTemplates();
+    await loadSavedTemplates();
+    const { getUniversalFrontTemplate, getUniversalBackTemplate } = useTemplateStore.getState();
 
-    const frontId = selectedFrontTemplateId || defaultNidaFrontTemplateId || 'sample_tanzania_nida';
-    const backId = selectedBackTemplateId || defaultNidaBackTemplateId || 'sample_tanzania_nida_back';
-
-    // Prefer in-memory currentTemplate if it matches the selected ID to capture active unsaved edits
-    let frontSourceRaw = pool.find((t) => t.id === frontId) || pool.find((t) => !t.id.includes('back')) || pool[0];
-    if (currentTemplate && currentTemplate.id === frontId) {
-      frontSourceRaw = currentTemplate;
-    }
-
-    let backSourceRaw = pool.find((t) => t.id === backId) || pool.find((t) => t.id.includes('back')) || pool[1] || pool[0];
-    if (currentTemplate && currentTemplate.id === backId) {
-      backSourceRaw = currentTemplate;
-    }
+    // Force resolve NIDA templates specifically to avoid using leftover IDs from other services
+    const frontSourceRaw = getUniversalFrontTemplate('nida');
+    const backSourceRaw = getUniversalBackTemplate('nida');
 
     // Always sanitize templates to clean placeholder tokens first, resolving any leftover hardcoded/populated data
     const frontSource = sanitizeTemplateForSaving(frontSourceRaw);
@@ -401,7 +392,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
         setSubmissionError('Offline: Templates not found in cache and no internet available. Please connect to sync.');
       } else {
         updateStep('step6_template', 'failed', 'Templates could not be resolved.');
-        setSubmissionError('Please ensure valid Front and Back templates are selected.');
+        setSubmissionError('Please ensure valid Front and Back NIDA templates are selected.');
       }
       setIsProcessing(false);
       return;
@@ -874,6 +865,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
           setIsSubmissionModalOpen(false);
           setIsProcessing(false);
         }}
+        title="NIDA Identity Form Submission"
       />
 
       {/* Services Navigation Drawer */}

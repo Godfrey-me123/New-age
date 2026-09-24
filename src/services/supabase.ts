@@ -415,6 +415,44 @@ export async function fetchManualRequestsSupabase(): Promise<any[]> {
   }
 }
 
+// Helper: Sanitize & Upload Template Background to Supabase Storage before persisting
+export async function sanitizeAndUploadTemplateBackground(template: any): Promise<any> {
+  if (!template || !template.background) return template;
+  try {
+    if (template.background.type === 'image' && template.background.src) {
+      const src = template.background.src;
+      // Only upload data URLs or blob URLs to Supabase Storage
+      if (src.startsWith('data:') || src.startsWith('blob:')) {
+        let blob: Blob | null = null;
+        try {
+          const res = await fetch(src);
+          blob = await res.blob();
+        } catch (fetchErr) {
+          console.warn('Could not extract blob from background source:', fetchErr);
+        }
+
+        if (blob) {
+          const safeId = (template.id || 'tpl').replace(/[^a-zA-Z0-9_-]/g, '_');
+          const filename = `${safeId}_bg_${Date.now()}.png`;
+          const publicUrl = await uploadBackgroundToSupabase(blob, filename);
+          if (publicUrl) {
+            return {
+              ...template,
+              background: {
+                ...template.background,
+                src: publicUrl,
+              },
+            };
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Background photo sanitization and storage upload skipped:', err);
+  }
+  return template;
+}
+
 // Helper: Save/Update Universal Template on Supabase
 export async function saveUniversalTemplateSupabase(
   serviceType: string,
@@ -424,6 +462,9 @@ export async function saveUniversalTemplateSupabase(
 ): Promise<boolean> {
   if (!supabase) return false;
   try {
+    // Sanitize background and upload to Supabase Storage if needed
+    const cleanTemplate = await sanitizeAndUploadTemplateBackground(template);
+
     // 1. Deactivate previous active version for this service_type & specific side (PROMPT 50.4)
     const sideValue = isUniversalBack ? 'Back Side' : 'Front Side';
 
@@ -436,11 +477,11 @@ export async function saveUniversalTemplateSupabase(
 
     // 2. Insert new active template record
     const { error } = await supabase.from('templates').upsert({
-      id: template.id,
+      id: cleanTemplate.id,
       service_type: serviceType,
-      template_name: template.templateName || `${serviceType} ${sideValue.split(' ')[0].toUpperCase()} Universal`,
-      template_json: template,
-      background_url: template.background?.src || null,
+      template_name: cleanTemplate.templateName || `${serviceType} ${sideValue.split(' ')[0].toUpperCase()} Universal`,
+      template_json: cleanTemplate,
+      background_url: cleanTemplate.background?.src || null,
       is_universal: true,
       is_active: true,
       version: Date.now(),
@@ -462,16 +503,19 @@ export async function saveUniversalTemplateSupabase(
 export async function saveTemplateSupabase(template: any): Promise<boolean> {
   if (!supabase) return false;
   try {
+    // Sanitize background and upload to Supabase Storage if needed
+    const cleanTemplate = await sanitizeAndUploadTemplateBackground(template);
+
     const { error } = await supabase.from('templates').upsert({
-      id: template.id,
-      service_type: template.serviceId || template.cardType?.toLowerCase().replace(' ', '_') || 'custom',
-      template_name: template.templateName || 'Untitled Template',
-      template_json: template,
-      background_url: template.background?.src || null,
-      is_universal: template.isUniversal || false,
+      id: cleanTemplate.id,
+      service_type: cleanTemplate.serviceId || cleanTemplate.cardType?.toLowerCase().replace(' ', '_') || 'custom',
+      template_name: cleanTemplate.templateName || 'Untitled Template',
+      template_json: cleanTemplate,
+      background_url: cleanTemplate.background?.src || null,
+      is_universal: cleanTemplate.isUniversal || false,
       is_active: true,
-      version: template.version || 1,
-      created_by: template.publishedBy || 'User',
+      version: cleanTemplate.version || 1,
+      created_by: cleanTemplate.publishedBy || 'User',
       updated_at: new Date().toISOString(),
     });
 

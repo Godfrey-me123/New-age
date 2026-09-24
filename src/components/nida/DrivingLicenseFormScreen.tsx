@@ -909,6 +909,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
           setIsSubmissionModalOpen(false);
           setIsProcessing(false);
         }}
+        title="Driving Licence Form Submission"
       />
     </div>
   );

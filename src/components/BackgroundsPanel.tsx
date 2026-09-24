@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Check, Edit3, Trash2, RefreshCw, Palette, Sun } from 'lucide-react';
 import { useTemplateStore } from '../store/useTemplateStore';
+import { isBackSideTemplate } from '../utils/templateMappingEngine';
 
 interface BackgroundsPanelProps {
   onBackgroundSelected?: () => void;
@@ -16,6 +17,9 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
     updateUploadedBackground,
     deleteUploadedBackground,
     setIsSaving,
+    activeServiceId,
+    saveUniversalFrontTemplate,
+    saveUniversalBackTemplate,
   } = useTemplateStore();
 
   const [editingBgId, setEditingBgId] = useState<string | null>(null);
@@ -37,7 +41,7 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
       img.onload = async () => {
         try {
           const orientation = img.height > img.width ? 'portrait' : 'landscape';
-          await addUploadedBackground({
+          const newBg = await addUploadedBackground({
             name: file.name.split('.')[0] || 'Card Background',
             src,
             originalWidthPx: img.width,
@@ -45,15 +49,38 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
             orientation,
           });
 
+          const finalSrc = newBg.src;
+
           // Set as active background
+          const backgroundConfig = {
+            type: 'image' as const,
+            src: finalSrc,
+            originalWidthPx: img.width,
+            originalHeightPx: img.height,
+          };
+
           updateTemplateMeta({
-            background: {
-              type: 'image',
-              src,
-              originalWidthPx: img.width,
-              originalHeightPx: img.height,
-            },
+            background: backgroundConfig,
           });
+
+          // AUTO-SYNC TO CLOUD: If this is a universal template, push background change to Supabase immediately
+          if (currentTemplate.isUniversal) {
+            const sideIsBack = isBackSideTemplate(currentTemplate);
+            const sId = currentTemplate.serviceId || activeServiceId || 'nida';
+            
+            const updatedTpl = {
+              ...currentTemplate,
+              background: backgroundConfig,
+              updatedAt: new Date().toISOString()
+            };
+
+            if (sideIsBack) {
+              await saveUniversalBackTemplate(sId, updatedTpl as any);
+            } else {
+              await saveUniversalFrontTemplate(sId, updatedTpl as any);
+            }
+          }
+
           onBackgroundSelected?.();
         } finally {
           setIsSaving(false);
@@ -77,22 +104,43 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
       img.onload = async () => {
         try {
           const orientation = img.height > img.width ? 'portrait' : 'landscape';
-          await updateUploadedBackground(id, {
+          const updatedBg = await updateUploadedBackground(id, {
             src,
             originalWidthPx: img.width,
             originalHeightPx: img.height,
             orientation,
           });
 
-          if (currentTemplate.background.src) {
+          // If we updated a library background that is currently in use, sync it to the active template
+          if (currentTemplate.background.src === src || currentTemplate.background.src?.includes(id)) {
+            const backgroundConfig = {
+              type: 'image' as const,
+              src,
+              originalWidthPx: img.width,
+              originalHeightPx: img.height,
+            };
+
             updateTemplateMeta({
-              background: {
-                type: 'image',
-                src,
-                originalWidthPx: img.width,
-                originalHeightPx: img.height,
-              },
+              background: backgroundConfig,
             });
+
+            // AUTO-SYNC TO CLOUD: Push change to Supabase if it's the active universal template
+            if (currentTemplate.isUniversal) {
+              const sideIsBack = isBackSideTemplate(currentTemplate);
+              const sId = currentTemplate.serviceId || activeServiceId || 'nida';
+              
+              const updatedTpl = {
+                ...currentTemplate,
+                background: backgroundConfig,
+                updatedAt: new Date().toISOString()
+              };
+
+              if (sideIsBack) {
+                await saveUniversalBackTemplate(sId, updatedTpl as any);
+              } else {
+                await saveUniversalFrontTemplate(sId, updatedTpl as any);
+              }
+            }
           }
         } finally {
           setIsSaving(false);
@@ -321,15 +369,41 @@ export const BackgroundsPanel: React.FC<BackgroundsPanelProps> = ({ onBackground
                   {/* Action Bar */}
                   <div className="flex items-center justify-between pt-1.5 border-t border-slate-700/50 text-xs">
                     <button
-                      onClick={() => {
+                      onClick={async () => {
+                        const backgroundConfig = {
+                          type: 'image' as const,
+                          src: bg.src,
+                          originalWidthPx: bg.originalWidthPx,
+                          originalHeightPx: bg.originalHeightPx,
+                        };
+
                         updateTemplateMeta({
-                          background: {
-                            type: 'image',
-                            src: bg.src,
-                            originalWidthPx: bg.originalWidthPx,
-                            originalHeightPx: bg.originalHeightPx,
-                          },
+                          background: backgroundConfig,
                         });
+
+                        // AUTO-SYNC TO CLOUD: If applying to a universal template, push to Supabase
+                        if (currentTemplate.isUniversal) {
+                          setIsSaving(true);
+                          try {
+                            const sideIsBack = isBackSideTemplate(currentTemplate);
+                            const sId = currentTemplate.serviceId || activeServiceId || 'nida';
+                            
+                            const updatedTpl = {
+                              ...currentTemplate,
+                              background: backgroundConfig,
+                              updatedAt: new Date().toISOString()
+                            };
+
+                            if (sideIsBack) {
+                              await saveUniversalBackTemplate(sId, updatedTpl as any);
+                            } else {
+                              await saveUniversalFrontTemplate(sId, updatedTpl as any);
+                            }
+                          } finally {
+                            setIsSaving(false);
+                          }
+                        }
+
                         onBackgroundSelected?.();
                       }}
                       disabled={isActive}
