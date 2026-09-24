@@ -381,7 +381,7 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
                   onChange={(val) => handleChange('cardNumber', val)}
                   onBlur={() => handleBlur('cardNumber')}
                   error={touched.cardNumber ? errors.cardNumber : ''}
-                  placeholder="e.g. 1234567890"
+                  placeholder="e.g. 00-0000-00"
                   required
                 />
               </div>
@@ -395,7 +395,7 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
                   onChange={(val) => handleChange('fullName', val)}
                   onBlur={() => handleBlur('fullName')}
                   error={touched.fullName ? errors.fullName : ''}
-                  placeholder="e.g. John Sample Member"
+                  placeholder="e.g. Name Example"
                   required
                 />
               </div>
@@ -496,7 +496,11 @@ export const NhifFormScreen: React.FC<NhifFormScreenProps> = ({ onCancel, onSucc
         currentStepId={currentStepId}
         isCompleted={isWorkflowCompleted}
         error={workflowError}
-        onClose={() => setShowProgressModal(false)}
+        title="NHIF Membership Submission"
+        onClose={() => {
+          setShowProgressModal(false);
+          setIsSubmitting(false);
+        }}
       />
     </div>
   );

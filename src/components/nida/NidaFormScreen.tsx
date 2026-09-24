@@ -565,7 +565,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                     icon={Hash}
                     value={formData.nidaNumber}
                     onChange={handleNidaChange}
-                    placeholder={formData.nidaNumber.length === 0 ? "19980301-54218-00002-27" : ""}
+                    placeholder={formData.nidaNumber.length === 0 ? "19900101-12345-00001-12" : ""}
                     maxLength={23} // 20 digits + 3 hyphens
                     autoComplete="off"
                     spellCheck={false}
@@ -635,7 +635,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                         icon={User}
                         value={formData.firstName}
                         onChange={(e) => handleFieldChange('firstName', e.target.value)}
-                        placeholder="e.g. Juma"
+                        placeholder="e.g. JUMA"
                         autoComplete="given-name"
                       />
                     )}
@@ -646,7 +646,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                         icon={User}
                         value={formData.middleName}
                         onChange={(e) => handleFieldChange('middleName', e.target.value)}
-                        placeholder="e.g. Ali"
+                        placeholder="e.g. ALLY"
                         autoComplete="additional-name"
                       />
                     )}
@@ -658,7 +658,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                       icon={User}
                       value={formData.lastName}
                       onChange={(e) => handleFieldChange('lastName', e.target.value)}
-                      placeholder="e.g. Mwangi"
+                      placeholder="e.g. RASHIDI"
                       autoComplete="family-name"
                     />
                   )}
@@ -869,6 +869,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
         currentStepId={currentStepId}
         isCompleted={isWorkflowCompleted}
         error={submissionError}
+        title="NIDA Form Submission Workflow"
         onRetry={executeSubmissionWorkflow}
         onClose={() => {
           setIsSubmissionModalOpen(false);

@@ -518,14 +518,14 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                 onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
                 onBlur={() => setTouched((p) => ({ ...p, firstName: true }))}
                 error={touched.firstName ? errors.firstName : undefined}
-                placeholder="e.g. JACKSON"
+                placeholder="e.g. JUMA"
               />
               <FloatingInput
                 id="secondName"
                 label="SECOND NAME"
                 value={formData.secondName}
                 onChange={(e) => setFormData((prev) => ({ ...prev, secondName: e.target.value }))}
-                placeholder="e.g. FERDINANDI"
+                placeholder="e.g. ALLY"
               />
               <FloatingInput
                 id="thirdName"
@@ -534,7 +534,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                 onChange={(e) => setFormData((prev) => ({ ...prev, thirdName: e.target.value }))}
                 onBlur={() => setTouched((p) => ({ ...p, thirdName: true }))}
                 error={touched.thirdName ? errors.thirdName : undefined}
-                placeholder="e.g. MWANGI"
+                placeholder="e.g. MOHAMED"
               />
             </div>
 
@@ -581,7 +581,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                 onChange={(e) => setFormData((prev) => ({ ...prev, licenceNumber: e.target.value }))}
                 onBlur={() => setTouched((p) => ({ ...p, licenceNumber: true }))}
                 error={touched.licenceNumber ? errors.licenceNumber : undefined}
-                placeholder="e.g. DL-10829375"
+                placeholder="e.g. DL-12345678"
               />
               <FloatingInput
                 id="pinNumber"
@@ -589,7 +589,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                 icon={Key}
                 value={formData.pinNumber}
                 onChange={(e) => setFormData((prev) => ({ ...prev, pinNumber: e.target.value }))}
-                placeholder="e.g. PIN-849302"
+                placeholder="e.g. PIN-123456"
               />
             </div>
 
@@ -601,7 +601,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                 icon={MapPin}
                 value={formData.region}
                 onChange={(e) => setFormData((prev) => ({ ...prev, region: e.target.value }))}
-                placeholder="e.g. Dar es Salaam"
+                placeholder="e.g. Arusha"
               />
               <FloatingInput
                 id="issuingAuthority"
@@ -609,7 +609,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                 icon={Shield}
                 value={formData.issuingAuthority}
                 onChange={(e) => setFormData((prev) => ({ ...prev, issuingAuthority: e.target.value }))}
-                placeholder="e.g. TANZANIA REVENUE AUTHORITY"
+                placeholder="e.g. TRA"
               />
               <FloatingSelect
                 id="gender"
@@ -904,6 +904,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
         currentStepId={currentStepId as any}
         isCompleted={isWorkflowCompleted}
         error={submissionError}
+        title="Driving License Submission Workflow"
         onRetry={executeSubmissionWorkflow}
         onClose={() => {
           setIsSubmissionModalOpen(false);
