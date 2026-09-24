@@ -20,7 +20,6 @@ interface SubmissionProgressModalProps {
   error: string | null;
   onRetry?: () => void;
   onClose?: () => void;
-  title?: string;
 }
 
 export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = ({
@@ -35,8 +34,7 @@ export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = (
   if (!isOpen) return null;
 
   const completedCount = steps.filter((s) => s.status === 'completed').length;
-  const totalSteps = steps.length || 1;
-  const progressPercent = Math.round((completedCount / totalSteps) * 100);
+  const progressPercent = Math.round((completedCount / steps.length) * 100);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
@@ -63,7 +61,7 @@ export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = (
                 id="submission-progress-title"
                 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2"
               >
-                <span>{title || 'Submission Workflow'}</span>
+                <span>Driving Form Submission Workflow</span>
               </h2>
             </div>
           </div>
@@ -108,7 +106,7 @@ export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = (
                   : 'bg-[#47A5FF]/15 text-[#47A5FF] border border-[#47A5FF]/30'
               }`}
             >
-              {error ? 'Action Needed' : isCompleted ? `${totalSteps}/${totalSteps} Completed` : `${completedCount} of ${totalSteps} Completed`}
+              {error ? 'Action Needed' : isCompleted ? '9/9 Completed' : `${completedCount} of 9 Completed`}
             </span>
           </div>
 
@@ -230,21 +228,12 @@ export const SubmissionProgressModal: React.FC<SubmissionProgressModalProps> = (
               <Loader2 className="w-4 h-4 animate-spin text-[#47A5FF]" />
             </div>
           ) : (
-            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#A0A4A8]">
+            <div className="w-full flex items-center justify-between text-xs text-[#A0A4A8]">
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-[#47A5FF]" />
-                <span className="text-white font-medium">Processing Step {currentStepId ? steps.find(s => s.id === currentStepId)?.stepNumber || 1 : 1} of {totalSteps}...</span>
+                <span className="text-white font-medium">Processing Step {currentStepId ? steps.find(s => s.id === currentStepId)?.stepNumber || 1 : 1} of 9...</span>
               </div>
-              
-              {!isCompleted && onClose && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold transition-colors flex items-center gap-1.5"
-                >
-                  <X className="w-3 h-3" /> Cancel
-                </button>
-              )}
+              <span className="text-[11px] text-[#7D8287] font-mono">Please wait</span>
             </div>
           )}
         </div>

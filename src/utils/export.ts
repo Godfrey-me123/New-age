@@ -893,7 +893,7 @@ export function downloadBIGstaAPK(): void {
     versionName: "2.5.0",
     versionCode: 25,
     buildTime: new Date().toISOString(),
-    description: "Official BIGsta Mobile App for NIDA, Driving Licence & NHIF verification with Cloud Sync.",
+    description: "Official BIGsta Mobile App for NIDA, Driving Licence & NHIF verification with Supabase Sync.",
   };
 
   const jsonContent = JSON.stringify(apkMeta, null, 2);

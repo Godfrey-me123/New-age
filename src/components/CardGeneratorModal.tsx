@@ -550,28 +550,14 @@ export const CardGeneratorModal: React.FC = () => {
                   'bg-amber-50 text-amber-800 border border-amber-200'
                 }`}>
                   <span>Export State: <span className="uppercase font-black">{downloadState}</span></span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] opacity-85">
-                      {downloadState === 'QUEUED' && 'Queued for generation...'}
-                      {downloadState === 'GENERATING' && 'Generating high-res file...'}
-                      {downloadState === 'READY' && 'File verified (Size > 0)...'}
-                      {downloadState === 'DOWNLOADING' && 'Delivering file download...'}
-                      {downloadState === 'COMPLETED' && 'Download complete! Token consumed.'}
-                      {downloadState === 'FAILED' && 'Export failed. Token NOT consumed.'}
-                    </span>
-                    {isExporting && downloadState !== 'COMPLETED' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsExporting(false);
-                          setDownloadState('IDLE');
-                        }}
-                        className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded text-[9px] font-black uppercase tracking-wider transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
+                  <span className="text-[10px] opacity-85">
+                    {downloadState === 'QUEUED' && 'Queued for generation...'}
+                    {downloadState === 'GENERATING' && 'Generating high-res file...'}
+                    {downloadState === 'READY' && 'File verified (Size > 0)...'}
+                    {downloadState === 'DOWNLOADING' && 'Delivering file download...'}
+                    {downloadState === 'COMPLETED' && 'Download complete! Token consumed.'}
+                    {downloadState === 'FAILED' && 'Export failed. Token NOT consumed.'}
+                  </span>
                 </div>
               )}
 

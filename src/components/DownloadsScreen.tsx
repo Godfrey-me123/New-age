@@ -14,7 +14,6 @@ import {
   Share2,
   FileText,
   Image as ImageIcon,
-  ArrowLeft,
   ZoomIn,
   ZoomOut,
   RotateCw,
@@ -470,9 +469,9 @@ export const DownloadsScreen: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPreviewRecord(null)}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-lg active:scale-95 mr-2"
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors mr-2"
                 >
-                  <ArrowLeft className="w-4 h-4" /> CLOSE & RETURN
+                  <X className="w-4 h-4" /> Back to Downloads
                 </button>
                 <div className="h-6 w-px bg-slate-800 mx-1 hidden sm:block"></div>
                 <button
@@ -523,32 +522,15 @@ export const DownloadsScreen: React.FC = () => {
                         className="w-[85vw] max-w-3xl h-[70vh] rounded-xl border-none"
                         title="PDF Preview"
                       />
-                      <div className="mt-4 p-5 bg-white/10 rounded-2xl backdrop-blur-md text-center border border-white/10 shadow-xl">
-                        <p className="text-white text-sm font-bold mb-3 flex items-center justify-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                          PDF Document Securely Generated
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                          <button
-                            onClick={() => handleDownload(previewRecord)}
-                            className="w-full sm:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
-                          >
-                            <FileText className="w-4 h-4" />
-                            Open in System Viewer
-                          </button>
-                          <button
-                            onClick={() => {
-                              const win = window.open();
-                              if (win) {
-                                win.document.write(`<iframe src="${previewRecord.dataUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
-                              }
-                            }}
-                            className="w-full sm:w-auto px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-white/10 flex items-center justify-center gap-2 transition-all"
-                          >
-                            <ZoomIn className="w-4 h-4" />
-                            Full Screen Mode
-                          </button>
-                        </div>
+                      <div className="mt-4 p-4 bg-white/10 rounded-xl backdrop-blur-sm text-center">
+                        <p className="text-white text-xs font-bold mb-2">PDF Document Ready</p>
+                        <button
+                          onClick={() => handleDownload(previewRecord)}
+                          className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-lg flex items-center gap-2 mx-auto"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Open System PDF Viewer
+                        </button>
                       </div>
                     </div>
                   ) : (

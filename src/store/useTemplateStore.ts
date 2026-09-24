@@ -1615,23 +1615,6 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         });
 
         const sanitized = sanitizeTemplateForSaving(updatedTpl);
-
-        // Supabase Background Image Upload (ensure cloud-bound asset)
-        try {
-          if (sanitized.background?.src && sanitized.background.src.startsWith('data:')) {
-            const { uploadBackgroundToSupabase } = await import('../services/supabase');
-            const res = await fetch(sanitized.background.src);
-            const blob = await res.blob();
-            const filename = `bg_template_${serviceId}_front_${Date.now()}.png`;
-            const supabaseUrl = await uploadBackgroundToSupabase(blob, filename);
-            if (supabaseUrl) {
-              sanitized.background.src = supabaseUrl;
-            }
-          }
-        } catch (e) {
-          console.warn('Background cloud upload failed for universal front:', e);
-        }
-
         await saveTemplateDB(sanitized);
 
         if (typeof window !== 'undefined') {
@@ -1703,23 +1686,6 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         });
 
         const sanitized = sanitizeTemplateForSaving(updatedTpl);
-
-        // Supabase Background Image Upload (ensure cloud-bound asset)
-        try {
-          if (sanitized.background?.src && sanitized.background.src.startsWith('data:')) {
-            const { uploadBackgroundToSupabase } = await import('../services/supabase');
-            const res = await fetch(sanitized.background.src);
-            const blob = await res.blob();
-            const filename = `bg_template_${serviceId}_back_${Date.now()}.png`;
-            const supabaseUrl = await uploadBackgroundToSupabase(blob, filename);
-            if (supabaseUrl) {
-              sanitized.background.src = supabaseUrl;
-            }
-          }
-        } catch (e) {
-          console.warn('Background cloud upload failed for universal back:', e);
-        }
-
         await saveTemplateDB(sanitized);
 
         if (typeof window !== 'undefined') {
@@ -4084,23 +4050,6 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         updatedAt: new Date().toISOString(),
       };
       const sanitized = sanitizeTemplateForSaving(template);
-
-      // ENSURE CLOUD BACKGROUND (PROMPT 51.5)
-      try {
-        if (sanitized.background?.src && sanitized.background.src.startsWith('data:')) {
-          const { uploadBackgroundToSupabase } = await import('../services/supabase');
-          const res = await fetch(sanitized.background.src);
-          const blob = await res.blob();
-          const filename = `bg_draft_${sanitized.id}_${Date.now()}.png`;
-          const supabaseUrl = await uploadBackgroundToSupabase(blob, filename);
-          if (supabaseUrl) {
-            sanitized.background.src = supabaseUrl;
-          }
-        }
-      } catch (e) {
-        console.warn('Draft background cloud upload skipped:', e);
-      }
-
       await saveTemplateDB(sanitized);
 
       // Sync to Supabase
@@ -4111,7 +4060,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         console.warn('Failed to sync current draft template to Supabase:', e);
       }
 
-      set({ currentTemplate: { ...template, background: sanitized.background }, hasUnsavedChanges: false });
+      set({ currentTemplate: template, hasUnsavedChanges: false });
       get().saveStudioDraft();
       await get().loadSavedTemplates();
     } finally {
@@ -4133,23 +4082,6 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
-      // ENSURE CLOUD BACKGROUND (PROMPT 51.5)
-      try {
-        if (newTpl.background?.src && newTpl.background.src.startsWith('data:')) {
-          const { uploadBackgroundToSupabase } = await import('../services/supabase');
-          const res = await fetch(newTpl.background.src);
-          const blob = await res.blob();
-          const filename = `bg_new_${newTpl.id}_${Date.now()}.png`;
-          const supabaseUrl = await uploadBackgroundToSupabase(blob, filename);
-          if (supabaseUrl) {
-            newTpl.background.src = supabaseUrl;
-          }
-        }
-      } catch (e) {
-        console.warn('New template background cloud upload skipped:', e);
-      }
-
       await saveTemplateDB(newTpl);
 
       // Sync to Supabase
@@ -4169,63 +4101,58 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     }
   },
 
-    loadSavedTemplates: async () => {
-      const nowSync = Date.now();
-      const lastSync = get().lastTemplateSync || 0;
-      const CACHE_TTL = 60 * 1000; // 1 minute cache for fast re-access during workflows
-      
-      // Fast-path for recent fetches
-      if (get().customTemplates.length > 0 && (nowSync - lastSync < CACHE_TTL)) {
-        return get().customTemplates;
-      }
+  loadSavedTemplates: async () => {
+    const nowSync = Date.now();
+    const lastSync = get().lastTemplateSync || 0;
+    const TEN_MINS = 10 * 60 * 1000;
+    
+    // Only skip remote fetch if we already have data and it's fresh (< 10 mins)
+    if (get().customTemplates.length > 0 && (nowSync - lastSync < TEN_MINS)) {
+      return get().customTemplates;
+    }
 
-      set({ loadingTemplates: true });
+    set({ loadingTemplates: true });
+    try {
+      // 1. Fetch locally saved templates from IndexedDB
+      const dbTemplates = await getAllTemplatesDB();
+      const map = new Map<string, CardTemplate>();
+
+      dbTemplates.forEach((t) => {
+        map.set(t.id, ensureTemplateFieldIds(t));
+      });
+
+      // 2. Fetch active universal templates and sync
       try {
-        // 1. Fetch locally saved templates from IndexedDB
-        const dbTemplates = await getAllTemplatesDB();
-        const map = new Map<string, CardTemplate>();
-
-        dbTemplates.forEach((t) => {
-          map.set(t.id, ensureTemplateFieldIds(t));
-        });
-
-        // 2. Fetch active universal templates and sync
-        try {
-          const { fetchAllActiveTemplatesSupabase, isSupabaseConfigured, fetchManualRequestsSupabase } = await import('../services/supabase');
-          if (isSupabaseConfigured) {
-            // Fetch active templates
-            const supabaseTemplates = await fetchAllActiveTemplatesSupabase();
-            const savePromises: Promise<any>[] = [];
-
-            for (const t of supabaseTemplates) {
-              if (t && t.id) {
-                const sanitized = ensureTemplateFieldIds(t);
-                map.set(sanitized.id, sanitized);
-                savePromises.push(saveTemplateDB(sanitized));
-              }
+        const { fetchAllActiveTemplatesSupabase, isSupabaseConfigured, fetchManualRequestsSupabase } = await import('../services/supabase');
+        if (isSupabaseConfigured) {
+          // Fetch active templates
+          const supabaseTemplates = await fetchAllActiveTemplatesSupabase();
+          for (const t of supabaseTemplates) {
+            if (t && t.id) {
+              const sanitized = ensureTemplateFieldIds(t);
+              map.set(sanitized.id, sanitized);
+              await saveTemplateDB(sanitized);
             }
-            
-            // Sync in parallel but don't block heavily
-            Promise.all(savePromises).catch(console.warn);
-
-            // Fetch manual requests and sync/merge
-            const supabaseManuals = await fetchManualRequestsSupabase();
-            const localManuals = get().manualRequests || [];
-            const manualMap = new Map<string, ManualRequestItem>();
-            localManuals.forEach((m) => manualMap.set(m.id, m));
-            supabaseManuals.forEach((m) => {
-              manualMap.set(m.id, {
-                ...manualMap.get(m.id),
-                ...m
-              });
-            });
-            const mergedManuals = Array.from(manualMap.values()).sort((a, b) => b.submittedAt - a.submittedAt);
-            localStorage.setItem('bigsta_manual_requests', JSON.stringify(mergedManuals));
-            set({ manualRequests: mergedManuals });
           }
-        } catch (e) {
-          console.warn('Sync skipped:', e);
+
+          // Fetch manual requests and sync/merge
+          const supabaseManuals = await fetchManualRequestsSupabase();
+          const localManuals = get().manualRequests || [];
+          const manualMap = new Map<string, ManualRequestItem>();
+          localManuals.forEach((m) => manualMap.set(m.id, m));
+          supabaseManuals.forEach((m) => {
+            manualMap.set(m.id, {
+              ...manualMap.get(m.id),
+              ...m
+            });
+          });
+          const mergedManuals = Array.from(manualMap.values()).sort((a, b) => b.submittedAt - a.submittedAt);
+          localStorage.setItem('bigsta_manual_requests', JSON.stringify(mergedManuals));
+          set({ manualRequests: mergedManuals });
         }
+      } catch (e) {
+        console.warn('Sync skipped:', e);
+      }
 
     // 3. Detect which serviceIds have custom/admin made templates for front and back separately
     const servicesWithCustomFront = new Set<string>();
