@@ -374,16 +374,25 @@ export default function App() {
 
       {/* Global Saving Indicator (PROMPT 51) */}
       {isSaving && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[4px]">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-5 animate-in fade-in zoom-in duration-300 max-w-xs w-full">
             <div className="relative">
-              <div className="w-12 h-12 border-4 border-slate-100 rounded-full"></div>
-              <div className="absolute top-0 left-0 w-12 h-12 border-4 border-[#000000] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-16 h-16 border-4 border-slate-100 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-16 h-16 border-4 border-[#000000] border-t-transparent rounded-full animate-spin"></div>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-sm font-bold text-[#000000]">Saving Changes...</span>
-              <span className="text-[10px] text-[#555555]">Syncing with Supabase database</span>
+            <div className="flex flex-col items-center text-center">
+              <span className="text-base font-black text-[#000000]">Saving Changes...</span>
+              <p className="text-[11px] text-slate-500 mt-1 font-medium px-2">
+                Updating your account preferences and syncing with the central cloud store.
+              </p>
             </div>
+            
+            <button
+              onClick={() => useTemplateStore.setState({ isSaving: false })}
+              className="mt-2 px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 active:scale-95"
+            >
+              Cancel Saving
+            </button>
           </div>
         </div>
       )}

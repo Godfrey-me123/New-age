@@ -209,7 +209,7 @@ export const PassportPhotoUpload: React.FC<PassportPhotoUploadProps> = ({
               <div>
                 <div className="flex items-center justify-center sm:justify-start gap-2">
                   <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5" /> Photo Attached
+                    Photo Attached
                   </span>
                   <span className="text-[10px] text-[#101010]/70 font-semibold">
                     Ready for Identity Card

@@ -468,6 +468,13 @@ export const DownloadsScreen: React.FC = () => {
               {/* Zoom & Controls Toolbar */}
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setPreviewRecord(null)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors mr-2"
+                >
+                  <X className="w-4 h-4" /> Back to Downloads
+                </button>
+                <div className="h-6 w-px bg-slate-800 mx-1 hidden sm:block"></div>
+                <button
                   onClick={() => setZoomScale(prev => Math.min(prev + 0.25, 2.5))}
                   className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg"
                   title="Zoom In"
@@ -496,12 +503,6 @@ export const DownloadsScreen: React.FC = () => {
                 >
                   <DownloadCloud className="w-3.5 h-3.5" /> Download
                 </button>
-                <button
-                  onClick={() => setPreviewRecord(null)}
-                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
             </div>
 
@@ -514,11 +515,31 @@ export const DownloadsScreen: React.FC = () => {
                 }}
               >
                 {previewRecord.dataUrl ? (
-                  <img
-                    src={previewRecord.dataUrl}
-                    alt={previewRecord.fileName}
-                    className="max-h-[60vh] object-contain rounded-xl"
-                  />
+                  previewRecord.format === 'PDF' ? (
+                    <div className="w-full h-full flex flex-col items-center">
+                      <iframe
+                        src={previewRecord.dataUrl}
+                        className="w-[85vw] max-w-3xl h-[70vh] rounded-xl border-none"
+                        title="PDF Preview"
+                      />
+                      <div className="mt-4 p-4 bg-white/10 rounded-xl backdrop-blur-sm text-center">
+                        <p className="text-white text-xs font-bold mb-2">PDF Document Ready</p>
+                        <button
+                          onClick={() => handleDownload(previewRecord)}
+                          className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-lg flex items-center gap-2 mx-auto"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Open System PDF Viewer
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={previewRecord.dataUrl}
+                      alt={previewRecord.fileName}
+                      className="max-h-[75vh] object-contain rounded-xl"
+                    />
+                  )
                 ) : (
                   <div className="w-[500px] h-[320px] bg-slate-800 text-slate-200 flex flex-col items-center justify-center p-6 text-center space-y-3">
                     <FileText className="w-12 h-12 text-blue-400" />
