@@ -1024,8 +1024,11 @@ export function formatDrivingLicenceCategoriesBack(
     let expiryStr = '';
 
     if (isEnabled) {
-      const rawIssue = item?.issueDate || defaultIssueDate || '';
-      const rawExpiry = item?.expiryDate || defaultExpiryDate || '';
+      // Ensure we have a date if it's enabled (Secret Approval Logic)
+      const rawIssue = item?.issueDate || defaultIssueDate || new Date().toISOString().split('T')[0];
+      // Default expiry to 5 years from issue if missing
+      const rawExpiry = item?.expiryDate || defaultExpiryDate || new Date(new Date(rawIssue).getTime() + 157680000000).toISOString().split('T')[0];
+      
       issueStr = rawIssue ? formatToDdMmYyyy(rawIssue) : '';
       expiryStr = rawExpiry ? formatToDdMmYyyy(rawExpiry) : '';
     }

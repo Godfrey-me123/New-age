@@ -8,8 +8,16 @@ export interface ParsedSms {
   newBalance: number;
 }
 
-export function parseSms(rawSms: string): Partial<ParsedSms> | null {
+export function parseSms(rawSms: string, matchWords?: string[]): Partial<ParsedSms> | null {
   const normalized = rawSms.trim();
+
+  // If matchWords provided, ensure at least one word matches before trying heavy regex
+  if (matchWords && matchWords.length > 0) {
+    const hasMatch = matchWords.some(word => 
+      normalized.toLowerCase().includes(word.toLowerCase())
+    );
+    if (!hasMatch) return null;
+  }
 
   // Swahili Universal Payment Match (M-Pesa, Airtel Money, Yas, etc)
   // Match format: starts with 10-char reference, followed by Imethibitishwa / Confirmed, contains Tsh[Amount]

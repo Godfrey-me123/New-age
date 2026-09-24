@@ -240,6 +240,9 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
     setIsWorkflowCompleted(false);
     setIsSubmissionModalOpen(true);
 
+    const isOnline = navigator.onLine;
+    const hasCachedTemplates = resolvedFrontTpl && resolvedBackTpl;
+
     const updateStep = (id: string, status: 'pending' | 'in_progress' | 'completed' | 'failed', errorMessage?: string) => {
       setSubmissionSteps((prev) =>
         prev.map((s) => (s.id === id ? { ...s, status, errorMessage } : s))
@@ -250,6 +253,13 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
 
     // Reset steps
     setSubmissionSteps((prev) => prev.map((s) => ({ ...s, status: 'pending', errorMessage: undefined })));
+
+    // Step 0: Connectivity Check (Internal logic)
+    if (!isOnline && !hasCachedTemplates) {
+      setSubmissionError('Internet connection required for first-time template sync. Please check your connection and try again.');
+      setIsProcessing(false);
+      return;
+    }
 
     // Step 1: Validate Fields
     setCurrentStepId('step1_fields');
@@ -310,8 +320,13 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
     updateStep('step6_template', 'in_progress');
     await delay(250);
     if (!resolvedFrontTpl || !resolvedBackTpl) {
-      updateStep('step6_template', 'failed', 'Driving License universal templates missing.');
-      setSubmissionError('Universal Driving License templates are not active.');
+      if (!isOnline) {
+        updateStep('step6_template', 'failed', 'No internet connection to fetch templates.');
+        setSubmissionError('Offline: Universal templates not found in cache and no internet available. Please connect to sync.');
+      } else {
+        updateStep('step6_template', 'failed', 'Driving License universal templates missing.');
+        setSubmissionError('Universal Driving License templates are not available or failed to load. Please try again.');
+      }
       setIsProcessing(false);
       return;
     }
@@ -806,7 +821,7 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#101010]">
-                Permit Statutory Terms
+                Terms and Conditions Acceptance
               </h2>
             </div>
             <TermsAndConditions

@@ -542,10 +542,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               {/* Top status indicator */}
               <div className="absolute top-2.5 left-3 pointer-events-none text-[10px] font-sans flex items-center gap-1.5">
                 {strokeCount > 0 ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-700" />
-                    <span>Calibrated • Direct Transparent Stroke</span>
-                  </span>
+                  null
                 ) : (
                   <span className="text-slate-500 font-medium flex items-center gap-1">
                     <PenTool className="w-3 h-3 text-[#101010]" />
@@ -614,10 +611,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
               {/* Direct status badge */}
               <div className="text-[11px] text-[#101010]/70 font-semibold flex items-center gap-1.5 ml-auto">
                 {value ? (
-                  <span className="flex items-center gap-1 text-emerald-800 font-bold">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>Transparent signature active</span>
-                  </span>
+                  null
                 ) : (
                   <span className="text-[#101010]/60 font-medium">Ready to sign</span>
                 )}

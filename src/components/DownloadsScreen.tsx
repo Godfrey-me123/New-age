@@ -320,7 +320,8 @@ export const DownloadsScreen: React.FC = () => {
               {filteredDownloads.map((record) => (
                 <div
                   key={record.id}
-                  className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                  onClick={() => { setPreviewRecord(record); setZoomScale(1); setRotationAngle(0); }}
+                  className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-300 hover:shadow-md transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer group"
                 >
                   <div className="flex items-start gap-3.5">
                     <div className={`p-3 rounded-2xl shrink-0 ${
@@ -332,12 +333,12 @@ export const DownloadsScreen: React.FC = () => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-slate-900">{record.fileName}</span>
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
                           {record.format}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500">
-                        Service: <span className="font-semibold text-slate-700">{record.service}</span> • Date: {record.date} • Size: {((record.sizeBytes || 1200000) / 1000000).toFixed(2)} MB
+                        {record.service} • {record.date} • {((record.sizeBytes || 1200000) / 1000000).toFixed(2)} MB
                       </p>
 
                       {/* Processing Progress Bar */}
@@ -345,11 +346,11 @@ export const DownloadsScreen: React.FC = () => {
                         <div className="w-full max-w-md pt-1">
                           <div className="flex items-center justify-between text-[11px] text-blue-700 font-medium mb-1">
                             <span>Generating high-resolution document...</span>
-                            <span>{record.progressPercent || 65}% (Queue #{record.queuePosition || 1})</span>
+                            <span>{record.progressPercent || 65}%</span>
                           </div>
-                          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-[#2563EB] transition-all duration-300"
+                              className="h-full bg-blue-600 transition-all duration-300"
                               style={{ width: `${record.progressPercent || 65}%` }}
                             ></div>
                           </div>
@@ -358,7 +359,7 @@ export const DownloadsScreen: React.FC = () => {
 
                       {record.status === 'FAILED' && (
                         <p className="text-xs font-semibold text-red-600">
-                          Failure Reason: {record.failureReason || 'Canvas rendering timeout during export.'}
+                          Failure: {record.failureReason || 'Generation timeout.'}
                         </p>
                       )}
                     </div>
@@ -376,24 +377,25 @@ export const DownloadsScreen: React.FC = () => {
                     ) : (record.status === 'READY' || record.status === 'DOWNLOADED') ? (
                       <>
                         <button
-                          onClick={() => { setPreviewRecord(record); setZoomScale(1); setRotationAngle(0); }}
-                          className="p-2 text-slate-600 hover:text-blue-600 bg-white hover:bg-blue-50 border border-slate-200 rounded-xl text-xs font-semibold transition-all"
-                          title="Full Screen Preview"
+                          onClick={(e) => { e.stopPropagation(); setPreviewRecord(record); setZoomScale(1); setRotationAngle(0); }}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
+                          title="Open document in app"
                         >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => handleShare(record, e)}
-                          className="p-2 text-slate-600 hover:text-blue-600 bg-white hover:bg-blue-50 border border-slate-200 rounded-xl text-xs font-semibold transition-all"
-                          title="Share Document"
-                        >
-                          <Share2 className="w-4 h-4" />
+                          <Eye className="w-4 h-4" /> Open
                         </button>
                         <button
                           onClick={(e) => handleDownload(record, e)}
-                          className="px-3.5 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
+                          className="p-2 text-slate-600 hover:text-blue-600 bg-slate-50 hover:bg-blue-100 border border-slate-200 rounded-xl text-xs font-semibold transition-all"
+                          title="Save to device storage"
                         >
-                          <DownloadCloud className="w-4 h-4" /> Save to Device
+                          <DownloadCloud className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleShare(record, e)}
+                          className="p-2 text-slate-600 hover:text-blue-600 bg-slate-50 hover:bg-blue-100 border border-slate-200 rounded-xl text-xs font-semibold transition-all"
+                          title="Share Document"
+                        >
+                          <Share2 className="w-4 h-4" />
                         </button>
                       </>
                     ) : null}

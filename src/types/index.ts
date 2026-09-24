@@ -344,6 +344,8 @@ export interface AdminSystemSettings {
   tokenRewardBonus: number;
   maxDailyTokenLimit: number;
   autoApprovalRules: string;
+  webhookSecret?: string;
+  matchWords?: string[];
 }
 
 export interface ExtractedPaymentData {

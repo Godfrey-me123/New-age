@@ -304,7 +304,7 @@ export const TemplatesScreen: React.FC = () => {
                 <div className="w-12 h-12 border-4 border-slate-100 rounded-full"></div>
                 <div className="absolute top-0 left-0 w-12 h-12 border-4 border-[#000000] border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <span className="text-sm font-bold text-[#000000]">Fetching Templates...</span>
+              <span className="text-sm font-bold text-[#000000]">Syncing Workspace...</span>
             </div>
           </div>
         )}

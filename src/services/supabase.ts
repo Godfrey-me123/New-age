@@ -21,6 +21,28 @@ const supabaseAnonKey =
   procEnv.SUPABASE_ANON_KEY ||
   '';
 
+const DEFAULT_TIMEOUT = 12000; // 12 seconds
+
+async function withTimeout<T>(
+  promise: Promise<T>, 
+  timeoutMs: number = DEFAULT_TIMEOUT, 
+  errorMsg: string = 'Connection timed out. Please check your internet connection or try again.'
+): Promise<T> {
+  let timeoutId: any;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
+  });
+  
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutId);
+    return result;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
   supabaseAnonKey && 

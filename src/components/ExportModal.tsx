@@ -54,8 +54,36 @@ export const ExportModal: React.FC = () => {
   // Generate card preview image
   useEffect(() => {
     if (isExportModalOpen) {
-      const isDL = currentTemplate.cardType === 'Driving License' || useTemplateStore.getState().activeServiceId === 'driving_license';
-      const formData = (isDL ? useTemplateStore.getState().lastDrivingLicenseFormData : useTemplateStore.getState().lastNidaFormData) || {};
+      const store = useTemplateStore.getState();
+      
+      // Strict data association to prevent leaks between card types
+      const templateName = (currentTemplate.templateName || '').toLowerCase();
+      const templateId = (currentTemplate.id || '').toLowerCase();
+      const serviceId = (currentTemplate.serviceId || '').toLowerCase();
+      
+      const isDrivingLicense = 
+        currentTemplate.cardType === 'Driving License' || 
+        serviceId === 'driving_license' || 
+        templateName.includes('driving') ||
+        templateId.includes('dl_') ||
+        store.activeServiceId === 'driving_license';
+
+      const isNhif = 
+        serviceId === 'nhif' || 
+        templateName.includes('nhif') ||
+        templateId.includes('nhif') ||
+        store.activeServiceId === 'nhif';
+
+      let formData = {};
+      if (isNhif) {
+        formData = store.lastNhifFormData || {};
+      } else if (isDrivingLicense) {
+        formData = store.lastDrivingLicenseFormData || {};
+      } else {
+        // Fallback to NIDA for general cards, but prefer NIDA data only if it looks like a NIDA card
+        formData = store.lastNidaFormData || {};
+      }
+
       renderTemplateToCanvas(currentTemplate, formData, 150).then((canvas) => {
         setPreviewSrc(canvas.toDataURL('image/png'));
       });
@@ -342,7 +370,23 @@ export const ExportModal: React.FC = () => {
                   const store = useTemplateStore.getState();
                   const val = store.validateExportAccess('pdf');
                   if (!val.allowed) return;
-                  const formData = store.lastNidaFormData || {};
+                  
+                  // Strict data association to prevent leaks
+                  const isDrivingLicense = 
+                    currentTemplate.cardType === 'Driving License' || 
+                    (currentTemplate.serviceId || '').toLowerCase() === 'driving_license' || 
+                    (currentTemplate.templateName || '').toLowerCase().includes('driving') ||
+                    (currentTemplate.id || '').toLowerCase().includes('dl_') ||
+                    store.activeServiceId === 'driving_license';
+
+                  const isNhif = 
+                    (currentTemplate.serviceId || '').toLowerCase() === 'nhif' || 
+                    (currentTemplate.templateName || '').toLowerCase().includes('nhif') ||
+                    (currentTemplate.id || '').toLowerCase().includes('nhif') ||
+                    store.activeServiceId === 'nhif';
+
+                  const formData = (isNhif ? store.lastNhifFormData : isDrivingLicense ? store.lastDrivingLicenseFormData : store.lastNidaFormData) || {};
+                  
                   try {
                     await downloadPDF(currentTemplate, formData, undefined, cropPayload);
                     store.consumeUsage(`${currentTemplate.templateName || 'Card'} PDF Export`, undefined, 1);
@@ -373,7 +417,22 @@ export const ExportModal: React.FC = () => {
                   const store = useTemplateStore.getState();
                   const val = store.validateExportAccess('png');
                   if (!val.allowed) return;
-                  const formData = store.lastNidaFormData || {};
+                  
+                  const isDrivingLicense = 
+                    currentTemplate.cardType === 'Driving License' || 
+                    (currentTemplate.serviceId || '').toLowerCase() === 'driving_license' || 
+                    (currentTemplate.templateName || '').toLowerCase().includes('driving') ||
+                    (currentTemplate.id || '').toLowerCase().includes('dl_') ||
+                    store.activeServiceId === 'driving_license';
+
+                  const isNhif = 
+                    (currentTemplate.serviceId || '').toLowerCase() === 'nhif' || 
+                    (currentTemplate.templateName || '').toLowerCase().includes('nhif') ||
+                    (currentTemplate.id || '').toLowerCase().includes('nhif') ||
+                    store.activeServiceId === 'nhif';
+
+                  const formData = (isNhif ? store.lastNhifFormData : isDrivingLicense ? store.lastDrivingLicenseFormData : store.lastNidaFormData) || {};
+                  
                   try {
                     await downloadPNG(currentTemplate, formData, undefined, cropPayload);
                     store.consumeUsage(`${currentTemplate.templateName || 'Card'} PNG Export`, undefined, 1);
@@ -404,7 +463,22 @@ export const ExportModal: React.FC = () => {
                   const store = useTemplateStore.getState();
                   const val = store.validateExportAccess('jpg');
                   if (!val.allowed) return;
-                  const formData = store.lastNidaFormData || {};
+                  
+                  const isDrivingLicense = 
+                    currentTemplate.cardType === 'Driving License' || 
+                    (currentTemplate.serviceId || '').toLowerCase() === 'driving_license' || 
+                    (currentTemplate.templateName || '').toLowerCase().includes('driving') ||
+                    (currentTemplate.id || '').toLowerCase().includes('dl_') ||
+                    store.activeServiceId === 'driving_license';
+
+                  const isNhif = 
+                    (currentTemplate.serviceId || '').toLowerCase() === 'nhif' || 
+                    (currentTemplate.templateName || '').toLowerCase().includes('nhif') ||
+                    (currentTemplate.id || '').toLowerCase().includes('nhif') ||
+                    store.activeServiceId === 'nhif';
+
+                  const formData = (isNhif ? store.lastNhifFormData : isDrivingLicense ? store.lastDrivingLicenseFormData : store.lastNidaFormData) || {};
+                  
                   try {
                     await downloadJPG(currentTemplate, formData, undefined, cropPayload);
                     store.consumeUsage(`${currentTemplate.templateName || 'Card'} JPG Export`, undefined, 1);

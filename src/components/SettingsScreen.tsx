@@ -47,7 +47,7 @@ export const SettingsScreen: React.FC = () => {
   } = useTemplateStore();
 
   // Active Category Tab
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance' | 'notifications' | 'downloads' | 'support' | 'payment_config' | 'ocr_config' | 'token_config' | 'system' | 'supabase_db' | 'native_apk'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance' | 'notifications' | 'downloads' | 'support' | 'payment_config' | 'ocr_config' | 'token_config' | 'system' | 'cloud_db' | 'native_apk'>('profile');
 
   // Feedback Toast
   const [saveToast, setSaveToast] = useState<string | null>(null);
@@ -112,7 +112,7 @@ export const SettingsScreen: React.FC = () => {
     // Publish to Supabase
     const success = await publishPaymentMethodsToSupabase();
     if (success) {
-      triggerToast('Payment Gateways successfully published & synced to Supabase!');
+      triggerToast('Payment Gateways successfully published & synced to Cloud!');
     } else {
       triggerToast('Payment settings saved locally.');
     }
@@ -124,7 +124,7 @@ export const SettingsScreen: React.FC = () => {
     const { publishAdminSettingsToSupabase } = useTemplateStore.getState();
     const success = await publishAdminSettingsToSupabase();
     if (success) {
-      triggerToast('OCR and Token settings successfully published & synced to Supabase!');
+      triggerToast('OCR and Token settings successfully published & synced to Cloud!');
     } else {
       triggerToast('OCR settings saved locally.');
     }
@@ -287,12 +287,12 @@ export const SettingsScreen: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => setActiveTab('supabase_db')}
+                    onClick={() => setActiveTab('cloud_db')}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all ${
-                      activeTab === 'supabase_db' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                      activeTab === 'cloud_db' ? 'bg-purple-700 text-white shadow-xs' : 'text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}
                   >
-                    <HardDrive className="w-4 h-4" /> Supabase DB Migration
+                    <HardDrive className="w-4 h-4" /> Cloud DB Migration
                   </button>
                 </>
               )}
@@ -665,7 +665,7 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white">SMS Interceptor</h4>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Captures incoming Vodacom, Airtel, and Tigo transaction messages natively on the device and syncs them to Supabase instantly.
+                      Captures incoming Vodacom, Airtel, and Tigo transaction messages natively on the device and syncs them to Cloud instantly.
                     </p>
                     <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[9px] font-bold rounded-md">
                       RECEIVE_SMS
@@ -841,7 +841,7 @@ export const SettingsScreen: React.FC = () => {
                       type="submit"
                       className="px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                     >
-                      <Save className="w-4 h-4" /> Save & Publish Gateways to Supabase
+                      <Save className="w-4 h-4" /> Save & Publish Gateways to Cloud
                     </button>
                   </div>
                 </form>
@@ -931,20 +931,20 @@ export const SettingsScreen: React.FC = () => {
               </div>
             )}
 
-            {/* ADMIN EXCLUSIVE TAB: SUPABASE DB MIGRATION */}
-            {authRole === 'admin' && activeTab === 'supabase_db' && (
+            {/* ADMIN EXCLUSIVE TAB: CLOUD DB MIGRATION */}
+            {authRole === 'admin' && activeTab === 'cloud_db' && (
               <div className="bg-white rounded-2xl border border-purple-200 p-6 shadow-xs space-y-5">
                 <div className="border-b border-purple-100 pb-3 flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-bold text-purple-950 flex items-center gap-2">
-                      <HardDrive className="w-5 h-5 text-purple-700" /> Supabase Database & Migration Control
+                      <HardDrive className="w-5 h-5 text-purple-700" /> Cloud Database & Migration Control
                     </h2>
                     <p className="text-xs text-slate-500">
-                      Manage backend database schemas, authentication persistence, and cross-device account syncing (PROMPT 50 Migration).
+                      Manage backend database schemas, authentication persistence, and cross-device account syncing.
                     </p>
                   </div>
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Supabase Active
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Cloud Active
                   </span>
                 </div>
 
@@ -964,7 +964,7 @@ export const SettingsScreen: React.FC = () => {
                   <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 space-y-2">
                     <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Storage Isolation Policy</span>
                     <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                      <strong>Downloads Policy:</strong> Document export files are saved strictly on user device storage (<code>Downloads/BIGsta</code>). Supabase stores metadata only.
+                      <strong>Downloads Policy:</strong> Document export files are saved strictly on user device storage (<code>Downloads/BIGsta</code>). Cloud stores metadata only.
                     </p>
                     <p className="text-xs text-slate-700 leading-relaxed font-medium">
                       <strong>Universal Template Policy:</strong> Updates made by Admin propagate automatically to all connected users and APK installations.
@@ -974,10 +974,10 @@ export const SettingsScreen: React.FC = () => {
 
                 <div className="space-y-2">
                   <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider">
-                    Supabase SQL Schema Script (PROMPT 50)
+                    Cloud SQL Schema Script (PROMPT 50)
                   </label>
                   <p className="text-xs text-slate-500">
-                    Run this SQL script in your Supabase SQL Editor if you need to create or verify tables:
+                    Run this SQL script in your Cloud SQL Editor if you need to create or verify tables:
                   </p>
                   <pre className="p-4 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-2xl overflow-x-auto max-h-48 border border-slate-800">
                     {`-- BIGsta Migration Schema

@@ -446,6 +446,7 @@ interface TemplateState {
   setIsSaving: (saving: boolean) => void;
   loadingTemplates: boolean;
   loadingPasskeys: boolean;
+  lastTemplateSync: number;
 
   setStudioMode: (enabled: boolean) => void;
   setHasUnsavedChanges: (dirty: boolean) => void;
@@ -1203,6 +1204,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     setIsSaving: (saving) => set({ isSaving: saving }),
     loadingTemplates: false,
     loadingPasskeys: false,
+    lastTemplateSync: 0,
 
     setStudioMode: (enabled: boolean) => set({ studioMode: enabled }),
     setHasUnsavedChanges: (dirty: boolean) => set({ hasUnsavedChanges: dirty }),
@@ -4100,49 +4102,57 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   },
 
   loadSavedTemplates: async () => {
+    const nowSync = Date.now();
+    const lastSync = get().lastTemplateSync || 0;
+    const TEN_MINS = 10 * 60 * 1000;
+    
+    // Only skip remote fetch if we already have data and it's fresh (< 10 mins)
+    if (get().customTemplates.length > 0 && (nowSync - lastSync < TEN_MINS)) {
+      return get().customTemplates;
+    }
+
     set({ loadingTemplates: true });
     try {
       // 1. Fetch locally saved templates from IndexedDB
       const dbTemplates = await getAllTemplatesDB();
-    const map = new Map<string, CardTemplate>();
+      const map = new Map<string, CardTemplate>();
 
-    dbTemplates.forEach((t) => {
-      map.set(t.id, ensureTemplateFieldIds(t));
-    });
+      dbTemplates.forEach((t) => {
+        map.set(t.id, ensureTemplateFieldIds(t));
+      });
 
-    // 2. Fetch active universal templates from Supabase database and sync to local store
-    try {
-      const { fetchAllActiveTemplatesSupabase, isSupabaseConfigured, fetchManualRequestsSupabase } = await import('../services/supabase');
-      if (isSupabaseConfigured) {
-        // Fetch active templates
-        const supabaseTemplates = await fetchAllActiveTemplatesSupabase();
-        for (const t of supabaseTemplates) {
-          if (t && t.id) {
-            const sanitized = ensureTemplateFieldIds(t);
-            // Overwrite/insert in map and save to local IndexedDB for local persistence
-            map.set(sanitized.id, sanitized);
-            await saveTemplateDB(sanitized);
+      // 2. Fetch active universal templates and sync
+      try {
+        const { fetchAllActiveTemplatesSupabase, isSupabaseConfigured, fetchManualRequestsSupabase } = await import('../services/supabase');
+        if (isSupabaseConfigured) {
+          // Fetch active templates
+          const supabaseTemplates = await fetchAllActiveTemplatesSupabase();
+          for (const t of supabaseTemplates) {
+            if (t && t.id) {
+              const sanitized = ensureTemplateFieldIds(t);
+              map.set(sanitized.id, sanitized);
+              await saveTemplateDB(sanitized);
+            }
           }
-        }
 
-        // Fetch manual requests and sync/merge
-        const supabaseManuals = await fetchManualRequestsSupabase();
-        const localManuals = get().manualRequests || [];
-        const manualMap = new Map<string, ManualRequestItem>();
-        localManuals.forEach((m) => manualMap.set(m.id, m));
-        supabaseManuals.forEach((m) => {
-          manualMap.set(m.id, {
-            ...manualMap.get(m.id),
-            ...m
+          // Fetch manual requests and sync/merge
+          const supabaseManuals = await fetchManualRequestsSupabase();
+          const localManuals = get().manualRequests || [];
+          const manualMap = new Map<string, ManualRequestItem>();
+          localManuals.forEach((m) => manualMap.set(m.id, m));
+          supabaseManuals.forEach((m) => {
+            manualMap.set(m.id, {
+              ...manualMap.get(m.id),
+              ...m
+            });
           });
-        });
-        const mergedManuals = Array.from(manualMap.values()).sort((a, b) => b.submittedAt - a.submittedAt);
-        localStorage.setItem('bigsta_manual_requests', JSON.stringify(mergedManuals));
-        set({ manualRequests: mergedManuals });
+          const mergedManuals = Array.from(manualMap.values()).sort((a, b) => b.submittedAt - a.submittedAt);
+          localStorage.setItem('bigsta_manual_requests', JSON.stringify(mergedManuals));
+          set({ manualRequests: mergedManuals });
+        }
+      } catch (e) {
+        console.warn('Sync skipped:', e);
       }
-    } catch (e) {
-      console.warn('Failed to fetch/sync templates or manual requests from Supabase:', e);
-    }
 
     // 3. Detect which serviceIds have custom/admin made templates for front and back separately
     const servicesWithCustomFront = new Set<string>();
@@ -4183,7 +4193,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime() || 0;
       return timeB - timeA;
     });
-    set({ customTemplates: sorted });
+    set({ customTemplates: sorted, lastTemplateSync: nowSync });
     return sorted;
     } finally {
       set({ loadingTemplates: false });

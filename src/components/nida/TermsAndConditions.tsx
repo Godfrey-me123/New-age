@@ -118,7 +118,7 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
               <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-2">
                 <p className="text-xs font-bold text-white uppercase tracking-wider">Welcome to BIGsta</p>
                 <p className="text-xs text-[#A0A4A8]">
-                  BIGsta is a document template creation, card design, sample document generation, and visual preview platform intended for educational, design, demonstration, testing, training, record-keeping, and template development purposes only.
+                  BIGsta is a specialized document template creation and card design platform intended for professional design, record-keeping, and template development.
                 </p>
                 <p className="text-xs text-[#A0A4A8]">
                   By accessing or using BIGsta, you agree to comply with and be bound by the following Terms and Conditions.
@@ -161,7 +161,7 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
                   3. Generated Documents Are Not Official
                 </h4>
                 <p className="text-[#A0A4A8] pl-5">
-                  Any document, card, permit, certificate, license, identification card, or visual output generated through BIGsta is considered: A sample, A template, A preview, A demonstration, or A design example.<br /><br />
+                  Any document or visual output generated through BIGsta is a user-defined template and design preview.<br /><br />
                   Generated outputs must never be represented as genuine, official, government-issued, or legally valid documents unless independently issued and authorized by the appropriate lawful authority.
                 </p>
               </section>
@@ -279,7 +279,7 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
                 <div className="space-y-1.5 text-[#C5C8CD] pl-1">
                   <p>⚠️ BIGsta is not an official government application, government portal, government database, or government verification service.</p>
                   <p>⚠️ BIGsta does not connect to, access, or verify records from NIDA, RITA, Immigration, TRA, NHIF, HESLB, or any government institution.</p>
-                  <p>⚠️ All documents generated within BIGsta are templates, samples, demonstrations, previews, or design examples only.</p>
+                  <p>⚠️ All documents generated within BIGsta are user-defined templates and design previews.</p>
                   <p>⚠️ Generated outputs should not be used for identity verification, legal transactions, government submissions, immigration processes, banking services, financial services, employment verification, or any activity requiring genuine official documents.</p>
                   <p>⚠️ Users are solely responsible for any information entered into the platform and for how generated outputs are used.</p>
                   <p>⚠️ Misuse of generated documents may violate local laws and regulations and may result in civil or criminal consequences.</p>

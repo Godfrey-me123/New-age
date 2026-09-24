@@ -109,6 +109,29 @@ export const PaymentDashboard: React.FC = () => {
     requests: []
   });
 
+  // Match Words state from store
+  const { adminSettings, updateAdminSettings, publishAdminSettingsToSupabase } = useTemplateStore();
+  const [matchWords, setMatchWords] = useState<string[]>(adminSettings?.matchWords || ['Confirmed', 'Umepokea', 'Imethibitishwa', 'received']);
+  const [newMatchWord, setNewMatchWord] = useState('');
+
+  const handleAddMatchWord = () => {
+    if (newMatchWord.trim() && !matchWords.includes(newMatchWord.trim())) {
+      const updated = [...matchWords, newMatchWord.trim()];
+      setMatchWords(updated);
+      setNewMatchWord('');
+    }
+  };
+
+  const handleRemoveMatchWord = (word: string) => {
+    setMatchWords(matchWords.filter(w => w !== word));
+  };
+
+  const handleSaveMatchWords = async () => {
+    updateAdminSettings({ matchWords });
+    await publishAdminSettingsToSupabase();
+    alert('SMS Match Words updated successfully!');
+  };
+
   const [isVerifying, setIsVerifying] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState<Partial<PaymentRecord>>({});
@@ -409,7 +432,7 @@ export const PaymentDashboard: React.FC = () => {
                   <td colSpan={7} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fetching records...</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Syncing records...</p>
                     </div>
                   </td>
                 </tr>
@@ -1041,12 +1064,12 @@ export const PaymentDashboard: React.FC = () => {
                 
                 <StatusRow label="Webhook Service" status="ONLINE" active />
                 <StatusRow 
-                  label="Internal Test Status" 
+                  label="Handshake Echo Status" 
                   value={testStatusInfo.label} 
                   valueColor={testStatusInfo.color}
                 />
                 <StatusRow 
-                  label="SMS Forwarder Status" 
+                  label="SMS Gateway Persistence" 
                   value={smsStatus.label} 
                   valueColor={smsStatus.label === 'CONNECTED' ? 'text-emerald-500' : 'text-gray-400'}
                 />
@@ -1077,6 +1100,54 @@ export const PaymentDashboard: React.FC = () => {
                 * Internal tests do not affect SMS Forwarder status
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Section: SMS Recognition Words */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Tag className="w-4 h-4 text-blue-600" />
+            <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">SMS Recognition & Match Words</h4>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
+            <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+              Define specific keywords the system should look for in incoming SMS to identify a payment. 
+              The system will extract the Transaction Code and Amount from messages containing these words.
+            </p>
+            
+            <div className="flex flex-wrap gap-2">
+              {matchWords.map((word) => (
+                <div key={word} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl">
+                  <span className="text-[11px] font-black text-blue-700 uppercase tracking-tight">{word}</span>
+                  <button onClick={() => handleRemoveMatchWord(word)} className="p-0.5 hover:bg-blue-100 rounded text-blue-400">
+                    <XCircle className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newMatchWord}
+                onChange={(e) => setNewMatchWord(e.target.value)}
+                placeholder="Enter new match word (e.g. Received)"
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+              <button
+                onClick={handleAddMatchWord}
+                className="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all"
+              >
+                Add Word
+              </button>
+            </div>
+
+            <button
+              onClick={handleSaveMatchWords}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+            >
+              Update Match Rules
+            </button>
           </div>
         </div>
 

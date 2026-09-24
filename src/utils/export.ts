@@ -45,10 +45,23 @@ export async function renderTemplateToCanvas(
 ): Promise<HTMLCanvasElement> {
   const store = useTemplateStore.getState();
 
-  // 1. Determine effective card data (fallback to store's lastNidaFormData, lastDrivingLicenseFormData, or lastNhifFormData)
-  const isDrivingLicense = template.cardType === 'Driving License' || store.activeServiceId === 'driving_license';
+  // 1. Determine effective card data (fallback to store's lastNidaFormData, etc. only for fresh exports)
+  const isDrivingLicense = template.cardType === 'Driving License' || store.activeServiceId === 'driving_license' || template.serviceId === 'driving_license';
   const isNhif = template.serviceId === 'nhif' || store.activeServiceId === 'nhif';
-  const storeFormData = (isNhif ? store.lastNhifFormData : isDrivingLicense ? store.lastDrivingLicenseFormData : store.lastNidaFormData) || {};
+  
+  // ELIMINATE DATA LEAKAGE: When specific cardData is provided (e.g. from a saved record in Downloads),
+  // we MUST NOT merge it with the last filled form in the store. 
+  // We only use the store as a fallback if the provided cardData is empty or just a placeholder.
+  const isSpecificRecordExport = cardData && (
+    (cardData.id && cardData.id.length > 5 && cardData.id !== 'sample_tanzania_nida') || 
+    Object.keys(cardData).length > 5
+  );
+
+  let storeFormData: any = {};
+  if (!isSpecificRecordExport) {
+    storeFormData = (isNhif ? store.lastNhifFormData : isDrivingLicense ? store.lastDrivingLicenseFormData : store.lastNidaFormData) || {};
+  }
+  
   const effectiveCardData: CardData = {
     ...storeFormData,
     ...cardData,

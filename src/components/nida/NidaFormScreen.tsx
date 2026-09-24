@@ -272,6 +272,9 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     setIsWorkflowCompleted(false);
     setIsSubmissionModalOpen(true);
 
+    const isOnline = navigator.onLine;
+    const hasCachedTemplates = resolvedFrontTpl && resolvedBackTpl;
+
     const updateStep = (id: SubmissionStepId, status: WorkflowStep['status'], errorMessage?: string) => {
       setSubmissionSteps((prev) =>
         prev.map((s) => (s.id === id ? { ...s, status, errorMessage } : s))
@@ -284,6 +287,13 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     setSubmissionSteps(
       INITIAL_SUBMISSION_STEPS.map((s) => ({ ...s, status: 'pending', errorMessage: undefined }))
     );
+
+    // Step 0: Connectivity Check (Internal logic)
+    if (!isOnline && !hasCachedTemplates) {
+      setSubmissionError('Internet connection required for first-time template sync. Please check your connection and try again.');
+      setIsProcessing(false);
+      return;
+    }
 
     // STEP 1: Validate all fields
     setCurrentStepId('step1_fields');
@@ -386,8 +396,13 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
     const backSource = sanitizeTemplateForSaving(backSourceRaw);
 
     if (!frontSource || !backSource) {
-      updateStep('step6_template', 'failed', 'Templates could not be resolved.');
-      setSubmissionError('Please ensure valid Front and Back templates are selected.');
+      if (!isOnline) {
+        updateStep('step6_template', 'failed', 'No internet connection to fetch templates.');
+        setSubmissionError('Offline: Templates not found in cache and no internet available. Please connect to sync.');
+      } else {
+        updateStep('step6_template', 'failed', 'Templates could not be resolved.');
+        setSubmissionError('Please ensure valid Front and Back templates are selected.');
+      }
       setIsProcessing(false);
       return;
     }

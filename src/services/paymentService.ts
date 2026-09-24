@@ -7,7 +7,9 @@ export class PaymentService {
   async receiveSms(payload: { raw_sms: string; sender: string; received_at: string; device_name: string }): Promise<PaymentRecord> {
     const { raw_sms, sender, received_at, device_name } = payload;
     
-    const parsed = parseSms(raw_sms);
+    const store = useTemplateStore.getState();
+    const matchWords = store.adminSettings?.matchWords;
+    const parsed = parseSms(raw_sms, matchWords);
     
     // Check for duplicate reference
     if (parsed?.transactionReference) {
@@ -36,12 +38,12 @@ export class PaymentService {
     await paymentDb.addPayment(payment);
     await this.logAction(payment.id, 'received', `SMS received from ${sender} via ${device_name}`);
     
-    // Sync to Supabase cloud!
+    // Sync to Cloud!
     try {
       const { syncPaymentRecordSupabase } = await import('./supabase');
       await syncPaymentRecordSupabase(payment);
     } catch (e) {
-      console.warn('Failed to sync incoming SMS payment to Supabase:', e);
+      console.warn('Failed to sync incoming SMS payment to Cloud:', e);
     }
 
     return payment;
@@ -51,13 +53,13 @@ export class PaymentService {
    * User provides a reference and amount to auto-verify their payment or submit a claim
    */
   async autoConfirmWithReference(reference: string, amountInput: number, passkeyId: string): Promise<{ success: boolean; message: string; status: 'verified' | 'submitted' }> {
-    // 1. Fetch from Supabase as first choice for cross-device connectivity
+    // 1. Fetch from Cloud as first choice for cross-device connectivity
     let all: PaymentRecord[] = [];
     try {
       const { fetchAllPaymentsSupabase } = await import('./supabase');
       all = await fetchAllPaymentsSupabase();
     } catch (e) {
-      console.warn('Failed to fetch payments from Supabase, falling back to local DB:', e);
+      console.warn('Failed to fetch payments from Cloud, falling back to local DB:', e);
       try {
         all = await paymentDb.getAllPayments();
       } catch (err) {}
@@ -98,7 +100,7 @@ export class PaymentService {
 
       await this.logAction(match.id, 'auto_confirm', `Auto-confirmed via reference matching for passkey ${passkeyId}. Granted ${tokens} tokens.`);
 
-      // Sync updated verification to Supabase!
+      // Sync updated verification to Cloud!
       try {
         const { syncPaymentRecordSupabase } = await import('./supabase');
         await syncPaymentRecordSupabase(match);
@@ -107,7 +109,7 @@ export class PaymentService {
       return { success: true, message: `Successfully verified! ${tokens} tokens have been added to your account.`, status: 'verified' };
     }
 
-    // 3. If no pre-synced SMS transaction matches, create a REAL user payment submission in Supabase
+    // 3. If no pre-synced SMS transaction matches, create a REAL user payment submission in Cloud
     // This allows the admin on the other side of the BIGsta app to instantly review and approve it!
     const newClaimId = 'claim_' + Math.random().toString(36).substring(2, 11).toUpperCase();
     const activeUser = store.activePasskeys.find(p => p.id === passkeyId);
@@ -133,12 +135,12 @@ export class PaymentService {
       await paymentDb.addPayment(newClaim);
     } catch (e) {}
 
-    // Push to Supabase user_payments table so the Admin Panel on the other side sees it!
+    // Push to Cloud user_payments table so the Admin Panel on the other side sees it!
     try {
       const { syncPaymentRecordSupabase } = await import('./supabase');
       await syncPaymentRecordSupabase(newClaim);
     } catch (e) {
-      console.warn('Failed to publish manual claim to Supabase:', e);
+      console.warn('Failed to publish manual claim to Cloud:', e);
     }
 
     await this.logAction(newClaimId, 'claim_submitted', `User submitted payment claim for Ref: ${cleanRef}, Amount: Tsh ${amountInput}. Awaiting Admin confirmation.`);
@@ -171,7 +173,7 @@ export class PaymentService {
     await paymentDb.updatePayment(payment);
     await this.logAction(paymentId, 'verified_manual', `Payment verified manually by ${adminId}${targetPasskeyId ? ` for passkey ${targetPasskeyId}` : ''}`, adminId);
 
-    // Sync manually verified status to Supabase
+    // Sync manually verified status to Cloud
     try {
       const { syncPaymentRecordSupabase } = await import('./supabase');
       await syncPaymentRecordSupabase(payment);
@@ -187,7 +189,7 @@ export class PaymentService {
     await paymentDb.updatePayment(payment);
     await this.logAction(paymentId, 'rejected', `Payment rejected by ${adminId}: ${reason}`, adminId);
 
-    // Sync rejected status to Supabase
+    // Sync rejected status to Cloud
     try {
       const { syncPaymentRecordSupabase } = await import('./supabase');
       await syncPaymentRecordSupabase(payment);
