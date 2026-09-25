@@ -556,7 +556,7 @@ export const NidaFormScreen: React.FC<NidaFormScreenProps> = ({ onSuccess, onCan
                     icon={Hash}
                     value={formData.nidaNumber}
                     onChange={handleNidaChange}
-                    placeholder={formData.nidaNumber.length === 0 ? "19980301-54218-00002-27" : ""}
+                    placeholder={formData.nidaNumber.length === 0 ? "19900101-00000-00000-01" : ""}
                     maxLength={23} // 20 digits + 3 hyphens
                     autoComplete="off"
                     spellCheck={false}

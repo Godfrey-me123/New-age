@@ -48,19 +48,27 @@ export const TokenBillingScreen: React.FC = () => {
     addUsagesToPasskey,
     addTokenHistoryItem,
     adminSettings,
-    updateAdminSettings
+    updateAdminSettings,
+    tokenPackages,
+    addTokenPackage,
+    editTokenPackage,
+    deleteTokenPackage,
+    weeklyOffers,
+    addWeeklyOffer,
+    editWeeklyOffer,
+    deleteWeeklyOffer,
   } = useTemplateStore();
 
   const currentPasskeyObj = activePasskeys.find(p => p.key === currentAuthKey) || activePasskeys[0];
   const availableTokens = currentPasskeyObj ? currentPasskeyObj.remainingUsages : 0;
 
   // Active Tab for Admin
-  const [adminTab, setAdminTab] = useState<'queue' | 'methods' | 'adjust' | 'stats'>('queue');
+  const [adminTab, setAdminTab] = useState<'queue' | 'methods' | 'packages' | 'offers' | 'adjust' | 'stats'>('queue');
 
   // Payment Upload Form State
   const [selectedMethod, setSelectedMethod] = useState<string>(paymentMethods[0]?.id || '');
   const [amountInput, setAmountInput] = useState<string>('6000');
-  const [senderInput, setSenderInput] = useState<string>('Alex M. (0754 123 456)');
+  const [senderInput, setSenderInput] = useState<string>('John Sample (0123 456 789)');
   const [referenceInput, setReferenceInput] = useState<string>('');
   const [uploadedImageName, setUploadedImageName] = useState<string | null>(null);
   const [isProcessingOCR, setIsProcessingOCR] = useState<boolean>(false);
@@ -77,6 +85,26 @@ export const TokenBillingScreen: React.FC = () => {
     accountName: 'BIGSTA SERVICES LTD',
     instructions: 'Dial *150*00# -> Pay Merchant',
     status: 'active' as 'active' | 'inactive'
+  });
+
+  // Admin Package Form State
+  const [isAddPackageOpen, setIsAddPackageOpen] = useState(false);
+  const [newPackageForm, setNewPackageForm] = useState({
+    name: '',
+    usages: 5,
+    price: 'TSh 15,000',
+    description: ''
+  });
+
+  // Admin Weekly Offer Form State
+  const [isAddOfferOpen, setIsAddOfferOpen] = useState(false);
+  const [newOfferForm, setNewOfferForm] = useState({
+    title: 'Special Bundle Offer',
+    description: 'Discounted token bundle valid for 7 days',
+    tokens: 10,
+    price: 'TSh 20,000',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
   });
 
   // Admin Token Adjust State
@@ -389,7 +417,7 @@ export const TokenBillingScreen: React.FC = () => {
                       type="text"
                       value={senderInput}
                       onChange={(e) => setSenderInput(e.target.value)}
-                      placeholder="e.g. Alex M. (0754 123 456)"
+                      placeholder="e.g. John Sample (0123 456 789)"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -400,7 +428,7 @@ export const TokenBillingScreen: React.FC = () => {
                       type="text"
                       value={referenceInput}
                       onChange={(e) => setReferenceInput(e.target.value)}
-                      placeholder="e.g. DIHEQ2MO5T"
+                      placeholder="e.g. ABC1234567"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono font-bold uppercase tracking-wider"
                     />
                   </div>
@@ -510,7 +538,23 @@ export const TokenBillingScreen: React.FC = () => {
                   adminTab === 'methods' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <Settings className="w-4 h-4" /> Payment Methods Config
+                <Settings className="w-4 h-4" /> Payment Methods
+              </button>
+              <button
+                onClick={() => setAdminTab('packages')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  adminTab === 'packages' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <Coins className="w-4 h-4" /> Packages (Supabase)
+              </button>
+              <button
+                onClick={() => setAdminTab('offers')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  adminTab === 'offers' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" /> Weekly Offers
               </button>
               <button
                 onClick={() => setAdminTab('adjust')}
@@ -683,6 +727,321 @@ export const TokenBillingScreen: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* TAB: PACKAGES (SUPABASE) */}
+            {adminTab === 'packages' && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">Token Packages (Supabase)</h2>
+                    <p className="text-xs text-slate-500">
+                      Changes propagate automatically to Web, Deployed Links, and APK users from Supabase
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsAddPackageOpen(!isAddPackageOpen)}
+                    className="px-3.5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" /> Add Package
+                  </button>
+                </div>
+
+                {isAddPackageOpen && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!newPackageForm.name || !newPackageForm.price) return;
+                      addTokenPackage(newPackageForm);
+                      setNewPackageForm({ name: '', usages: 5, price: 'TSh 15,000', description: '' });
+                      setIsAddPackageOpen(false);
+                    }}
+                    className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3"
+                  >
+                    <h3 className="text-xs font-bold text-slate-800">Create New Token Package</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Package Name</label>
+                        <input
+                          type="text"
+                          value={newPackageForm.name}
+                          onChange={(e) => setNewPackageForm({ ...newPackageForm, name: e.target.value })}
+                          placeholder="e.g. Starter Pack"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Tokens / Usages</label>
+                        <input
+                          type="number"
+                          value={newPackageForm.usages}
+                          onChange={(e) => setNewPackageForm({ ...newPackageForm, usages: parseInt(e.target.value) || 1 })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-bold"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Price String</label>
+                        <input
+                          type="text"
+                          value={newPackageForm.price}
+                          onChange={(e) => setNewPackageForm({ ...newPackageForm, price: e.target.value })}
+                          placeholder="e.g. TSh 15,000"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-bold text-emerald-600"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 block mb-1">Description</label>
+                      <input
+                        type="text"
+                        value={newPackageForm.description}
+                        onChange={(e) => setNewPackageForm({ ...newPackageForm, description: e.target.value })}
+                        placeholder="Package description for users"
+                        className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddPackageOpen(false)}
+                        className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold"
+                      >
+                        Save Package
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {tokenPackages.map((pkg) => (
+                    <div key={pkg.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <input
+                          type="text"
+                          value={pkg.name}
+                          onChange={(e) => editTokenPackage(pkg.id, { name: e.target.value })}
+                          className="text-sm font-bold text-slate-900 bg-transparent border-b border-transparent focus:border-blue-500"
+                        />
+                        <button
+                          onClick={() => deleteTokenPackage(pkg.id)}
+                          className="text-slate-400 hover:text-red-600 p-1"
+                          title="Delete Package"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2 text-xs">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-500">Tokens</label>
+                          <input
+                            type="number"
+                            value={pkg.usages}
+                            onChange={(e) => editTokenPackage(pkg.id, { usages: parseInt(e.target.value) || 0 })}
+                            className="w-full px-3 py-1 rounded-lg border border-slate-300 font-bold text-blue-600 bg-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-500">Price</label>
+                          <input
+                            type="text"
+                            value={pkg.price}
+                            onChange={(e) => editTokenPackage(pkg.id, { price: e.target.value })}
+                            className="w-full px-3 py-1 rounded-lg border border-slate-300 font-bold text-emerald-600 bg-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-500">Description</label>
+                          <input
+                            type="text"
+                            value={pkg.description || ''}
+                            onChange={(e) => editTokenPackage(pkg.id, { description: e.target.value })}
+                            className="w-full px-3 py-1 rounded-lg border border-slate-300 text-slate-700 bg-white text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: WEEKLY OFFERS (SUPABASE) */}
+            {adminTab === 'offers' && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">Weekly Offers System</h2>
+                    <p className="text-xs text-slate-500">
+                      Offers automatically expire and disappear when their end date/time is reached
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsAddOfferOpen(!isAddOfferOpen)}
+                    className="px-3.5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" /> Create Weekly Offer
+                  </button>
+                </div>
+
+                {isAddOfferOpen && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      addWeeklyOffer(newOfferForm);
+                      setNewOfferForm({
+                        title: 'Special Bundle Offer',
+                        description: 'Discounted token bundle valid for 7 days',
+                        tokens: 10,
+                        price: 'TSh 20,000',
+                        startDate: new Date().toISOString().split('T')[0],
+                        endDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+                      });
+                      setIsAddOfferOpen(false);
+                    }}
+                    className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3"
+                  >
+                    <h3 className="text-xs font-bold text-slate-800">Create New Weekly Offer</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Offer Title</label>
+                        <input
+                          type="text"
+                          value={newOfferForm.title}
+                          onChange={(e) => setNewOfferForm({ ...newOfferForm, title: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Tokens Included</label>
+                        <input
+                          type="number"
+                          value={newOfferForm.tokens}
+                          onChange={(e) => setNewOfferForm({ ...newOfferForm, tokens: parseInt(e.target.value) || 1 })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-bold text-blue-600"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Offer Price</label>
+                        <input
+                          type="text"
+                          value={newOfferForm.price}
+                          onChange={(e) => setNewOfferForm({ ...newOfferForm, price: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-bold text-emerald-600"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Start Date & Time</label>
+                        <input
+                          type="datetime-local"
+                          value={newOfferForm.startDate.includes('T') ? newOfferForm.startDate : `${newOfferForm.startDate}T00:00`}
+                          onChange={(e) => setNewOfferForm({ ...newOfferForm, startDate: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-mono"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">End Date & Expiry Time</label>
+                        <input
+                          type="datetime-local"
+                          value={newOfferForm.endDate.includes('T') ? newOfferForm.endDate : `${newOfferForm.endDate}T23:59`}
+                          onChange={(e) => setNewOfferForm({ ...newOfferForm, endDate: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-mono"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 block mb-1">Description</label>
+                      <input
+                        type="text"
+                        value={newOfferForm.description}
+                        onChange={(e) => setNewOfferForm({ ...newOfferForm, description: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddOfferOpen(false)}
+                        className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 bg-[#2563EB] text-white rounded-lg text-xs font-bold"
+                      >
+                        Publish Offer
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {weeklyOffers.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400">
+                    <Sparkles className="w-8 h-8 mx-auto opacity-40 mb-2" />
+                    <p className="text-xs">No active weekly offers configured. Click "Create Weekly Offer" to set up a new campaign.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {weeklyOffers.map((offer) => {
+                      const isExpired = new Date(offer.endDate).getTime() < Date.now();
+                      return (
+                        <div key={offer.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3 relative">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-slate-900">{offer.title}</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isExpired ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {isExpired ? 'EXPIRED' : 'ACTIVE'}
+                              </span>
+                              <button
+                                onClick={() => deleteWeeklyOffer(offer.id)}
+                                className="text-slate-400 hover:text-red-600 p-1"
+                                title="Delete Offer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="text-xs space-y-1">
+                            <p className="text-slate-600">{offer.description}</p>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="font-bold text-blue-600">+{offer.tokens} Tokens</span>
+                              <span className="font-bold text-emerald-600">{offer.price}</span>
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-200">
+                              Expires: {new Date(offer.endDate).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 

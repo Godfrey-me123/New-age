@@ -17,7 +17,13 @@ export const RechargeModal: React.FC = () => {
     updateUserPaymentRequest,
     refreshUserStatus,
     tokenPackages,
+    weeklyOffers,
   } = useTemplateStore();
+
+  const activeWeeklyOffers = useMemo(() => {
+    const now = Date.now();
+    return (weeklyOffers || []).filter((o) => o.active !== false && new Date(o.endDate).getTime() > now);
+  }, [weeklyOffers]);
 
   const activePkgs = useMemo(() => {
     return (tokenPackages || []).filter((p) => p.active !== false);
@@ -121,7 +127,13 @@ export const RechargeModal: React.FC = () => {
   const pendingRequest = userRequests.find((r) => r.status === 'PENDING') || null;
   const hasPendingRequest = !!pendingRequest || paymentStatus === 'PENDING';
 
-  const selectedPkg = useMemo(() => activePkgs.find((p) => p.id === selectedPkgId) || activePkgs[0] || { id: 'pkg_basic', name: 'Basic Package', price: 'TSh 10,000', usages: 3 }, [activePkgs, selectedPkgId]);
+  const selectedPkg = useMemo(() => {
+    const offerMatch = activeWeeklyOffers.find((o) => o.id === selectedPkgId);
+    if (offerMatch) {
+      return { id: offerMatch.id, name: offerMatch.title, price: offerMatch.price, usages: offerMatch.tokens };
+    }
+    return activePkgs.find((p) => p.id === selectedPkgId) || activePkgs[0] || { id: 'pkg_basic', name: 'Basic Package', price: 'TSh 10,000', usages: 3 };
+  }, [activePkgs, activeWeeklyOffers, selectedPkgId]);
 
   const isPendingDifferentPackage = useMemo(() => {
     if (!pendingRequest) return false;
@@ -462,6 +474,64 @@ export const RechargeModal: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Active Weekly Offers */}
+          {activeWeeklyOffers.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-amber-700 block flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                Active Weekly Offers
+              </label>
+
+              <div className="grid grid-cols-1 gap-2">
+                {activeWeeklyOffers.map((offer) => {
+                  const isSelected = selectedPkgId === offer.id;
+                  return (
+                    <button
+                      key={offer.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPkgId(offer.id);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
+                          : 'bg-gradient-to-r from-amber-50/50 to-orange-50/50 border-amber-200 hover:border-amber-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                            isSelected ? 'border-amber-600 bg-amber-600 text-white' : 'border-amber-300'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900">{offer.title}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 font-extrabold text-[9px] uppercase">
+                              Special Offer
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-slate-500 font-medium block">
+                            {offer.tokens} Tokens — {offer.description || 'Limited time weekly deal'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-sm font-extrabold font-mono text-amber-700">
+                          {offer.price}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Package Selection */}
           <div className="space-y-2">

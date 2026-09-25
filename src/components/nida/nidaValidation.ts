@@ -5,7 +5,7 @@ import { convertNidaDobBlockToDdMmmYyyy } from '../../utils/dateValidation';
  * Validation and Formatting Utilities
  *
  * Format: YYYYMMDD-XXXXX-XXXXX-XX
- * Example: 19980301-54218-00002-27
+ * Example: 19900101-00000-00000-01
  * Total digits: 20 (8 + 5 + 5 + 2)
  * Total length formatted: 23 characters
  */

@@ -1248,13 +1248,15 @@ export function applyTemplateMapping(template: CardTemplate, formData: NidaFormD
       const textLayer = layer as TextLayer;
       if (textLayer.licenseCategoryGroup !== undefined) {
         const classes = (formData as any).classes || (formData as any).categories || [];
-        const matchedClass = classes.find((c: any) => c && c.classCode === textLayer.licenseCategoryGroup);
-        const isEnabled = matchedClass && !!matchedClass.enabled;
+        const groupCode = String(textLayer.licenseCategoryGroup || '').trim().toUpperCase();
+        const matchedClass = classes.find((c: any) => c && String(c.classCode || '').trim().toUpperCase() === groupCode);
+        const isEnabled = matchedClass && !!(matchedClass.enabled || matchedClass.selected || matchedClass.checked);
         let dateValue = '';
         if (isEnabled) {
-          const rawDate = textLayer.licenseCategoryDateType === 'expiryDate'
-            ? (matchedClass.expiryDate || (formData as any).dateOfExpiry || (formData as any).expiryDate || '')
-            : (matchedClass.issueDate || (formData as any).dateOfIssue || (formData as any).issueDate || '');
+          const isExpiryType = textLayer.licenseCategoryDateType === 'expiryDate' || /exp/i.test(String(textLayer.licenseCategoryDateType || ''));
+          const rawDate = isExpiryType
+            ? (matchedClass.expiryDate || (formData as any).dateOfExpiry || (formData as any).expiryDate || (formData as any).date_of_expiry || '')
+            : (matchedClass.issueDate || (formData as any).dateOfIssue || (formData as any).issueDate || (formData as any).date_of_issue || '');
           dateValue = rawDate ? formatToDdMmYyyy(rawDate) : '';
         }
         clonedLayers.push({
@@ -1403,11 +1405,11 @@ export function replaceTextTokens(text: string, formData: NidaFormData): string 
         const lowerCode = code.toLowerCase();
         const found = rawClasses.find((c: any) => c && String(c.classCode || '').trim().toUpperCase() === code);
         const isEnabled = !!(found && (found.enabled || found.selected || found.checked));
-        const issueStr = isEnabled ? formatToDdMmYyyy(found?.issueDate || (formData as any).dateOfIssue || (formData as any).issueDate || '') : '';
-        const expiryStr = isEnabled ? formatToDdMmYyyy(found?.expiryDate || (formData as any).dateOfExpiry || (formData as any).expiryDate || '') : '';
+        const issueStr = isEnabled ? formatToDdMmYyyy(found?.issueDate || (formData as any).dateOfIssue || (formData as any).issueDate || (formData as any).date_of_issue || '') : '';
+        const expiryStr = isEnabled ? formatToDdMmYyyy(found?.expiryDate || (formData as any).dateOfExpiry || (formData as any).expiryDate || (formData as any).date_of_expiry || '') : '';
 
-        const issuePattern = new RegExp(`\\{\\{(?:class_${lowerCode}_issue|category_${lowerCode}_issue|cat_${lowerCode}_issue|${lowerCode}_issue|issue_${lowerCode})\\}\\}`, 'gi');
-        const expiryPattern = new RegExp(`\\{\\{(?:class_${lowerCode}_expiry|category_${lowerCode}_expiry|cat_${lowerCode}_expiry|${lowerCode}_expiry|expiry_${lowerCode})\\}\\}`, 'gi');
+        const issuePattern = new RegExp(`\\{\\{(?:class_${lowerCode}_issue|category_${lowerCode}_issue|cat_${lowerCode}_issue|${lowerCode}_issue|issue_${lowerCode}|issue_date_${lowerCode}|${lowerCode}_issue_date)\\}\\}`, 'gi');
+        const expiryPattern = new RegExp(`\\{\\{(?:class_${lowerCode}_expiry|category_${lowerCode}_expiry|cat_${lowerCode}_expiry|${lowerCode}_expiry|expiry_${lowerCode}|expiry_date_${lowerCode}|${lowerCode}_expiry_date)\\}\\}`, 'gi');
 
         result = result.replace(issuePattern, issueStr);
         result = result.replace(expiryPattern, expiryStr);

@@ -29,7 +29,32 @@ import { DownloadRecord, getAllDownloadRecordsDB, deleteDownloadRecordDB, saveDo
 import { UniversalBackButton } from './common/UniversalBackButton';
 
 export const DownloadsScreen: React.FC = () => {
-  const { authRole, setActiveScreen, consumeUsage, userPreferences } = useTemplateStore();
+  const { authRole, setActiveScreen, consumeUsage, userPreferences, navigateSafely } = useTemplateStore();
+  
+  if (authRole === 'user') {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full text-center space-y-5 border border-slate-200 animate-in fade-in zoom-in duration-300">
+          <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center">
+            <DownloadCloud className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-lg font-bold text-slate-900">Downloads Center</h2>
+            <p className="text-sm text-slate-600 font-medium">
+              Downloads Center is currently in progress.
+            </p>
+          </div>
+          <button
+            onClick={() => navigateSafely('home')}
+            className="w-full py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

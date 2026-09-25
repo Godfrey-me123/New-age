@@ -193,6 +193,37 @@ CREATE TABLE IF NOT EXISTS public.user_generated_cards (
 ALTER TABLE public.user_generated_cards ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public access user_generated_cards" ON public.user_generated_cards FOR ALL USING (true);
 
+CREATE TABLE IF NOT EXISTS public.token_packages (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  usages INTEGER NOT NULL,
+  price TEXT NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.token_packages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public select token_packages" ON public.token_packages FOR SELECT USING (true);
+CREATE POLICY "Allow full write token_packages" ON public.token_packages FOR ALL USING (true);
+
+CREATE TABLE IF NOT EXISTS public.weekly_offers (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  tokens INTEGER NOT NULL,
+  price TEXT NOT NULL,
+  services TEXT[], -- Array of service IDs
+  start_date TIMESTAMPTZ NOT NULL,
+  end_date TIMESTAMPTZ NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.weekly_offers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public select weekly_offers" ON public.weekly_offers FOR SELECT USING (true);
+CREATE POLICY "Allow full write weekly_offers" ON public.weekly_offers FOR ALL USING (true);
+
 CREATE TABLE IF NOT EXISTS public.background_assets (
   id TEXT PRIMARY KEY,
   name TEXT,
@@ -832,8 +863,9 @@ export async function syncProfileSupabase(profile: {
 }): Promise<boolean> {
   if (!supabase) return false;
   try {
-    const { error } = await supabase.from('profiles').upsert({
-      id: getUUID(profile.id),
+    const pUuid = getUUID(profile.id);
+    const { error: err1 } = await supabase.from('profiles').upsert({
+      id: pUuid,
       name: profile.name,
       phone: profile.phone,
       email: profile.email,
@@ -842,8 +874,20 @@ export async function syncProfileSupabase(profile: {
       tokens: profile.tokens,
       updated_at: new Date().toISOString(),
     });
-    if (error) {
-      console.warn('Sync profile warning:', error.message);
+
+    const { error: err2 } = await supabase.from('user_profiles').upsert({
+      id: pUuid,
+      name: profile.name,
+      phone: profile.phone,
+      email: profile.email,
+      role: profile.role,
+      passkey: profile.passkey,
+      tokens: profile.tokens,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (err1 && err2) {
+      console.warn('Sync profile warning:', err1?.message || err2?.message);
       return false;
     }
     return true;
@@ -988,7 +1032,7 @@ export async function fetchPasskeysSupabase(): Promise<any[]> {
   }
 }
 
-// Helper: Query Passkey directly by Key from Supabase (Canonical Source: passkeys.key & profiles.passkey)
+// Helper: Query Passkey directly by Key from Supabase (Canonical Source: passkeys, profiles & user_profiles)
 export async function fetchPasskeyByKeySupabase(inputKey: string): Promise<any | null> {
   if (!supabase || !inputKey) return null;
   const trimmed = inputKey.trim();
@@ -1000,7 +1044,7 @@ export async function fetchPasskeyByKeySupabase(inputKey: string): Promise<any |
       .ilike('key', trimmed)
       .limit(1);
 
-    if (passkeys && passkeys.length > 0) {
+    if (!error && passkeys && passkeys.length > 0) {
       const p = passkeys[0];
       if (p.active === false || p.payment_status === 'DISABLED') {
         return null;
@@ -1015,9 +1059,9 @@ export async function fetchPasskeyByKeySupabase(inputKey: string): Promise<any |
         createdBy: p.created_by || 'Supabase',
         description: p.description || 'Supabase Passkey',
         lastUsed: p.last_used,
-        totalUsages: p.total_usages ?? (p.role === 'admin' ? 99999 : 1),
-        usedUsages: p.used_usages ?? 0,
-        remainingUsages: p.remaining_usages ?? (p.role === 'admin' ? 99999 : 1),
+        totalUsages: typeof p.total_usages === 'number' ? p.total_usages : (p.role === 'admin' ? 99999 : 1),
+        usedUsages: typeof p.used_usages === 'number' ? p.used_usages : 0,
+        remainingUsages: typeof p.remaining_usages === 'number' ? p.remaining_usages : (p.role === 'admin' ? 99999 : 1),
         paymentStatus: p.payment_status || 'ACTIVE',
         packageName: p.package_name || (p.role === 'admin' ? 'Unlimited Admin' : '1 Usage Package'),
         packagePrice: p.package_price || 'Free',
@@ -1035,6 +1079,7 @@ export async function fetchPasskeyByKeySupabase(inputKey: string): Promise<any |
     if (!profErr && profiles && profiles.length > 0) {
       const prof = profiles[0];
       if (prof.status === 'DISABLED') return null;
+      const tokensCount = typeof prof.tokens === 'number' ? prof.tokens : 1;
       return {
         id: `pk_prof_${prof.id}`,
         key: prof.passkey,
@@ -1044,9 +1089,39 @@ export async function fetchPasskeyByKeySupabase(inputKey: string): Promise<any |
         createdAtTimestamp: new Date(prof.created_at || Date.now()).getTime(),
         createdBy: prof.name || 'User',
         description: `Profile Passkey: ${prof.name} (${prof.phone})`,
-        totalUsages: 1,
+        totalUsages: tokensCount,
         usedUsages: 0,
-        remainingUsages: 1,
+        remainingUsages: tokensCount,
+        paymentStatus: 'ACTIVE',
+        packageName: 'Standard User Package',
+        packagePrice: 'Free',
+        usageHistory: [],
+      };
+    }
+
+    // 3. Fallback check user_profiles table
+    const { data: uProfiles, error: uProfErr } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .ilike('passkey', trimmed)
+      .limit(1);
+
+    if (!uProfErr && uProfiles && uProfiles.length > 0) {
+      const uProf = uProfiles[0];
+      if (uProf.status === 'DISABLED') return null;
+      const tokensCount = typeof uProf.tokens === 'number' ? uProf.tokens : 1;
+      return {
+        id: `pk_uprof_${uProf.id}`,
+        key: uProf.passkey,
+        role: uProf.role || 'user',
+        active: true,
+        createdDate: new Date(uProf.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
+        createdAtTimestamp: new Date(uProf.created_at || Date.now()).getTime(),
+        createdBy: uProf.name || uProf.full_name || 'User',
+        description: `Profile Passkey: ${uProf.name || uProf.full_name} (${uProf.phone})`,
+        totalUsages: tokensCount,
+        usedUsages: 0,
+        remainingUsages: tokensCount,
         paymentStatus: 'ACTIVE',
         packageName: 'Standard User Package',
         packagePrice: 'Free',
@@ -1074,6 +1149,135 @@ export async function deletePasskeySupabase(id?: string, key?: string): Promise<
     return true;
   } catch (e) {
     console.error('Failed to delete passkey from Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Fetch all token packages from Supabase
+export async function fetchTokenPackagesSupabase(): Promise<any[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('token_packages')
+      .select('*')
+      .eq('is_active', true)
+      .order('usages', { ascending: true });
+    
+    if (error) {
+      console.error('Supabase fetch token packages error:', error.message);
+      return [];
+    }
+    return data || [];
+  } catch (e) {
+    console.error('Failed to fetch token packages from Supabase:', e);
+    return [];
+  }
+}
+
+// Helper: Save/Update token package on Supabase
+export async function saveTokenPackageSupabase(pkg: any): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('token_packages').upsert({
+      id: pkg.id,
+      name: pkg.name,
+      usages: pkg.usages,
+      price: pkg.price,
+      description: pkg.description || null,
+      is_active: pkg.active !== false,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error('Supabase token package save error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to save token package to Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Delete token package on Supabase
+export async function deleteTokenPackageSupabase(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('token_packages').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase token package delete error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to delete token package from Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Fetch all active weekly offers from Supabase
+export async function fetchWeeklyOffersSupabase(): Promise<any[]> {
+  if (!supabase) return [];
+  try {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('weekly_offers')
+      .select('*')
+      .eq('is_active', true)
+      .lte('start_date', now)
+      .gte('end_date', now);
+    
+    if (error) {
+      console.error('Supabase fetch weekly offers error:', error.message);
+      return [];
+    }
+    return data || [];
+  } catch (e) {
+    console.error('Failed to fetch weekly offers from Supabase:', e);
+    return [];
+  }
+}
+
+// Helper: Save/Update weekly offer on Supabase
+export async function saveWeeklyOfferSupabase(offer: any): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('weekly_offers').upsert({
+      id: offer.id,
+      title: offer.title,
+      description: offer.description || null,
+      tokens: offer.tokens,
+      price: offer.price,
+      services: offer.services || [],
+      start_date: offer.startDate,
+      end_date: offer.endDate,
+      is_active: offer.active !== false,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error('Supabase weekly offer save error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to save weekly offer to Supabase:', e);
+    return false;
+  }
+}
+
+// Helper: Delete weekly offer on Supabase
+export async function deleteWeeklyOfferSupabase(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('weekly_offers').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase weekly offer delete error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to delete weekly offer from Supabase:', e);
     return false;
   }
 }

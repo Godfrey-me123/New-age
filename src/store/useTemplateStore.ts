@@ -409,6 +409,12 @@ interface TemplateState {
   adminSettings: AdminSystemSettings;
   userPaymentSubmissions: UserPaymentSubmission[];
   tokenHistory: TokenTransaction[];
+  weeklyOffers: any[];
+  loadTokenPackages: () => Promise<void>;
+  loadWeeklyOffers: () => Promise<void>;
+  showSuccessActivation: (message: string) => void;
+  successActivationMessage: string | null;
+  setSuccessActivationMessage: (msg: string | null) => void;
 
   updatePaymentMethod: (id: string, updates: Partial<ConfigurablePaymentMethod>) => void;
   addPaymentMethod: (method: Omit<ConfigurablePaymentMethod, 'id'>) => void;
@@ -470,6 +476,11 @@ interface TemplateState {
   editTokenPackage: (id: string, pkg: Partial<UsagePackage>) => void;
   deleteTokenPackage: (id: string) => void;
   toggleTokenPackage: (id: string) => void;
+
+  // Weekly Offers state & actions
+  addWeeklyOffer: (offer: any) => Promise<void>;
+  editWeeklyOffer: (id: string, offer: any) => Promise<void>;
+  deleteWeeklyOffer: (id: string) => Promise<void>;
 
   // Dynamic Services state & actions
   services: any[];
@@ -910,11 +921,11 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
   const initialPaymentMethods: ConfigurablePaymentMethod[] = (() => {
     const DEFAULT_METHODS: ConfigurablePaymentMethod[] = [
-      { id: 'pm_mpesa', name: 'M-Pesa', number: '0754 000 111', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*00# -> Pay Merchant or Send Money to 0754 000 111', status: 'active' },
-      { id: 'pm_mixx', name: 'Mixx by Yas', number: '0655 000 222', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*01# -> Pay Merchant or Send Money to 0655 000 222', status: 'active' },
-      { id: 'pm_airtel', name: 'Airtel Money', number: '0784 000 333', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*60# -> Pay Merchant or Send Money to 0784 000 333', status: 'active' },
-      { id: 'pm_halopesa', name: 'HaloPesa', number: '0622 000 444', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*88# -> Send Money to 0622 000 444', status: 'active' },
-      { id: 'pm_lipanamba', name: 'Lipa Namba', number: '5443322', accountName: 'BIGSTA SERVICES LTD', instructions: 'Pay via Lipa Namba merchant payment to number 5443322', status: 'active' }
+      { id: 'pm_mpesa', name: 'M-Pesa', number: '0123 000 111', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*00# -> Pay Merchant or Send Money to 0123 000 111', status: 'active' },
+      { id: 'pm_mixx', name: 'Mixx by Yas', number: '0123 000 222', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*01# -> Pay Merchant or Send Money to 0123 000 222', status: 'active' },
+      { id: 'pm_airtel', name: 'Airtel Money', number: '0123 000 333', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*60# -> Pay Merchant or Send Money to 0123 000 333', status: 'active' },
+      { id: 'pm_halopesa', name: 'HaloPesa', number: '0123 000 444', accountName: 'BIGSTA SERVICES LTD', instructions: 'Dial *150*88# -> Send Money to 0123 000 444', status: 'active' },
+      { id: 'pm_lipanamba', name: 'Lipa Namba', number: '1234567', accountName: 'BIGSTA SERVICES LTD', instructions: 'Pay via Lipa Namba merchant payment to number 1234567', status: 'active' }
     ];
     if (typeof window === 'undefined') return DEFAULT_METHODS;
     try {
@@ -927,13 +938,13 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     return DEFAULT_METHODS;
   })();
 
-  const initialUserProfile: UserProfileSettings = (() => {
-    if (typeof window === 'undefined') return { name: 'Alex M.', phone: '+255 754 123 456', email: 'user@bigsta.tz', region: 'Dar es Salaam' };
+    const initialUserProfile: UserProfileSettings = (() => {
+    if (typeof window === 'undefined') return { name: 'John Sample', phone: '+255 123 456 789', email: 'sample@bigsta.tz', region: 'Dar es Salaam' };
     try {
       const raw = localStorage.getItem('bigsta_user_profile');
       if (raw) return JSON.parse(raw);
     } catch (e) {}
-    return { name: 'Alex M.', phone: '+255 754 123 456', email: 'user@bigsta.tz', region: 'Dar es Salaam' };
+    return { name: 'John Sample', phone: '+255 123 456 789', email: 'sample@bigsta.tz', region: 'Dar es Salaam' };
   })();
 
   const initialUserPreferences: UserPreferences = (() => {
@@ -1003,17 +1014,17 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         id: 'sub_sample_1',
         userId: 'pk_user_1',
         amount: 6000,
-        sender: 'Alex M. (0754123456)',
+        sender: 'John Sample (0123456789)',
         receiver: 'BIGsta Services',
-        reference: 'DIHEQ2MO5T',
+        reference: 'ABC1234567',
         date: '2026-09-17',
         submittedAt: new Date(Date.now() - 86400000).toISOString(),
         status: 'verified',
         extractedData: {
           amount: 6000,
-          sender: 'Alex M.',
+          sender: 'John Sample',
           receiver: 'BIGsta',
-          reference: 'DIHEQ2MO5T',
+          reference: 'ABC1234567',
           date: '2026-09-17'
         },
         tokensGranted: 3
@@ -1029,8 +1040,8 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     } catch (e) {}
     return [
       { id: 'th_1', userId: 'pk_user_1', amount: 5, reason: 'Welcome Token Package Granted', timestamp: new Date(Date.now() - 172800000).toISOString() },
-      { id: 'th_2', userId: 'pk_user_1', amount: 3, reason: 'Payment Top-Up Verified (Ref: DIHEQ2MO5T)', timestamp: new Date(Date.now() - 86400000).toISOString() },
-      { id: 'th_3', userId: 'pk_user_1', amount: -1, reason: 'Generated NIDA Card Export', timestamp: new Date(Date.now() - 36000000).toISOString() }
+      { id: 'th_2', userId: 'pk_user_1', amount: 3, reason: 'Payment Top-Up Verified (Ref: ABC1234567)', timestamp: new Date(Date.now() - 86400000).toISOString() },
+      { id: 'th_3', userId: 'pk_user_1', amount: -1, reason: 'Generated ID Card Export', timestamp: new Date(Date.now() - 36000000).toISOString() }
     ];
   })();
 
@@ -1053,6 +1064,59 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     adminSettings: initialAdminSettings,
     userPaymentSubmissions: initialUserPayments,
     tokenHistory: initialTokenHistory,
+    weeklyOffers: [],
+    successActivationMessage: null,
+
+    setSuccessActivationMessage: (msg) => set({ successActivationMessage: msg }),
+
+    showSuccessActivation: (message) => {
+      set({ successActivationMessage: message });
+      // Message will be cleared by the UI component after user clicks OK
+    },
+
+    loadTokenPackages: async () => {
+      try {
+        const { fetchTokenPackagesSupabase } = await import('../services/supabase');
+        const pkgs = await fetchTokenPackagesSupabase();
+        if (pkgs && pkgs.length > 0) {
+          const mapped = pkgs.map(p => ({
+            id: p.id,
+            name: p.name,
+            usages: p.usages,
+            price: p.price,
+            description: p.description,
+            active: p.is_active
+          }));
+          set({ tokenPackages: mapped });
+          safeLocalStorageSetItem('bigsta_token_packages', JSON.stringify(mapped));
+        }
+      } catch (e) {
+        console.error('Error loading token packages from Supabase:', e);
+      }
+    },
+
+    loadWeeklyOffers: async () => {
+      try {
+        const { fetchWeeklyOffersSupabase } = await import('../services/supabase');
+        const offers = await fetchWeeklyOffersSupabase();
+        if (offers) {
+          const mapped = offers.map(o => ({
+            id: o.id,
+            title: o.title,
+            description: o.description,
+            tokens: o.tokens,
+            price: o.price,
+            services: o.services,
+            startDate: o.start_date,
+            endDate: o.end_date,
+            active: o.is_active
+          }));
+          set({ weeklyOffers: mapped });
+        }
+      } catch (e) {
+        console.error('Error loading weekly offers from Supabase:', e);
+      }
+    },
 
     updatePaymentMethod: (id, updates) => {
       const updated = get().paymentMethods.map(pm => pm.id === id ? { ...pm, ...updates } : pm);
@@ -1167,6 +1231,8 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       // Log token history
       get().addTokenHistoryItem(granted, `Top-Up Approved (Ref: ${sub.reference})`);
+
+      get().showSuccessActivation(`Your top-up of ${granted} tokens has been activated successfully.`);
 
       set({ userPaymentSubmissions: updatedSubs });
       return { success: true, message: `Payment approved! Granted ${granted} tokens.` };
@@ -1307,6 +1373,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     navigateSafely: (targetScreen, serviceId, bypassDraftRestore) => {
       const role = get().authRole;
       let finalTarget = targetScreen;
+
       if (role === 'user' && (targetScreen === 'upload' || targetScreen === 'editor' || targetScreen === 'templates')) {
         finalTarget = 'home';
       }
@@ -1775,21 +1842,63 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const updated = [...get().tokenPackages, newPkg];
       safeLocalStorageSetItem('bigsta_token_packages', JSON.stringify(updated));
       set({ tokenPackages: updated });
+      import('../services/supabase').then(({ saveTokenPackageSupabase }) => {
+        saveTokenPackageSupabase(newPkg);
+      }).catch(() => {});
     },
     editTokenPackage: (id, updatedFields) => {
       const updated = get().tokenPackages.map((p) => p.id === id ? { ...p, ...updatedFields } : p);
       safeLocalStorageSetItem('bigsta_token_packages', JSON.stringify(updated));
       set({ tokenPackages: updated });
+      const target = updated.find(p => p.id === id);
+      if (target) {
+        import('../services/supabase').then(({ saveTokenPackageSupabase }) => {
+          saveTokenPackageSupabase(target);
+        }).catch(() => {});
+      }
     },
     deleteTokenPackage: (id) => {
       const updated = get().tokenPackages.filter((p) => p.id !== id);
       safeLocalStorageSetItem('bigsta_token_packages', JSON.stringify(updated));
       set({ tokenPackages: updated });
+      import('../services/supabase').then(({ deleteTokenPackageSupabase }) => {
+        deleteTokenPackageSupabase(id);
+      }).catch(() => {});
     },
     toggleTokenPackage: (id) => {
       const updated = get().tokenPackages.map((p) => p.id === id ? { ...p, active: p.active === false ? true : false } : p);
       safeLocalStorageSetItem('bigsta_token_packages', JSON.stringify(updated));
       set({ tokenPackages: updated });
+      const target = updated.find(p => p.id === id);
+      if (target) {
+        import('../services/supabase').then(({ saveTokenPackageSupabase }) => {
+          saveTokenPackageSupabase(target);
+        }).catch(() => {});
+      }
+    },
+
+    addWeeklyOffer: async (offer) => {
+      const id = offer.id || `offer_${Date.now()}`;
+      const newOffer = { ...offer, id, active: offer.active !== false };
+      const updated = [...get().weeklyOffers, newOffer];
+      set({ weeklyOffers: updated });
+      const { saveWeeklyOfferSupabase } = await import('../services/supabase');
+      await saveWeeklyOfferSupabase(newOffer);
+    },
+    editWeeklyOffer: async (id, fields) => {
+      const updated = get().weeklyOffers.map((o) => o.id === id ? { ...o, ...fields } : o);
+      set({ weeklyOffers: updated });
+      const target = updated.find(o => o.id === id);
+      if (target) {
+        const { saveWeeklyOfferSupabase } = await import('../services/supabase');
+        await saveWeeklyOfferSupabase(target);
+      }
+    },
+    deleteWeeklyOffer: async (id) => {
+      const updated = get().weeklyOffers.filter((o) => o.id !== id);
+      set({ weeklyOffers: updated });
+      const { deleteWeeklyOfferSupabase } = await import('../services/supabase');
+      await deleteWeeklyOfferSupabase(id);
     },
 
     services: initialServicesList,
@@ -2224,6 +2333,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       // Sync approved passkey to Supabase
       const approvedPk = updatedPasskeys.find((p) => p.id === targetReq.passkeyId || p.key.toLowerCase() === targetReq.userPasskey.toLowerCase());
       if (approvedPk) {
+        get().showSuccessActivation(`Congratulations! Your ${targetReq.packageName} has been activated successfully.`);
         import('../services/supabase').then(({ syncPasskeySupabase }) => {
           syncPasskeySupabase(approvedPk);
         }).catch(() => {});
