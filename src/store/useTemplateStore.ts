@@ -1571,7 +1571,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         t.isActive !== false && 
         !isBackSideTemplate(t)
       );
-      if (activeCustom) return ensureTemplateFieldIds(activeCustom);
+      if (activeCustom) {
+        console.log('Template resolution: Found cloud template', activeCustom.id);
+        return ensureTemplateFieldIds(activeCustom);
+      }
+      
+      console.log('Template resolution: No cloud template found, falling back for service', serviceId);
 
       // 2. Fallback to localStorage for explicit JSON object override (Legacy support)
       if (typeof window !== 'undefined') {
@@ -4214,7 +4219,6 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       const template = {
         ...get().currentTemplate,
         visibility: 'private' as const,
-        isUniversal: false,
         status: 'draft' as const,
         updatedAt: new Date().toISOString(),
       };

@@ -468,14 +468,14 @@ export async function sanitizeAndUploadTemplateBackground(template: any): Promis
 
         if (blob) {
           const safeId = (template.id || 'tpl').replace(/[^a-zA-Z0-9_-]/g, '_');
-          const filename = `${safeId}_bg_${Date.now()}.png`;
+          const filename = `${safeId}_bg_latest.png`; // Fixed filename
           const publicUrl = await uploadBackgroundToSupabase(blob, filename);
           if (publicUrl) {
             return {
               ...template,
               background: {
                 ...template.background,
-                src: publicUrl,
+                src: `${publicUrl}?t=${Date.now()}`,
               },
             };
           }
@@ -507,8 +507,9 @@ export async function saveUniversalTemplateSupabase(
       .from('templates')
       .update({ is_active: false })
       .eq('service_type', serviceType)
+      .eq('is_universal', true)
       .eq('is_active', true)
-      .or(`template_json->>side.eq."${sideValue}",template_json->>side.eq."${sideValue.toLowerCase()}"`);
+      .ilike('template_json->>side', sideValue);
 
     // 2. Insert new active template record
     const { error } = await supabase.from('templates').upsert({
@@ -628,11 +629,11 @@ export async function fetchAllActiveTemplatesSupabase(): Promise<any[]> {
       return {
         ...parsed,
         id: d.id || parsed.id,
-        serviceId: parsed.serviceId || d.service_type,
-        templateName: d.template_name || parsed.templateName,
-        isUniversal: d.is_universal !== undefined ? d.is_universal : parsed.isUniversal,
-        isActive: d.is_active !== false && parsed.isActive !== false,
-        updatedAt: d.updated_at || parsed.updatedAt,
+        serviceId: parsed.serviceId || d.service_type || 'custom',
+        templateName: d.template_name || parsed.templateName || 'Untitled Template',
+        isUniversal: d.is_universal !== undefined ? d.is_universal : (parsed.isUniversal || false),
+        isActive: d.is_active !== undefined ? d.is_active : (parsed.isActive !== undefined ? parsed.isActive : true),
+        updatedAt: d.updated_at || parsed.updatedAt || new Date().toISOString(),
       };
     });
   } catch (e) {

@@ -48,6 +48,7 @@ export default function App() {
 
     import('./services/supabase').then(({ subscribeTokenPackagesRealtime, subscribeWeeklyOffersRealtime }) => {
       unsubPkgs = subscribeTokenPackagesRealtime((freshPkgs) => {
+        console.log('Realtime update: token packages received', freshPkgs);
         if (freshPkgs && Array.isArray(freshPkgs)) {
           const mapped = freshPkgs.map((p) => ({
             id: p.id,
