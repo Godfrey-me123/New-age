@@ -628,10 +628,10 @@ export async function fetchAllActiveTemplatesSupabase(): Promise<any[]> {
       return {
         ...parsed,
         id: d.id || parsed.id,
-        serviceId: d.service_type || parsed.serviceId,
+        serviceId: parsed.serviceId || d.service_type,
         templateName: d.template_name || parsed.templateName,
         isUniversal: d.is_universal !== undefined ? d.is_universal : parsed.isUniversal,
-        isActive: d.is_active !== undefined ? d.is_active : parsed.isActive,
+        isActive: d.is_active !== false && parsed.isActive !== false,
         updatedAt: d.updated_at || parsed.updatedAt,
       };
     });
@@ -1249,17 +1249,14 @@ export async function deleteTokenPackageSupabase(id: string): Promise<boolean> {
   }
 }
 
-// Helper: Fetch all active weekly offers from Supabase
-export async function fetchWeeklyOffersSupabase(): Promise<any[]> {
+// Helper: Fetch all weekly offers from Supabase
+export async function fetchAllWeeklyOffersSupabase(): Promise<any[]> {
   if (!supabase) return [];
   try {
-    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('weekly_offers')
       .select('*')
-      .eq('is_active', true)
-      .lte('start_date', now)
-      .gte('end_date', now);
+      .order('created_at', { ascending: false });
     
     if (error) {
       console.error('Supabase fetch weekly offers error:', error.message);
@@ -1269,6 +1266,37 @@ export async function fetchWeeklyOffersSupabase(): Promise<any[]> {
   } catch (e) {
     console.error('Failed to fetch weekly offers from Supabase:', e);
     return [];
+  }
+}
+
+// Helper: Fetch active weekly offers from Supabase
+export async function fetchWeeklyOffersSupabase(): Promise<any[]> {
+  return fetchAllWeeklyOffersSupabase();
+}
+
+// Helper: Subscribe to weekly_offers table realtime updates
+export function subscribeWeeklyOffersRealtime(callback: (offers: any[]) => void): () => void {
+  if (!supabase) return () => {};
+
+  try {
+    const channel = supabase
+      .channel('realtime_weekly_offers')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'weekly_offers' },
+        async () => {
+          const fresh = await fetchAllWeeklyOffersSupabase();
+          callback(fresh);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  } catch (e) {
+    console.error('Weekly offers realtime subscription error:', e);
+    return () => {};
   }
 }
 

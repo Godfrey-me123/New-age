@@ -109,7 +109,9 @@ export const TokenBillingScreen: React.FC = () => {
     tokens: 10,
     price: 'TSh 20,000',
     startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+    endDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+    services: ['nida', 'driving_licence', 'nhif'],
+    active: true
   });
 
   // Admin Token Adjust State
@@ -1016,7 +1018,9 @@ export const TokenBillingScreen: React.FC = () => {
                         tokens: 10,
                         price: 'TSh 20,000',
                         startDate: new Date().toISOString().split('T')[0],
-                        endDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+                        endDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+                        services: ['nida', 'driving_licence', 'nhif'],
+                        active: true
                       });
                       setIsAddOfferOpen(false);
                     }}
@@ -1076,6 +1080,38 @@ export const TokenBillingScreen: React.FC = () => {
                           className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-mono"
                           required
                         />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 block mb-1">Applicable Services</label>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {[
+                          { id: 'nida', label: 'NIDA Card' },
+                          { id: 'driving_licence', label: 'Driving Licence' },
+                          { id: 'nhif', label: 'NHIF Card' },
+                          { id: 'birth_certificate', label: 'Birth Certificate' },
+                        ].map((srv) => {
+                          const isChecked = newOfferForm.services.includes(srv.id);
+                          return (
+                            <label key={srv.id} className={`px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
+                              isChecked ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const updated = e.target.checked
+                                    ? [...newOfferForm.services, srv.id]
+                                    : newOfferForm.services.filter((s) => s !== srv.id);
+                                  setNewOfferForm({ ...newOfferForm, services: updated });
+                                }}
+                                className="rounded text-blue-600"
+                              />
+                              <span>{srv.label}</span>
+                            </label>
+                          );
+                        })}
                       </div>
                     </div>
 

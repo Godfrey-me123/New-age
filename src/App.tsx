@@ -32,6 +32,7 @@ import { SettingsScreen } from './components/SettingsScreen';
 import { PaymentDashboard } from './components/admin/PaymentDashboard';
 import { UnsavedChangesModal } from './components/common/UnsavedChangesModal';
 import { StartupDisclaimerModal } from './components/common/StartupDisclaimerModal';
+import { SuccessActivationModal } from './components/common/SuccessActivationModal';
 
 export default function App() {
   const { activeScreen, setActiveScreen, authRole, fetchPasskeysFromSupabase, userPreferences, loadSavedTemplates, isSaving, loadTokenPackages, loadWeeklyOffers } = useTemplateStore();
@@ -42,9 +43,11 @@ export default function App() {
     loadTokenPackages();
     loadWeeklyOffers();
 
-    let unsubscribe: (() => void) | null = null;
-    import('./services/supabase').then(({ subscribeTokenPackagesRealtime }) => {
-      unsubscribe = subscribeTokenPackagesRealtime((freshPkgs) => {
+    let unsubPkgs: (() => void) | null = null;
+    let unsubOffers: (() => void) | null = null;
+
+    import('./services/supabase').then(({ subscribeTokenPackagesRealtime, subscribeWeeklyOffersRealtime }) => {
+      unsubPkgs = subscribeTokenPackagesRealtime((freshPkgs) => {
         if (freshPkgs && Array.isArray(freshPkgs)) {
           const mapped = freshPkgs.map((p) => ({
             id: p.id,
@@ -61,12 +64,37 @@ export default function App() {
           useTemplateStore.setState({ tokenPackages: mapped });
         }
       });
+
+      unsubOffers = subscribeWeeklyOffersRealtime((freshOffers) => {
+        if (freshOffers && Array.isArray(freshOffers)) {
+          const mapped = freshOffers.map((o) => ({
+            id: o.id,
+            title: o.title,
+            description: o.description || '',
+            tokens: o.tokens,
+            price: o.price,
+            services: o.services || [],
+            startDate: o.start_date,
+            endDate: o.end_date,
+            active: o.is_active !== false,
+          }));
+          useTemplateStore.setState({ weeklyOffers: mapped });
+        }
+      });
     }).catch(() => {});
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubPkgs) unsubPkgs();
+      if (unsubOffers) unsubOffers();
     };
   }, [fetchPasskeysFromSupabase, loadSavedTemplates, loadTokenPackages, loadWeeklyOffers]);
+
+  // Guard Custom Studio access for non-admin users
+  useEffect(() => {
+    if (authRole !== 'admin' && (activeScreen === 'upload' || activeScreen === 'templates' || activeScreen === 'editor')) {
+      setActiveScreen('home');
+    }
+  }, [authRole, activeScreen, setActiveScreen]);
 
   // Native Android APK JS Bridges
   useEffect(() => {
@@ -390,6 +418,7 @@ export default function App() {
       <BottomStatusBar />
 
       {/* Modals & Passkey Manager */}
+      <SuccessActivationModal />
       <UnsavedChangesModal />
       <PasskeyManagerModal />
       <ManualApplicationModal />
@@ -420,30 +449,6 @@ export default function App() {
               className="mt-2 px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 active:scale-95"
             >
               Cancel Saving
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Success Activation Modal (PROMPT: Targeted Fixes 5) */}
-      {useTemplateStore((state) => state.successActivationMessage) && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[4px]">
-          <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-5 animate-in fade-in zoom-in duration-300 max-w-xs w-full">
-            <div className="p-4 bg-emerald-50 rounded-full text-emerald-600">
-              <CheckCircle2 className="w-12 h-12" />
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <span className="text-xl font-black text-slate-900 tracking-tight">Congratulations!</span>
-              <p className="text-sm text-slate-600 mt-2 font-medium px-2">
-                {useTemplateStore((state) => state.successActivationMessage)}
-              </p>
-            </div>
-            
-            <button
-              onClick={() => useTemplateStore.getState().setSuccessActivationMessage(null)}
-              className="mt-2 w-full py-3 bg-[#111827] hover:bg-black text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95"
-            >
-              OK
             </button>
           </div>
         </div>

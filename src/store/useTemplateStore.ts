@@ -1543,13 +1543,32 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
     getUniversalFrontTemplate: (serviceId: string) => {
       const customTemplates = get().customTemplates;
-      const sId = (serviceId || '').toLowerCase();
-      const sClean = sId.replace('_', ' ');
+      const sId = (serviceId || '').toLowerCase().trim();
       
-      // 1. PRIMARY RULE: Fetch exactly where isActive = true for this service and side
+      const isServiceMatch = (t: CardTemplate) => {
+        const tServ = (t.serviceId || '').toLowerCase().trim();
+        const tId = (t.id || '').toLowerCase().trim();
+        const tType = (t.cardType || '').toLowerCase().trim();
+
+        if (sId === 'driving_license' || sId === 'driving_licence') {
+          return tServ === 'driving_license' || tServ === 'driving_licence' || tId.includes('driving') || tType.includes('driving') || tType.includes('license') || tType.includes('licence');
+        }
+        if (sId === 'nida') {
+          return tServ === 'nida' || tId.includes('nida') || tType.includes('nida') || tType.includes('national');
+        }
+        if (sId === 'nhif') {
+          return tServ === 'nhif' || tId.includes('nhif') || tType.includes('nhif') || tType.includes('health');
+        }
+        if (sId === 'birth_certificate') {
+          return tServ === 'birth_certificate' || tId.includes('birth') || tType.includes('birth');
+        }
+        return tServ === sId || tId.includes(sId) || tType.includes(sId.replace('_', ' '));
+      };
+
+      // 1. PRIMARY RULE: Fetch cloud/custom template matching service and side
       const activeCustom = customTemplates.find((t) => 
-        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
-        t.isActive === true && 
+        isServiceMatch(t) && 
+        t.isActive !== false && 
         !isBackSideTemplate(t)
       );
       if (activeCustom) return ensureTemplateFieldIds(activeCustom);
@@ -1580,29 +1599,46 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       // 4. Fallback to sample templates specifically matching serviceId
       const sampleMatch = SAMPLE_TEMPLATES.find((t) => 
-        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        isServiceMatch(t) && 
         !isBackSideTemplate(t)
       );
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
       // 5. Final Fallback ONLY to default front template if serviceId match is not found
-      // PROMPT 51: Strict isolation. Do not return NIDA if serviceId is NHIF.
-      const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && !isBackSideTemplate(t));
+      const fallbackSample = SAMPLE_TEMPLATES.find((t) => isServiceMatch(t) && !isBackSideTemplate(t));
       if (fallbackSample) return ensureTemplateFieldIds(fallbackSample);
       
-      // If still nothing, return a blank template with proper dimensions for the service
       return ensureTemplateFieldIds(SAMPLE_TEMPLATES[0]);
     },
 
     getUniversalBackTemplate: (serviceId: string) => {
       const customTemplates = get().customTemplates;
-      const sId = (serviceId || '').toLowerCase();
-      const sClean = sId.replace('_', ' ');
+      const sId = (serviceId || '').toLowerCase().trim();
       
-      // 1. PRIMARY RULE: Fetch exactly where isActive = true for this service and side
+      const isServiceMatch = (t: CardTemplate) => {
+        const tServ = (t.serviceId || '').toLowerCase().trim();
+        const tId = (t.id || '').toLowerCase().trim();
+        const tType = (t.cardType || '').toLowerCase().trim();
+
+        if (sId === 'driving_license' || sId === 'driving_licence') {
+          return tServ === 'driving_license' || tServ === 'driving_licence' || tId.includes('driving') || tType.includes('driving') || tType.includes('license') || tType.includes('licence');
+        }
+        if (sId === 'nida') {
+          return tServ === 'nida' || tId.includes('nida') || tType.includes('nida') || tType.includes('national');
+        }
+        if (sId === 'nhif') {
+          return tServ === 'nhif' || tId.includes('nhif') || tType.includes('nhif') || tType.includes('health');
+        }
+        if (sId === 'birth_certificate') {
+          return tServ === 'birth_certificate' || tId.includes('birth') || tType.includes('birth');
+        }
+        return tServ === sId || tId.includes(sId) || tType.includes(sId.replace('_', ' '));
+      };
+
+      // 1. PRIMARY RULE: Fetch cloud/custom template matching service and side
       const activeCustom = customTemplates.find((t) => 
-        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
-        t.isActive === true && 
+        isServiceMatch(t) && 
+        t.isActive !== false && 
         isBackSideTemplate(t)
       );
       if (activeCustom) return ensureTemplateFieldIds(activeCustom);
@@ -1633,18 +1669,17 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       // 4. Fallback to sample templates specifically matching serviceId
       const sampleMatch = SAMPLE_TEMPLATES.find((t) => 
-        (t.serviceId?.toLowerCase() === sId || t.id?.toLowerCase().includes(sId) || t.cardType?.toLowerCase().includes(sClean)) && 
+        isServiceMatch(t) && 
         isBackSideTemplate(t)
       );
       if (sampleMatch) return ensureTemplateFieldIds(sampleMatch);
 
-      // 5. Final Fallback ONLY to default back template if serviceId match is not found
-      // PROMPT 51: Strict isolation. Do not return NIDA if serviceId is NHIF.
-      const fallbackSample = SAMPLE_TEMPLATES.find((t) => t.serviceId === serviceId && isBackSideTemplate(t));
+      const fallbackSample = SAMPLE_TEMPLATES.find((t) => isServiceMatch(t) && isBackSideTemplate(t));
       if (fallbackSample) return ensureTemplateFieldIds(fallbackSample);
 
       return ensureTemplateFieldIds(SAMPLE_TEMPLATES[1]);
     },
+
 
     saveUniversalFrontTemplate: async (serviceId: string, template: CardTemplate) => {
       set({ isSaving: true });
