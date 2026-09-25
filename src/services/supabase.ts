@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SUPABASE_PUBLIC_URL, SUPABASE_PUBLIC_ANON_KEY } from './supabaseConfig';
 
 // Read configuration from environment or fallback.
 // vite.config.ts maps the Supabase integration's injected names
@@ -12,14 +13,14 @@ const supabaseUrl =
   procEnv.VITE_SUPABASE_URL ||
   procEnv.NEXT_PUBLIC_SUPABASE_URL ||
   procEnv.SUPABASE_URL ||
-  '';
+  SUPABASE_PUBLIC_URL;
 const supabaseAnonKey =
   metaEnv.VITE_SUPABASE_ANON_KEY ||
   metaEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   procEnv.VITE_SUPABASE_ANON_KEY ||
   procEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   procEnv.SUPABASE_ANON_KEY ||
-  '';
+  SUPABASE_PUBLIC_ANON_KEY;
 
 const DEFAULT_TIMEOUT = 12000; // 12 seconds
 
