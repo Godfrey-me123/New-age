@@ -199,7 +199,11 @@ CREATE TABLE IF NOT EXISTS public.token_packages (
   usages INTEGER NOT NULL,
   price TEXT NOT NULL,
   description TEXT,
+  visibility TEXT DEFAULT 'public',
   is_active BOOLEAN DEFAULT TRUE,
+  sort_order INTEGER DEFAULT 0,
+  bonus INTEGER DEFAULT 0,
+  promotion TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -1160,7 +1164,7 @@ export async function fetchTokenPackagesSupabase(): Promise<any[]> {
     const { data, error } = await supabase
       .from('token_packages')
       .select('*')
-      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
       .order('usages', { ascending: true });
     
     if (error) {
@@ -1184,7 +1188,11 @@ export async function saveTokenPackageSupabase(pkg: any): Promise<boolean> {
       usages: pkg.usages,
       price: pkg.price,
       description: pkg.description || null,
+      visibility: pkg.visibility || 'public',
       is_active: pkg.active !== false,
+      sort_order: pkg.sortOrder ?? pkg.sort_order ?? 0,
+      bonus: pkg.bonus ?? 0,
+      promotion: pkg.promotion || null,
       updated_at: new Date().toISOString(),
     });
 
@@ -1196,6 +1204,32 @@ export async function saveTokenPackageSupabase(pkg: any): Promise<boolean> {
   } catch (e) {
     console.error('Failed to save token package to Supabase:', e);
     return false;
+  }
+}
+
+// Helper: Subscribe to token_packages table realtime updates
+export function subscribeTokenPackagesRealtime(callback: (pkgs: any[]) => void): () => void {
+  if (!supabase) return () => {};
+
+  try {
+    const channel = supabase
+      .channel('realtime_token_packages')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'token_packages' },
+        async () => {
+          const fresh = await fetchTokenPackagesSupabase();
+          callback(fresh);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  } catch (e) {
+    console.error('Realtime subscription error:', e);
+    return () => {};
   }
 }
 

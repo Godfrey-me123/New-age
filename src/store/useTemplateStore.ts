@@ -159,6 +159,10 @@ export interface UsagePackage {
   price: string;
   active?: boolean;
   description?: string;
+  visibility?: 'public' | 'hidden';
+  sortOrder?: number;
+  bonus?: number;
+  promotion?: string;
 }
 
 export interface ServiceData {
@@ -1079,16 +1083,19 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         const { fetchTokenPackagesSupabase } = await import('../services/supabase');
         const pkgs = await fetchTokenPackagesSupabase();
         if (pkgs && pkgs.length > 0) {
-          const mapped = pkgs.map(p => ({
+          const mapped: UsagePackage[] = pkgs.map(p => ({
             id: p.id,
             name: p.name,
             usages: p.usages,
             price: p.price,
-            description: p.description,
-            active: p.is_active
+            description: p.description || '',
+            visibility: (p.visibility || 'public') as 'public' | 'hidden',
+            active: p.is_active !== false,
+            sortOrder: p.sort_order ?? 0,
+            bonus: p.bonus ?? 0,
+            promotion: p.promotion || '',
           }));
           set({ tokenPackages: mapped });
-          safeLocalStorageSetItem('bigsta_token_packages', JSON.stringify(mapped));
         }
       } catch (e) {
         console.error('Error loading token packages from Supabase:', e);

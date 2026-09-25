@@ -41,6 +41,31 @@ export default function App() {
     loadSavedTemplates();
     loadTokenPackages();
     loadWeeklyOffers();
+
+    let unsubscribe: (() => void) | null = null;
+    import('./services/supabase').then(({ subscribeTokenPackagesRealtime }) => {
+      unsubscribe = subscribeTokenPackagesRealtime((freshPkgs) => {
+        if (freshPkgs && Array.isArray(freshPkgs)) {
+          const mapped = freshPkgs.map((p) => ({
+            id: p.id,
+            name: p.name,
+            usages: p.usages,
+            price: p.price,
+            description: p.description || '',
+            visibility: (p.visibility || 'public') as 'public' | 'hidden',
+            active: p.is_active !== false,
+            sortOrder: p.sort_order ?? 0,
+            bonus: p.bonus ?? 0,
+            promotion: p.promotion || '',
+          }));
+          useTemplateStore.setState({ tokenPackages: mapped });
+        }
+      });
+    }).catch(() => {});
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [fetchPasskeysFromSupabase, loadSavedTemplates, loadTokenPackages, loadWeeklyOffers]);
 
   // Native Android APK JS Bridges

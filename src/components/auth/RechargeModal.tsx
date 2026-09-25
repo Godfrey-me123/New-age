@@ -26,7 +26,7 @@ export const RechargeModal: React.FC = () => {
   }, [weeklyOffers]);
 
   const activePkgs = useMemo(() => {
-    return (tokenPackages || []).filter((p) => p.active !== false);
+    return (tokenPackages || []).filter((p) => p.active !== false && p.visibility !== 'hidden');
   }, [tokenPackages]);
 
   const [selectedPkgId, setSelectedPkgId] = useState<string>('');
@@ -563,9 +563,18 @@ export const RechargeModal: React.FC = () => {
                       </div>
 
                       <div>
-                        <div className="font-bold text-xs text-slate-900">{pkg.name}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs text-slate-900">{pkg.name}</span>
+                          {pkg.promotion && (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-extrabold text-[9px] uppercase">
+                              {pkg.promotion}
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[11px] text-slate-500 font-mono">
                           {pkg.usages} {pkg.usages === 1 ? 'Usage' : 'Usages'}
+                          {pkg.bonus ? <span className="text-emerald-600 font-bold ml-1">+{pkg.bonus} Bonus</span> : null}
+                          {pkg.description ? ` — ${pkg.description}` : ''}
                         </div>
                       </div>
                     </div>

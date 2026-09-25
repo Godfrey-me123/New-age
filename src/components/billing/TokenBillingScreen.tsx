@@ -93,7 +93,12 @@ export const TokenBillingScreen: React.FC = () => {
     name: '',
     usages: 5,
     price: 'TSh 15,000',
-    description: ''
+    description: '',
+    visibility: 'public' as 'public' | 'hidden',
+    active: true,
+    sortOrder: 1,
+    bonus: 0,
+    promotion: ''
   });
 
   // Admin Weekly Offer Form State
@@ -754,7 +759,17 @@ export const TokenBillingScreen: React.FC = () => {
                       e.preventDefault();
                       if (!newPackageForm.name || !newPackageForm.price) return;
                       addTokenPackage(newPackageForm);
-                      setNewPackageForm({ name: '', usages: 5, price: 'TSh 15,000', description: '' });
+                      setNewPackageForm({
+                        name: '',
+                        usages: 5,
+                        price: 'TSh 15,000',
+                        description: '',
+                        visibility: 'public',
+                        active: true,
+                        sortOrder: 1,
+                        bonus: 0,
+                        promotion: ''
+                      });
                       setIsAddPackageOpen(false);
                     }}
                     className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3"
@@ -794,6 +809,52 @@ export const TokenBillingScreen: React.FC = () => {
                         />
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Bonus Tokens</label>
+                        <input
+                          type="number"
+                          value={newPackageForm.bonus}
+                          onChange={(e) => setNewPackageForm({ ...newPackageForm, bonus: parseInt(e.target.value) || 0 })}
+                          placeholder="e.g. 2"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-bold text-blue-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Promotion Tag</label>
+                        <input
+                          type="text"
+                          value={newPackageForm.promotion}
+                          onChange={(e) => setNewPackageForm({ ...newPackageForm, promotion: e.target.value })}
+                          placeholder="e.g. 20% OFF"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-bold text-amber-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Visibility</label>
+                        <select
+                          value={newPackageForm.visibility}
+                          onChange={(e) => setNewPackageForm({ ...newPackageForm, visibility: e.target.value as 'public' | 'hidden' })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white"
+                        >
+                          <option value="public">Public (Visible to all users)</option>
+                          <option value="hidden">Hidden (Admin only)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">Status</label>
+                        <select
+                          value={newPackageForm.active ? 'true' : 'false'}
+                          onChange={(e) => setNewPackageForm({ ...newPackageForm, active: e.target.value === 'true' })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-bold"
+                        >
+                          <option value="true">Active (Enabled)</option>
+                          <option value="false">Inactive (Disabled)</option>
+                        </select>
+                      </div>
+                    </div>
+
                     <div>
                       <label className="text-[11px] font-semibold text-slate-600 block mb-1">Description</label>
                       <input
@@ -816,7 +877,7 @@ export const TokenBillingScreen: React.FC = () => {
                         type="submit"
                         className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold"
                       >
-                        Save Package
+                        Save Package to Supabase
                       </button>
                     </div>
                   </form>
@@ -842,24 +903,72 @@ export const TokenBillingScreen: React.FC = () => {
                       </div>
 
                       <div className="space-y-2 text-xs">
-                        <div>
-                          <label className="text-[11px] font-semibold text-slate-500">Tokens</label>
-                          <input
-                            type="number"
-                            value={pkg.usages}
-                            onChange={(e) => editTokenPackage(pkg.id, { usages: parseInt(e.target.value) || 0 })}
-                            className="w-full px-3 py-1 rounded-lg border border-slate-300 font-bold text-blue-600 bg-white"
-                          />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-500">Tokens</label>
+                            <input
+                              type="number"
+                              value={pkg.usages}
+                              onChange={(e) => editTokenPackage(pkg.id, { usages: parseInt(e.target.value) || 0 })}
+                              className="w-full px-2.5 py-1 rounded-lg border border-slate-300 font-bold text-blue-600 bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-500">Price</label>
+                            <input
+                              type="text"
+                              value={pkg.price}
+                              onChange={(e) => editTokenPackage(pkg.id, { price: e.target.value })}
+                              className="w-full px-2.5 py-1 rounded-lg border border-slate-300 font-bold text-emerald-600 bg-white"
+                            />
+                          </div>
                         </div>
 
-                        <div>
-                          <label className="text-[11px] font-semibold text-slate-500">Price</label>
-                          <input
-                            type="text"
-                            value={pkg.price}
-                            onChange={(e) => editTokenPackage(pkg.id, { price: e.target.value })}
-                            className="w-full px-3 py-1 rounded-lg border border-slate-300 font-bold text-emerald-600 bg-white"
-                          />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-500">Bonus Tokens</label>
+                            <input
+                              type="number"
+                              value={pkg.bonus || 0}
+                              onChange={(e) => editTokenPackage(pkg.id, { bonus: parseInt(e.target.value) || 0 })}
+                              className="w-full px-2.5 py-1 rounded-lg border border-slate-300 font-bold text-blue-600 bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-500">Promotion Tag</label>
+                            <input
+                              type="text"
+                              value={pkg.promotion || ''}
+                              onChange={(e) => editTokenPackage(pkg.id, { promotion: e.target.value })}
+                              placeholder="e.g. HOT"
+                              className="w-full px-2.5 py-1 rounded-lg border border-slate-300 font-bold text-amber-600 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-500">Visibility</label>
+                            <select
+                              value={pkg.visibility || 'public'}
+                              onChange={(e) => editTokenPackage(pkg.id, { visibility: e.target.value as 'public' | 'hidden' })}
+                              className="w-full px-2 py-1 rounded-lg border border-slate-300 text-slate-800 bg-white"
+                            >
+                              <option value="public">Public</option>
+                              <option value="hidden">Hidden</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-500">Status</label>
+                            <select
+                              value={pkg.active !== false ? 'true' : 'false'}
+                              onChange={(e) => editTokenPackage(pkg.id, { active: e.target.value === 'true' })}
+                              className="w-full px-2 py-1 rounded-lg border border-slate-300 text-slate-800 bg-white font-bold"
+                            >
+                              <option value="true">Active</option>
+                              <option value="false">Inactive</option>
+                            </select>
+                          </div>
                         </div>
 
                         <div>
