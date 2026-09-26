@@ -22,6 +22,34 @@ const supabaseAnonKey =
   procEnv.SUPABASE_ANON_KEY ||
   SUPABASE_PUBLIC_ANON_KEY;
 
+// Devices that used the app before the move to the current Supabase project may
+// still hold cached template/background URLs pointing at the retired project.
+// Rewrite them once so every device resolves assets from the current project.
+const LEGACY_SUPABASE_HOST = 'cxmbustlvhzentduuvnx.supabase.co';
+function migrateLegacySupabaseCache() {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const currentHost = new URL(supabaseUrl).host;
+    if (currentHost === LEGACY_SUPABASE_HOST) return;
+    const storage = window.localStorage;
+    for (let i = storage.length - 1; i >= 0; i--) {
+      const key = storage.key(i);
+      if (!key) continue;
+      if (key.startsWith('sb-cxmbustlvhzentduuvnx')) {
+        storage.removeItem(key);
+        continue;
+      }
+      const value = storage.getItem(key);
+      if (value && value.includes(LEGACY_SUPABASE_HOST)) {
+        storage.setItem(key, value.split(LEGACY_SUPABASE_HOST).join(currentHost));
+      }
+    }
+  } catch {
+    // Cache migration is best-effort; the cloud fetch remains authoritative.
+  }
+}
+migrateLegacySupabaseCache();
+
 const DEFAULT_TIMEOUT = 12000; // 12 seconds
 
 async function withTimeout<T>(
