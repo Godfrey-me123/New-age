@@ -1082,7 +1082,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       try {
         const { fetchTokenPackagesSupabase } = await import('../services/supabase');
         const pkgs = await fetchTokenPackagesSupabase();
-        if (pkgs && pkgs.length > 0) {
+        if (Array.isArray(pkgs)) {
           const mapped: UsagePackage[] = pkgs.map(p => ({
             id: p.id,
             name: p.name,
@@ -1566,11 +1566,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       };
 
       // 1. PRIMARY RULE: Fetch cloud/custom template matching service and side
-      const activeCustom = customTemplates.find((t) => 
-        isServiceMatch(t) && 
-        t.isActive !== false && 
+      const frontCandidates = customTemplates.filter((t) =>
+        isServiceMatch(t) &&
+        t.isActive !== false &&
         !isBackSideTemplate(t)
       );
+      const activeCustom = frontCandidates.find((t) => t.isUniversal) || frontCandidates[0];
       if (activeCustom) {
         console.log('Template resolution: Found cloud template', activeCustom.id);
         return ensureTemplateFieldIds(activeCustom);
@@ -1641,11 +1642,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       };
 
       // 1. PRIMARY RULE: Fetch cloud/custom template matching service and side
-      const activeCustom = customTemplates.find((t) => 
-        isServiceMatch(t) && 
-        t.isActive !== false && 
+      const backCandidates = customTemplates.filter((t) =>
+        isServiceMatch(t) &&
+        t.isActive !== false &&
         isBackSideTemplate(t)
       );
+      const activeCustom = backCandidates.find((t) => t.isUniversal) || backCandidates[0];
       if (activeCustom) return ensureTemplateFieldIds(activeCustom);
 
       // 2. Fallback to localStorage for explicit JSON object override (Legacy support)
@@ -4308,7 +4310,18 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         if (isSupabaseConfigured) {
           // Fetch active templates
           const supabaseTemplates = await fetchAllActiveTemplatesSupabase();
-          for (const t of supabaseTemplates) {
+          if (supabaseTemplates) {
+            // Supabase is the source of truth: drop cached universal/cloud copies the admin deleted.
+            const cloudIds = new Set(supabaseTemplates.map((t: any) => t.id));
+            for (const [id, t] of Array.from(map.entries())) {
+              const isCloudCopy = t.isUniversal || id.startsWith('tpl_') || id.startsWith('template_');
+              if (isCloudCopy && !cloudIds.has(id)) {
+                map.delete(id);
+                await deleteTemplateDB(id);
+              }
+            }
+          }
+          for (const t of supabaseTemplates || []) {
             if (t && t.id) {
               const sanitized = ensureTemplateFieldIds(t);
               map.set(sanitized.id, sanitized);

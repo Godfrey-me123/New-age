@@ -22,6 +22,34 @@ const supabaseAnonKey =
   procEnv.SUPABASE_ANON_KEY ||
   SUPABASE_PUBLIC_ANON_KEY;
 
+// Devices that used the app before the move to the current Supabase project may
+// still hold cached template/background URLs pointing at the retired project.
+// Rewrite them once so every device resolves assets from the current project.
+const LEGACY_SUPABASE_HOST = 'cxmbustlvhzentduuvnx.supabase.co';
+function migrateLegacySupabaseCache() {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const currentHost = new URL(supabaseUrl).host;
+    if (currentHost === LEGACY_SUPABASE_HOST) return;
+    const storage = window.localStorage;
+    for (let i = storage.length - 1; i >= 0; i--) {
+      const key = storage.key(i);
+      if (!key) continue;
+      if (key.startsWith('sb-cxmbustlvhzentduuvnx')) {
+        storage.removeItem(key);
+        continue;
+      }
+      const value = storage.getItem(key);
+      if (value && value.includes(LEGACY_SUPABASE_HOST)) {
+        storage.setItem(key, value.split(LEGACY_SUPABASE_HOST).join(currentHost));
+      }
+    }
+  } catch {
+    // Cache migration is best-effort; the cloud fetch remains authoritative.
+  }
+}
+migrateLegacySupabaseCache();
+
 const DEFAULT_TIMEOUT = 12000; // 12 seconds
 
 async function withTimeout<T>(
@@ -504,13 +532,19 @@ export async function saveUniversalTemplateSupabase(
     // 1. Deactivate previous active version for this service_type & specific side (PROMPT 50.4)
     const sideValue = isUniversalBack ? 'Back Side' : 'Front Side';
 
-    await supabase
+    // Filter by side in JS: the JSON-path filter was unreliable and deactivated the opposite side too.
+    const { data: activeRows } = await supabase
       .from('templates')
-      .update({ is_active: false })
+      .select('id, template_json')
       .eq('service_type', serviceType)
       .eq('is_universal', true)
-      .eq('is_active', true)
-      .ilike('template_json->>side', sideValue);
+      .eq('is_active', true);
+    const sameSideIds = (activeRows || [])
+      .filter((r: any) => r.id !== cleanTemplate.id && String(r.template_json?.side || '').toLowerCase() === sideValue.toLowerCase())
+      .map((r: any) => r.id);
+    if (sameSideIds.length > 0) {
+      await supabase.from('templates').update({ is_active: false }).in('id', sameSideIds);
+    }
 
     // 2. Insert new active template record
     const { error } = await supabase.from('templates').upsert({
@@ -607,15 +641,16 @@ export async function fetchActiveUniversalTemplateSupabase(serviceType: string, 
 }
 
 // Helper: Fetch All Templates from Supabase (Universal + Custom Admin Templates)
-export async function fetchAllActiveTemplatesSupabase(): Promise<any[]> {
-  if (!supabase) return [];
+// Returns null on failure so the loader only prunes local copies when the cloud answered.
+export async function fetchAllActiveTemplatesSupabase(): Promise<any[] | null> {
+  if (!supabase) return null;
   try {
     const { data, error } = await supabase
       .from('templates')
       .select('*')
       .order('updated_at', { ascending: false });
 
-    if (error || !data || !Array.isArray(data)) return [];
+    if (error || !data || !Array.isArray(data)) return null;
 
     return data.map((d: any) => {
       let parsed = d.template_json;
@@ -1160,8 +1195,9 @@ export async function deletePasskeySupabase(id?: string, key?: string): Promise<
 }
 
 // Helper: Fetch all token packages from Supabase
-export async function fetchTokenPackagesSupabase(): Promise<any[]> {
-  if (!supabase) return [];
+// Returns null on failure so callers can tell "cloud unreachable" apart from "admin removed every package".
+export async function fetchTokenPackagesSupabase(): Promise<any[] | null> {
+  if (!supabase) return null;
   try {
     const { data, error } = await supabase
       .from('token_packages')
@@ -1171,12 +1207,12 @@ export async function fetchTokenPackagesSupabase(): Promise<any[]> {
     
     if (error) {
       console.error('Supabase fetch token packages error:', error.message);
-      return [];
+      return null;
     }
     return data || [];
   } catch (e) {
     console.error('Failed to fetch token packages from Supabase:', e);
-    return [];
+    return null;
   }
 }
 
