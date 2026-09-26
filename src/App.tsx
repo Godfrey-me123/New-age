@@ -84,9 +84,32 @@ export default function App() {
       });
     }).catch(() => {});
 
+    let templatesChannel: any = null;
+    let templatesClient: any = null;
+    import('./services/supabase').then(({ supabase }) => {
+      if (!supabase) return;
+      templatesClient = supabase;
+      templatesChannel = supabase
+        .channel('realtime_templates')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'templates' }, () => {
+          loadSavedTemplates();
+        })
+        .subscribe();
+    }).catch(() => {});
+
+    const refreshFromCloud = () => {
+      if (document.visibilityState === 'visible') {
+        loadSavedTemplates();
+        loadTokenPackages();
+      }
+    };
+    document.addEventListener('visibilitychange', refreshFromCloud);
+
     return () => {
       if (unsubPkgs) unsubPkgs();
       if (unsubOffers) unsubOffers();
+      if (templatesClient && templatesChannel) templatesClient.removeChannel(templatesChannel);
+      document.removeEventListener('visibilitychange', refreshFromCloud);
     };
   }, [fetchPasskeysFromSupabase, loadSavedTemplates, loadTokenPackages, loadWeeklyOffers]);
 
