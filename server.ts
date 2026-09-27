@@ -4,6 +4,8 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
+import { SUPABASE_PUBLIC_URL, SUPABASE_PUBLIC_ANON_KEY } from "./src/services/supabaseConfig";
 
 async function startServer() {
   const app = express();
@@ -11,8 +13,8 @@ async function startServer() {
   const PORT = 3000;
 
   // Initialize Supabase Client
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || SUPABASE_PUBLIC_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || SUPABASE_PUBLIC_ANON_KEY;
   const supabase = supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('YOUR_SUPABASE')
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
@@ -183,6 +185,37 @@ async function startServer() {
 
       // 4. [SMS PARSED]
       const parsedData = parseMobileMoneySms(smsLog.raw_sms);
+
+      const saveRawSms = async () => {
+        if (!supabase) return 'Supabase client not configured';
+        const { error } = await supabase.from('sms_logs').insert({
+          sms_hash: crypto.createHash('sha256').update(`${smsLog.sender}|${smsLog.raw_sms}|${smsLog.received_at}`).digest('hex'),
+          sender: smsLog.sender,
+          raw_sms: smsLog.raw_sms,
+          received_at: smsLog.received_at,
+          device_id: smsLog.device_name,
+          network: parsedData?.network ?? null,
+          amount: parsedData?.amount ?? null,
+          reference: parsedData?.reference ?? null,
+          transaction_id: parsedData?.reference ?? null,
+          payer_name: parsedData?.sender_name ?? null,
+          status: 'UNREVIEWED',
+          processing_state: parsedData ? 'PARSED' : 'PARSE_FAILED',
+          source: 'webhook',
+        }).select('id').single();
+        if (error && error.code !== '23505') return `${error.code || 'ERR'}: ${error.message}`;
+        return null;
+      };
+      const rawSaveError = smsLog.raw_sms.trim() ? await saveRawSms() : 'Empty SMS body';
+      if (rawSaveError) {
+        console.error('[SMS STORAGE] Raw SMS insert failed:', rawSaveError);
+        addTrace(SmsProcessingStatus.FAILED, `Raw SMS insert failed: ${rawSaveError}`);
+        smsLog.error_message = rawSaveError;
+        failedSmsCount++;
+        if (isTestPayload) lastTestStatus = 'failed';
+        return res.status(200).json({ success: false, received: true, status: 'FAILED', error: rawSaveError });
+      }
+
       if (!parsedData) {
         const error = 'Unsupported SMS format: Parsing Failed';
         addTrace(SmsProcessingStatus.FAILED, error);
@@ -199,21 +232,6 @@ async function startServer() {
       // 5. [TRANSACTION CREATED]
       if (supabase) {
         try {
-          // ALSO LOG THE RAW SMS TO sms_logs TABLE
-          await supabase.from('sms_logs').insert({
-            id: smsLog.id,
-            received_at: smsLog.received_at,
-            sender: smsLog.sender,
-            raw_sms: smsLog.raw_sms,
-            parsed_amount: parsedData.amount,
-            parsed_reference: parsedData.reference,
-            parsed_name: parsedData.sender_name,
-            status: smsLog.status,
-            source: 'webhook',
-            device_name: smsLog.device_name,
-            processed: true
-          });
-
           const { error } = await supabase.from('user_payments').upsert({
             id: smsLog.id,
             user_id: null,
@@ -231,6 +249,9 @@ async function startServer() {
           if (error) {
             console.error('[DATABASE SYNC] Supabase insert failed:', error.message);
             addTrace(SmsProcessingStatus.FAILED, `DB Sync Failed: ${error.message}`);
+            smsLog.error_message = error.message;
+            failedSmsCount++;
+            return res.status(200).json({ success: false, received: true, status: 'FAILED', error: error.message });
           } else {
             console.log(`[DATABASE SYNC] Reference ${parsedData.reference} synced successfully to Supabase!`);
             addTrace(SmsProcessingStatus.TRANSACTION_CREATED, `Ref: ${parsedData.reference} synced to Supabase`);
@@ -238,9 +259,10 @@ async function startServer() {
         } catch (dbErr: any) {
           console.error('[DATABASE SYNC] Exception during insert:', dbErr);
           addTrace(SmsProcessingStatus.FAILED, `DB Exception: ${dbErr.message || dbErr}`);
+          smsLog.error_message = dbErr.message || String(dbErr);
+          failedSmsCount++;
+          return res.status(200).json({ success: false, received: true, status: 'FAILED', error: smsLog.error_message });
         }
-      } else {
-        addTrace(SmsProcessingStatus.TRANSACTION_CREATED, `Ref: ${parsedData.reference} (Supabase not configured, local only)`);
       }
       console.log(`[TRANSACTION CREATED]`);
 

@@ -123,31 +123,24 @@ export default function App() {
   // Native Android APK JS Bridges
   useEffect(() => {
     // 1. Android Native SMS Receiver Callback
-    (window as any).onNativeSmsReceived = async (sender: string, rawSms: string) => {
-      console.log('[Native APK Bridge] SMS received:', { sender, rawSms });
-      try {
-        const response = await fetch('/api/payment-sms', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sender: sender || 'Native SMS',
-            raw_sms: rawSms,
-            device_name: 'BIGsta Native Android APK'
-          })
-        });
-        if (response.ok) {
-          console.log('[Native APK Bridge] SMS successfully forwarded to backend.');
-          alert(`[BIGsta Native APK] Successfully intercepted payment SMS from ${sender}! Checking and auto-confirming your tokens...`);
-          
-          // Force active state reload
-          fetchPasskeysFromSupabase();
-        } else {
-          console.error('[Native APK Bridge] Webhook rejection:', await response.text());
-        }
-      } catch (err) {
-        console.error('[Native APK Bridge] Network error posting intercepted SMS:', err);
+    (window as any).onNativeSmsReceived = async (sender: string, rawSms: string, timestamp?: string | number) => {
+      const { receiveNativeSms } = await import('./services/smsReceiver');
+      const result = await receiveNativeSms(sender, rawSms, timestamp);
+      if (result.ok) {
+        fetchPasskeysFromSupabase();
       }
+      return result.ok;
     };
+
+    import('./services/smsReceiver').then(({ markReceiverRegistered, flushSmsOutbox }) => {
+      markReceiverRegistered();
+      flushSmsOutbox();
+    }).catch(() => {});
+
+    const retryOutbox = () => {
+      import('./services/smsReceiver').then(({ flushSmsOutbox }) => flushSmsOutbox()).catch(() => {});
+    };
+    window.addEventListener('online', retryOutbox);
 
     // 2. Request Permissions Bridge
     (window as any).requestApkPermissions = () => {
@@ -169,6 +162,8 @@ export default function App() {
       }
       return false;
     };
+
+    return () => window.removeEventListener('online', retryOutbox);
   }, [fetchPasskeysFromSupabase]);
 
   // Automatically trigger Native Permissions request if inside the APK Webview environment on startup
