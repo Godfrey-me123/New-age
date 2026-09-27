@@ -1,5 +1,14 @@
 import { supabase } from './supabase';
-import { parseSms } from '../utils/smsParser';
+import {
+  ExtractedPayment,
+  computeSmsHash,
+  detectNetwork,
+  extractPaymentFields,
+  isParsedPayment,
+} from '../utils/smsFields';
+
+export type { ExtractedPayment };
+export { extractPaymentFields, detectNetwork, computeSmsHash };
 
 export const SMS_TABLE = 'sms_logs';
 
@@ -116,68 +125,6 @@ export function getDeviceId(): string {
   return id;
 }
 
-async function sha256(text: string): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-function detectNetwork(sender: string, text: string): string | null {
-  const hay = `${sender} ${text}`.toLowerCase();
-  if (hay.includes('m-pesa') || hay.includes('mpesa') || hay.includes('vodacom')) return 'M-Pesa';
-  if (hay.includes('mixx') || hay.includes('yas')) return 'Mixx by Yas';
-  if (hay.includes('tigo')) return 'Tigo Pesa';
-  if (hay.includes('airtel')) return 'Airtel Money';
-  if (hay.includes('halo')) return 'HaloPesa';
-  if (hay.includes('t-pesa') || hay.includes('ttcl')) return 'T-Pesa';
-  if (hay.includes('crdb') || hay.includes('nmb') || hay.includes('bank')) return 'Bank';
-  return null;
-}
-
-const toNumber = (v?: string | null) => {
-  if (!v) return null;
-  const n = parseFloat(v.replace(/,/g, ''));
-  return Number.isFinite(n) ? n : null;
-};
-
-export interface ExtractedPayment {
-  amount: number | null;
-  reference: string | null;
-  transactionId: string | null;
-  payerName: string | null;
-  payerPhone: string | null;
-  receiver: string | null;
-  balance: number | null;
-  network: string | null;
-}
-
-export function extractPaymentFields(sender: string, rawSms: string): ExtractedPayment {
-  const text = rawSms.trim();
-  const structured = parseSms(text);
-
-  const amountMatch = text.match(/(?:TSh|Tsh|TZS)\s*([\d,]+(?:\.\d{1,2})?)/i);
-  const refMatch =
-    text.match(/(?:Ref(?:erence)?|Kumbukumbu|Muamala|Transaction\s*ID|TxnID|ID)\s*(?:No\.?|namba)?\s*[:.]?\s*([A-Z0-9]{6,20})/i) ||
-    text.match(/^([A-Z0-9]{8,12})\b/);
-  const phoneMatch = text.match(/\b(255\d{9}|0[67]\d{8})\b/);
-  const balanceMatch = text.match(/(?:balance|salio)[^\d]{0,40}([\d,]+(?:\.\d{1,2})?)/i);
-  const fromMatch = text.match(/(?:from|kutoka\s+kwa|kutoka)\s+([A-Z][A-Z .'-]{2,40}?)(?=\s*(?:\(|\d|on\b|mnamo|\.|,|$))/i);
-  const toMatch = text.match(/(?:sent\s+to|to|kwenda\s+kwa|kwa)\s+([A-Z][A-Z .'-]{2,40}?)(?=\s*(?:\(|\d|on\b|mnamo|\.|,|$))/i);
-
-  const reference = structured?.transactionReference || refMatch?.[1] || null;
-  return {
-    amount: structured?.amount ?? toNumber(amountMatch?.[1]),
-    reference,
-    transactionId: reference,
-    payerName: structured?.senderName && structured.senderName !== 'Mobile Payment Transfer' ? structured.senderName : fromMatch?.[1]?.trim() || null,
-    payerPhone: structured?.senderPhone || phoneMatch?.[1] || null,
-    receiver: toMatch?.[1]?.trim() || null,
-    balance: structured?.newBalance || toNumber(balanceMatch?.[1]),
-    network: detectNetwork(sender, text) || (structured?.network && structured.network !== 'Mobile Money Gateway' ? structured.network : null),
-  };
-}
-
 interface OutboxItem {
   sender: string;
   rawSms: string;
@@ -208,9 +155,9 @@ async function persistSms(sender: string, rawSms: string, receivedAt: string): P
   if (!supabase) return { ok: false, error: 'Supabase client not configured' };
 
   const deviceId = getDeviceId();
-  const smsHash = await sha256(`${sender}|${rawSms}|${receivedAt}`);
+  const smsHash = await computeSmsHash(sender, rawSms, receivedAt);
   const fields = extractPaymentFields(sender, rawSms);
-  const parsed = fields.amount !== null && fields.reference !== null;
+  const parsed = isParsedPayment(fields);
 
   const row = {
     sms_hash: smsHash,
@@ -322,7 +269,11 @@ export function markReceiverRegistered() {
   updateDiagnostics({ receiverRegisteredAt: new Date().toISOString() });
 }
 
-export type SmsTableHealth = { ok: true } | { ok: false; error: string; missingTable: boolean };
+export interface SmsTableHealth {
+  ok: boolean;
+  error: string;
+  missingTable: boolean;
+}
 
 export async function checkSmsTable(): Promise<SmsTableHealth> {
   if (!supabase) return { ok: false, error: 'Supabase client not configured', missingTable: false };
@@ -331,7 +282,7 @@ export async function checkSmsTable(): Promise<SmsTableHealth> {
     const missing = error.code === 'PGRST205' || error.code === '42P01' || /could not find the table|does not exist/i.test(error.message);
     return { ok: false, error: `${error.code || 'ERR'}: ${error.message}`, missingTable: missing };
   }
-  return { ok: true };
+  return { ok: true, error: '', missingTable: false };
 }
 
 export async function fetchSmsTransactions(limit = 200): Promise<SmsTransaction[]> {
@@ -354,7 +305,10 @@ export async function countUnreviewedSms(): Promise<number> {
     .from(SMS_TABLE)
     .select('id', { count: 'exact', head: true })
     .eq('status', 'UNREVIEWED');
-  if (error) return 0;
+  if (error) {
+    console.error('[BIGsta SMS Receiver] Unreviewed count failed:', error.message);
+    return 0;
+  }
   return count || 0;
 }
 
@@ -401,8 +355,18 @@ CREATE TABLE IF NOT EXISTS public.sms_logs (
 );
 CREATE INDEX IF NOT EXISTS sms_logs_received_at_idx ON public.sms_logs (received_at DESC);
 CREATE INDEX IF NOT EXISTS sms_logs_status_idx ON public.sms_logs (status);
+CREATE INDEX IF NOT EXISTS sms_logs_sms_hash_idx ON public.sms_logs (sms_hash);
 ALTER TABLE public.sms_logs ENABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE ON public.sms_logs TO anon, authenticated;
 DROP POLICY IF EXISTS "Allow public access sms_logs" ON public.sms_logs;
 CREATE POLICY "Allow public access sms_logs" ON public.sms_logs FOR ALL USING (true) WITH CHECK (true);
-ALTER PUBLICATION supabase_realtime ADD TABLE public.sms_logs;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'sms_logs'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.sms_logs;
+  END IF;
+END $$;
 NOTIFY pgrst, 'reload schema';`;
