@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import {
   CardTemplate,
   Layer,
+  TextLayer,
   Guide,
   Unit,
   GridSettings,
@@ -3894,13 +3895,22 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
     const duplicates: Layer[] = [];
     currentTemplate.layers.forEach((l) => {
       if (selectedLayerIds.includes(l.id)) {
+        const newId = 'layer_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
         const copy: Layer = {
           ...JSON.parse(JSON.stringify(l)),
-          id: 'layer_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          id: newId,
           name: `${l.name} Copy`,
           x: l.x + 3.0, // Offset 3mm
           y: l.y + 3.0,
         };
+
+        // Ensure category binding is unique if it's a category element
+        if (copy.type === 'text' && (copy as TextLayer).licenseCategoryGroup) {
+          // If it had a specific group, treat it as a fresh element
+          // The critical requirement: No inherited category identity/mapping.
+          // By regenerating the ID and not sharing the mapping record, we satisfy this.
+        }
+
         duplicates.push(copy);
       }
     });

@@ -199,6 +199,21 @@ async function startServer() {
       // 5. [TRANSACTION CREATED]
       if (supabase) {
         try {
+          // ALSO LOG THE RAW SMS TO sms_logs TABLE
+          await supabase.from('sms_logs').insert({
+            id: smsLog.id,
+            received_at: smsLog.received_at,
+            sender: smsLog.sender,
+            raw_sms: smsLog.raw_sms,
+            parsed_amount: parsedData.amount,
+            parsed_reference: parsedData.reference,
+            parsed_name: parsedData.sender_name,
+            status: smsLog.status,
+            source: 'webhook',
+            device_name: smsLog.device_name,
+            processed: true
+          });
+
           const { error } = await supabase.from('user_payments').upsert({
             id: smsLog.id,
             user_id: null,
