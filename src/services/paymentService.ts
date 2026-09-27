@@ -1,5 +1,6 @@
 import { paymentDb } from './paymentDb';
 import { parseSms } from '../utils/smsParser';
+import { SmsClaimResult, claimSmsPaymentByReference, releaseSmsClaim } from './smsReceiver';
 import { PaymentRecord, VerificationLog, TokenTransaction, ServiceUnlock, PaymentStatus, VerificationType } from '../types';
 import { useTemplateStore } from '../store/useTemplateStore';
 
@@ -50,10 +51,91 @@ export class PaymentService {
   }
 
   /**
-   * User provides a reference and amount to auto-verify their payment or submit a claim
+   * User provides a reference and amount to auto-verify their payment or submit a claim.
+   *
+   * Lookup order:
+   *   1. `sms_logs`  - every SMS captured by the phone app or the server webhook.
+   *                    This is the real auto-confirmation path.
+   *   2. `user_payments` - transactions already promoted by the webhook.
+   *   3. Manual claim for admin review.
    */
   async autoConfirmWithReference(reference: string, amountInput: number, passkeyId: string): Promise<{ success: boolean; message: string; status: 'verified' | 'submitted' }> {
-    // 1. Fetch from Cloud as first choice for cross-device connectivity
+    const cleanRef = reference.trim().toUpperCase();
+    const store = useTemplateStore.getState();
+    const tokenPrice = store.adminSettings?.tokenPriceTsh || 2000;
+    const computedTokens = Math.max(1, Math.floor(amountInput / tokenPrice));
+
+    if (!passkeyId) {
+      return { success: false, message: 'No active passkey. Please sign in again before verifying a payment.', status: 'submitted' };
+    }
+
+    // --- 1. AUTO-CONFIRM FROM STORED PAYMENT SMS ---------------------------
+    let smsClaim: SmsClaimResult | null = null;
+    try {
+      smsClaim = await claimSmsPaymentByReference(cleanRef, amountInput);
+    } catch (e: any) {
+      console.warn('SMS lookup failed, falling back to payment records:', e);
+    }
+
+    if (smsClaim?.outcome === 'ALREADY_USED') {
+      return { success: false, message: `Transaction code ${cleanRef} has already been used to recharge an account.`, status: 'submitted' };
+    }
+    if (smsClaim?.outcome === 'AMOUNT_MISMATCH') {
+      return { success: false, message: smsClaim.message + ' Please enter the exact amount shown in your payment message.', status: 'submitted' };
+    }
+
+    if (smsClaim?.outcome === 'CLAIMED' && smsClaim.row) {
+      const smsRow = smsClaim.row;
+      const confirmedAmount = Number(smsClaim.amount ?? amountInput);
+      const tokens = Math.max(1, Math.floor(confirmedAmount / tokenPrice));
+
+      try {
+        store.addUsagesToPasskey(passkeyId, tokens, `${tokens} Tokens Recharged (Ref: ${cleanRef})`);
+      } catch (e: any) {
+        // Granting failed - give the code back so the user can retry.
+        await releaseSmsClaim(smsRow.id).catch(() => {});
+        return { success: false, message: 'Could not add tokens to your account. Please try again.', status: 'submitted' };
+      }
+
+      const record: PaymentRecord = {
+        id: `sms_${smsRow.id}`,
+        rawSms: smsRow.raw_sms,
+        sender: smsRow.sender,
+        receivedAt: smsRow.received_at,
+        deviceName: smsRow.device_id || 'BIGsta SMS Receiver',
+        status: 'verified',
+        used: true,
+        transactionReference: cleanRef,
+        senderName: smsRow.payer_name || 'Mobile Money User',
+        senderPhone: smsRow.payer_phone || '',
+        amount: confirmedAmount,
+        newBalance: smsRow.balance ?? undefined,
+        tokensGranted: tokens,
+        passkeyId,
+        verificationType: 'auto',
+        verifiedAt: new Date().toISOString(),
+        verifiedBy: 'auto',
+      };
+
+      try {
+        const existingLocal = await paymentDb.getPayment(record.id);
+        if (existingLocal) await paymentDb.updatePayment(record);
+        else await paymentDb.addPayment(record);
+      } catch (e) {}
+
+      try {
+        const { syncPaymentRecordSupabase } = await import('./supabase');
+        await syncPaymentRecordSupabase(record);
+      } catch (e) {
+        console.warn('Failed to sync auto-confirmed payment to Cloud:', e);
+      }
+
+      await this.logAction(record.id, 'auto_confirm', `Auto-confirmed from sms_logs row ${smsRow.id} for passkey ${passkeyId}. Granted ${tokens} tokens.`);
+
+      return { success: true, message: `Successfully verified! ${tokens} tokens have been added to your account.`, status: 'verified' };
+    }
+
+    // --- 2. FALL BACK TO ALREADY-PROMOTED PAYMENT RECORDS ------------------
     let all: PaymentRecord[] = [];
     try {
       const { fetchAllPaymentsSupabase } = await import('./supabase');
@@ -65,27 +147,24 @@ export class PaymentService {
       } catch (err) {}
     }
 
-    const cleanRef = reference.trim().toUpperCase();
-
-    // 2. Find matching reference in database
-    const match = all.find(p => 
-      p.transactionReference?.toUpperCase() === cleanRef && 
+    const match = all.find(p =>
+      p.transactionReference?.trim().toUpperCase() === cleanRef &&
       !p.used
     );
 
-    const store = useTemplateStore.getState();
-    const tokenPrice = store.adminSettings?.tokenPriceTsh || 2000;
-    const computedTokens = Math.max(1, Math.floor(amountInput / tokenPrice));
-
     if (match) {
-      // Found pre-synced transaction! Instant auto-confirm
-      // Determine token grant based on match amount or user-claimed amount
       const finalAmount = match.amount || amountInput;
+      if (match.amount && Math.abs(Number(match.amount) - Number(amountInput)) > 1) {
+        return {
+          success: false,
+          message: `The amount you entered (TSh ${amountInput.toLocaleString()}) does not match the recorded payment for code ${cleanRef}.`,
+          status: 'submitted',
+        };
+      }
       const tokens = Math.max(1, Math.floor(finalAmount / tokenPrice));
 
       store.addUsagesToPasskey(passkeyId, tokens, `${tokens} Tokens Recharged (Ref: ${cleanRef})`);
 
-      // Update payment record status
       match.status = 'verified';
       match.used = true;
       match.verificationType = 'auto';
@@ -95,12 +174,13 @@ export class PaymentService {
       match.passkeyId = passkeyId;
 
       try {
-        await paymentDb.updatePayment(match);
+        const existingLocal = await paymentDb.getPayment(match.id);
+        if (existingLocal) await paymentDb.updatePayment(match);
+        else await paymentDb.addPayment(match);
       } catch (e) {}
 
       await this.logAction(match.id, 'auto_confirm', `Auto-confirmed via reference matching for passkey ${passkeyId}. Granted ${tokens} tokens.`);
 
-      // Sync updated verification to Cloud!
       try {
         const { syncPaymentRecordSupabase } = await import('./supabase');
         await syncPaymentRecordSupabase(match);
@@ -109,14 +189,18 @@ export class PaymentService {
       return { success: true, message: `Successfully verified! ${tokens} tokens have been added to your account.`, status: 'verified' };
     }
 
-    // 3. If no pre-synced SMS transaction matches, create a REAL user payment submission in Cloud
-    // This allows the admin on the other side of the BIGsta app to instantly review and approve it!
+    // --- 3. NOTHING MATCHED: SUBMIT A CLAIM FOR ADMIN REVIEW ---------------
+    const alreadyClaimed = all.find(p => p.transactionReference?.trim().toUpperCase() === cleanRef);
+    if (alreadyClaimed?.used) {
+      return { success: false, message: `Transaction code ${cleanRef} has already been used to recharge an account.`, status: 'submitted' };
+    }
+
     const newClaimId = 'claim_' + Math.random().toString(36).substring(2, 11).toUpperCase();
     const activeUser = store.activePasskeys.find(p => p.id === passkeyId);
 
     const newClaim: PaymentRecord = {
       id: newClaimId,
-      rawSms: '',
+      rawSms: smsClaim?.row?.raw_sms || '',
       sender: activeUser?.key || 'User Claim',
       receivedAt: new Date().toISOString(),
       deviceName: 'BIGsta Manual Entry',
@@ -131,11 +215,9 @@ export class PaymentService {
     };
 
     try {
-      // Save local DB
       await paymentDb.addPayment(newClaim);
     } catch (e) {}
 
-    // Push to Cloud user_payments table so the Admin Panel on the other side sees it!
     try {
       const { syncPaymentRecordSupabase } = await import('./supabase');
       await syncPaymentRecordSupabase(newClaim);
@@ -145,10 +227,14 @@ export class PaymentService {
 
     await this.logAction(newClaimId, 'claim_submitted', `User submitted payment claim for Ref: ${cleanRef}, Amount: Tsh ${amountInput}. Awaiting Admin confirmation.`);
 
-    return { 
-      success: true, 
-      message: `No pre-recorded SMS matches code ${cleanRef} yet. We have submitted your payment details (TSh ${amountInput.toLocaleString()}) to our Admin Panel. The admin will verify and grant your tokens shortly!`, 
-      status: 'submitted' 
+    const reason = smsClaim?.outcome === 'UNPARSED'
+      ? `We found your SMS for code ${cleanRef} but could not read the amount automatically.`
+      : `No payment SMS matching code ${cleanRef} has reached us yet.`;
+
+    return {
+      success: true,
+      message: `${reason} We have submitted your payment details (TSh ${amountInput.toLocaleString()}) to our Admin Panel. The admin will verify and grant your tokens shortly!`,
+      status: 'submitted'
     };
   }
 

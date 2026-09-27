@@ -123,7 +123,7 @@ export default function App() {
   // Native Android APK JS Bridges
   useEffect(() => {
     // 1. Android Native SMS Receiver Callback
-    (window as any).onNativeSmsReceived = async (sender: string, rawSms: string, timestamp?: string | number) => {
+    const handleNativeSms = async (sender: string, rawSms: string, timestamp?: string | number) => {
       const { receiveNativeSms } = await import('./services/smsReceiver');
       const result = await receiveNativeSms(sender, rawSms, timestamp);
       if (result.ok) {
@@ -131,6 +131,12 @@ export default function App() {
       }
       return result.ok;
     };
+    // Register under every name the Android wrapper may call, so a mismatch
+    // in the native layer can never silently drop incoming payment SMS.
+    (window as any).onNativeSmsReceived = handleNativeSms;
+    (window as any).onSmsReceived = handleNativeSms;
+    (window as any).receiveSms = handleNativeSms;
+    (window as any).BIGstaOnSms = handleNativeSms;
 
     import('./services/smsReceiver').then(({ markReceiverRegistered, flushSmsOutbox }) => {
       markReceiverRegistered();
@@ -141,6 +147,9 @@ export default function App() {
       import('./services/smsReceiver').then(({ flushSmsOutbox }) => flushSmsOutbox()).catch(() => {});
     };
     window.addEventListener('online', retryOutbox);
+    // Periodic retry so a queued SMS is never stranded if the device never
+    // fires an 'online' event (common inside Android WebViews).
+    const outboxTimer = setInterval(retryOutbox, 60000);
 
     // 2. Request Permissions Bridge
     (window as any).requestApkPermissions = () => {
@@ -163,7 +172,10 @@ export default function App() {
       return false;
     };
 
-    return () => window.removeEventListener('online', retryOutbox);
+    return () => {
+      window.removeEventListener('online', retryOutbox);
+      clearInterval(outboxTimer);
+    };
   }, [fetchPasskeysFromSupabase]);
 
   // Automatically trigger Native Permissions request if inside the APK Webview environment on startup

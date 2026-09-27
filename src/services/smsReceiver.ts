@@ -331,6 +331,127 @@ export function subscribeSmsTransactions(onChange: () => void): () => void {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Payment auto-confirmation
+//
+// The APK native receiver and the server webhook both store every incoming
+// SMS in `sms_logs`. When a user types their transaction code + amount into
+// the recharge form we must look for THAT row here — previously the lookup
+// only searched `user_payments`, so any payment ingested by the phone app
+// never auto-confirmed and always fell through to manual admin review.
+// ---------------------------------------------------------------------------
+
+export type SmsClaimOutcome =
+  | 'CLAIMED'
+  | 'NOT_FOUND'
+  | 'AMOUNT_MISMATCH'
+  | 'ALREADY_USED'
+  | 'UNPARSED'
+  | 'ERROR';
+
+export interface SmsClaimResult {
+  outcome: SmsClaimOutcome;
+  message: string;
+  amount?: number;
+  row?: SmsTransaction;
+}
+
+export function normalizeReference(reference: string): string {
+  return String(reference || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+/** Read-only lookup of an SMS by its mobile-money reference. */
+export async function findSmsByReference(reference: string): Promise<SmsTransaction | null> {
+  if (!supabase) return null;
+  const ref = normalizeReference(reference);
+  if (!ref) return null;
+  const { data, error } = await supabase
+    .from(SMS_TABLE)
+    .select('*')
+    .or(`reference.ilike.${ref},transaction_id.ilike.${ref}`)
+    .order('received_at', { ascending: false })
+    .limit(1);
+  if (error) throw new Error(`${error.code || 'ERR'}: ${error.message}`);
+  return (data?.[0] as SmsTransaction) || null;
+}
+
+/**
+ * Atomically claim a stored SMS for a user recharge.
+ *
+ * The UNREVIEWED -> REVIEWED transition is done with a conditional UPDATE so
+ * two people submitting the same code at the same time can never both win.
+ */
+export async function claimSmsPaymentByReference(
+  reference: string,
+  amountInput: number,
+): Promise<SmsClaimResult> {
+  if (!supabase) return { outcome: 'ERROR', message: 'Cloud database is not configured.' };
+
+  const ref = normalizeReference(reference);
+  if (!ref) return { outcome: 'NOT_FOUND', message: 'Transaction code is empty or invalid.' };
+
+  let row: SmsTransaction | null;
+  try {
+    row = await findSmsByReference(ref);
+  } catch (e: any) {
+    return { outcome: 'ERROR', message: e?.message || String(e) };
+  }
+
+  if (!row) {
+    return { outcome: 'NOT_FOUND', message: `No payment SMS stored for code ${ref}.` };
+  }
+  if (row.status !== 'UNREVIEWED') {
+    return { outcome: 'ALREADY_USED', message: `Code ${ref} has already been used.`, row };
+  }
+  if (row.processing_state !== 'PARSED' || row.amount === null || row.amount === undefined) {
+    return {
+      outcome: 'UNPARSED',
+      message: `The SMS for code ${ref} was stored but its amount could not be read automatically.`,
+      row,
+    };
+  }
+
+  const smsAmount = Number(row.amount);
+  if (!Number.isFinite(smsAmount) || Math.abs(smsAmount - Number(amountInput)) > 1) {
+    return {
+      outcome: 'AMOUNT_MISMATCH',
+      message: `The amount you entered (TSh ${Number(amountInput).toLocaleString()}) does not match the payment SMS for code ${ref}.`,
+      amount: smsAmount,
+      row,
+    };
+  }
+
+  const { data: claimed, error: claimError } = await supabase
+    .from(SMS_TABLE)
+    .update({ status: 'REVIEWED' as SmsReviewStatus })
+    .eq('id', row.id)
+    .eq('status', 'UNREVIEWED')
+    .select('*')
+    .maybeSingle();
+
+  if (claimError) {
+    return { outcome: 'ERROR', message: `${claimError.code || 'ERR'}: ${claimError.message}` };
+  }
+  if (!claimed) {
+    return { outcome: 'ALREADY_USED', message: `Code ${ref} was just used by another request.`, row };
+  }
+
+  return {
+    outcome: 'CLAIMED',
+    message: `Payment of TSh ${smsAmount.toLocaleString()} confirmed.`,
+    amount: smsAmount,
+    row: claimed as SmsTransaction,
+  };
+}
+
+/** Release a claim when granting tokens afterwards fails, so the user can retry. */
+export async function releaseSmsClaim(id: string): Promise<void> {
+  if (!supabase) return;
+  await supabase.from(SMS_TABLE).update({ status: 'UNREVIEWED' as SmsReviewStatus }).eq('id', id);
+}
+
 export const SMS_TABLE_SQL = `CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS public.sms_logs (
