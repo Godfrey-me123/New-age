@@ -6,6 +6,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { SUPABASE_PUBLIC_URL, SUPABASE_PUBLIC_ANON_KEY } from "./src/services/supabaseConfig";
+import { computeSmsHash, extractPaymentFields, isParsedPayment } from "./src/utils/smsFields";
 
 async function startServer() {
   const app = express();
@@ -81,43 +82,22 @@ async function startServer() {
   let lastTestStatus: string | null = null;
 
   // WEBHOOK SECRET CONFIGURATION
+  const isProduction = process.env.NODE_ENV === 'production';
   let webhookSecret = process.env.WEBHOOK_SECRET_KEY || "BIGsta_SEC_default_" + Math.random().toString(36).substring(7);
-
-  // --- PARSER: Mobile Money SMS ---
-  function parseMobileMoneySms(text: string) {
-    const normalized = text.trim();
-
-    // 1. Swahili Universal Pattern (e.g., "DIFEQ2LX2R Imethibitishwa. Tsh3,000.00 imetumwa...")
-    const swahiliMatch = normalized.match(/^([A-Z0-9]{10}).*?Tsh\s*([\d,]+(?:\.\d{2})?)/i);
-    if (swahiliMatch) {
-      return {
-        amount: parseFloat(swahiliMatch[2].replace(/,/g, '')),
-        reference: swahiliMatch[1],
-        sender_name: 'Mobile Money Transfer',
-        type: 'MOBILE_MONEY',
-        network: text.includes('M-Pesa') || text.includes('imethibitishwa') ? 'MPESA' : 'MOBILE_MONEY',
-        transaction_time: new Date().toISOString()
-      };
-    }
-
-    // 2. Tanzanian Mobile Money Patterns (Tigo Pesa, M-Pesa, Airtel Money)
-    // Example: "Tigo Pesa: Confirmed. You have received TSh 10,000 from TEST USER. Ref: TX123456789."
-    const amountMatch = text.match(/(?:received|TSh)\s?([\d,]+)/i);
-    const refMatch = text.match(/(?:Ref|ID|Code):\s?([A-Z0-9]+)/i);
-    const senderMatch = text.match(/from\s?([^.]+)/i);
-
-    if (amountMatch && refMatch) {
-      return {
-        amount: parseFloat(amountMatch[1].replace(/,/g, '')),
-        reference: refMatch[1],
-        sender_name: senderMatch ? senderMatch[1].trim() : 'Unknown',
-        type: 'MOBILE_MONEY',
-        network: text.includes('Tigo') ? 'TIGO' : text.includes('M-Pesa') ? 'MPESA' : 'OTHER',
-        transaction_time: new Date().toISOString()
-      };
-    }
-    return null;
+  if (!process.env.WEBHOOK_SECRET_KEY) {
+    console.warn('[SMS WEBHOOK] WEBHOOK_SECRET_KEY is not set. A temporary secret was generated and it CHANGES ON EVERY RESTART, which will silently break already-configured devices. Set WEBHOOK_SECRET_KEY in the environment.');
   }
+  // Unauthenticated test payloads are a development convenience only. In
+  // production a caller could otherwise skip the secret entirely by sending
+  // device_name: "Admin Web Test".
+  const allowTestBypass = process.env.ALLOW_TEST_WEBHOOK === 'true' || !isProduction;
+  const adminApiKey = process.env.ADMIN_API_KEY || '';
+  const requireAdmin = (req: any, res: any): boolean => {
+    if (!adminApiKey) return true;
+    if (req.get('x-admin-key') === adminApiKey) return true;
+    res.status(401).json({ success: false, error: 'Unauthorized: missing or invalid x-admin-key' });
+    return false;
+  };
 
   // --- PUBLIC WEBHOOK ENDPOINT ---
   app.post(["/api/payment-sms", "/api/payment-sms/"], async (req, res) => {
@@ -156,9 +136,8 @@ async function startServer() {
                             smsLog.device_name === "Admin Web Test" || 
                             smsLog.device_name === "BIGsta SMS Simulator Integration";
       
-      const isBypassSecret = smsLog.device_name === "Admin Web Test" || 
-                             smsLog.device_name === "BIGsta SMS Simulator Integration";
-      
+      const isBypassSecret = allowTestBypass && isTestPayload;
+
       if (!isBypassSecret && (!secret || secret !== webhookSecret)) {
         const error = !secret ? 'Missing Secret' : 'Invalid Secret';
         addTrace(SmsProcessingStatus.FAILED, error);
@@ -166,7 +145,7 @@ async function startServer() {
         failedSmsCount++;
         if (isTestPayload) lastTestStatus = 'unauthorized';
         console.warn(`[PROCESSING FAILED] ${error} from ${clientIp}`);
-        return res.status(200).json({ success: false, received: true, status: 'FAILED', error });
+        return res.status(401).json({ success: false, received: true, status: 'FAILED', error });
       }
       addTrace(SmsProcessingStatus.VALIDATED);
       console.log(`[SECRET VALIDATED]`);
@@ -180,78 +159,152 @@ async function startServer() {
         return res.status(200).json({ success: true, received: true, status: 'DUPLICATE' });
       }
       processedHashes.add(contentHash);
+      if (processedHashes.size > 5000) {
+        // Keep the in-memory cache bounded; the sms_hash UNIQUE index in
+        // Supabase remains the authoritative duplicate guard.
+        for (const h of processedHashes) {
+          processedHashes.delete(h);
+          if (processedHashes.size <= 2500) break;
+        }
+      }
       addTrace(SmsProcessingStatus.LOGGED);
       console.log(`[RAW SMS SAVED] Hash: ${contentHash.substring(0, 8)}...`);
 
-      // 4. [SMS PARSED]
-      const parsedData = parseMobileMoneySms(smsLog.raw_sms);
+      // 4. [SMS PARSED] - same extractor the APK receiver uses
+      const fields = extractPaymentFields(smsLog.sender, smsLog.raw_sms);
+      const parsed = isParsedPayment(fields);
+      const parsedData = parsed
+        ? {
+            amount: fields.amount as number,
+            reference: fields.reference as string,
+            sender_name: fields.payerName || 'Mobile Money User',
+            network: fields.network,
+            transaction_time: smsLog.received_at,
+          }
+        : null;
 
-      const saveRawSms = async () => {
-        if (!supabase) return 'Supabase client not configured';
-        const { error } = await supabase.from('sms_logs').insert({
-          sms_hash: crypto.createHash('sha256').update(`${smsLog.sender}|${smsLog.raw_sms}|${smsLog.received_at}`).digest('hex'),
+      if (!smsLog.raw_sms.trim()) {
+        const error = 'Empty SMS body';
+        addTrace(SmsProcessingStatus.FAILED, error);
+        smsLog.error_message = error;
+        failedSmsCount++;
+        if (isTestPayload) lastTestStatus = 'failed';
+        return res.status(400).json({ success: false, received: true, status: 'FAILED', error });
+      }
+
+      if (!supabase) {
+        // No fake success: without a database the SMS is NOT stored.
+        const error = 'Supabase client not configured; SMS was not stored';
+        console.error('[SMS STORAGE]', error);
+        addTrace(SmsProcessingStatus.FAILED, error);
+        smsLog.error_message = error;
+        failedSmsCount++;
+        if (isTestPayload) lastTestStatus = 'failed';
+        return res.status(503).json({ success: false, received: true, status: 'FAILED', error });
+      }
+
+      const smsHash = await computeSmsHash(smsLog.sender, smsLog.raw_sms, smsLog.received_at);
+      const { data: savedRow, error: rawSaveDbError } = await supabase
+        .from('sms_logs')
+        .insert({
+          sms_hash: smsHash,
           sender: smsLog.sender,
           raw_sms: smsLog.raw_sms,
           received_at: smsLog.received_at,
           device_id: smsLog.device_name,
-          network: parsedData?.network ?? null,
-          amount: parsedData?.amount ?? null,
-          reference: parsedData?.reference ?? null,
-          transaction_id: parsedData?.reference ?? null,
-          payer_name: parsedData?.sender_name ?? null,
+          network: fields.network,
+          amount: fields.amount,
+          reference: fields.reference,
+          receiver: fields.receiver,
+          balance: fields.balance,
+          transaction_id: fields.transactionId,
+          payer_name: fields.payerName,
+          payer_phone: fields.payerPhone,
           status: 'UNREVIEWED',
-          processing_state: parsedData ? 'PARSED' : 'PARSE_FAILED',
+          processing_state: parsed ? 'PARSED' : 'PARSE_FAILED',
           source: 'webhook',
-        }).select('id').single();
-        if (error && error.code !== '23505') return `${error.code || 'ERR'}: ${error.message}`;
-        return null;
-      };
-      const rawSaveError = smsLog.raw_sms.trim() ? await saveRawSms() : 'Empty SMS body';
-      if (rawSaveError) {
+        })
+        .select('id')
+        .maybeSingle();
+
+      const isDbDuplicate = rawSaveDbError?.code === '23505';
+      if (rawSaveDbError && !isDbDuplicate) {
+        const rawSaveError = `${rawSaveDbError.code || 'ERR'}: ${rawSaveDbError.message}`;
         console.error('[SMS STORAGE] Raw SMS insert failed:', rawSaveError);
         addTrace(SmsProcessingStatus.FAILED, `Raw SMS insert failed: ${rawSaveError}`);
         smsLog.error_message = rawSaveError;
         failedSmsCount++;
         if (isTestPayload) lastTestStatus = 'failed';
-        return res.status(200).json({ success: false, received: true, status: 'FAILED', error: rawSaveError });
+        return res.status(502).json({ success: false, received: true, status: 'FAILED', error: rawSaveError });
       }
+      if (isDbDuplicate) {
+        addTrace(SmsProcessingStatus.DUPLICATE, 'Already stored in sms_logs (sms_hash conflict)');
+        duplicateSmsCount++;
+        return res.status(200).json({ success: true, received: true, status: 'DUPLICATE' });
+      }
+      if (!savedRow?.id) {
+        const error = 'Insert returned no row; storage not confirmed';
+        addTrace(SmsProcessingStatus.FAILED, error);
+        smsLog.error_message = error;
+        failedSmsCount++;
+        if (isTestPayload) lastTestStatus = 'failed';
+        return res.status(502).json({ success: false, received: true, status: 'FAILED', error });
+      }
+      smsLog.transaction_id = savedRow.id;
+      console.log(`[RAW SMS SAVED] row ${savedRow.id}`);
 
       if (!parsedData) {
-        const error = 'Unsupported SMS format: Parsing Failed';
+        // Raw SMS IS stored (PARSE_FAILED) and shows in the dashboard for
+        // manual review; only the automatic transaction step is skipped.
+        const error = 'Unsupported SMS format: stored as raw for manual review';
         addTrace(SmsProcessingStatus.FAILED, error);
         smsLog.error_message = error;
         failedSmsCount++;
         if (isTestPayload) lastTestStatus = 'failed';
         console.warn(`[SMS PARSED] FAILED for ${smsLog.sender}`);
-        return res.status(200).json({ success: false, received: true, status: 'FAILED', error });
+        return res.status(422).json({ success: false, received: true, stored: true, status: 'PARSE_FAILED', error });
       }
       smsLog.parse_result = parsedData;
       addTrace(SmsProcessingStatus.PARSED, `Extracted TSh ${parsedData.amount} (${parsedData.reference})`);
       console.log(`[SMS PARSED] Amount: ${parsedData.amount}, Ref: ${parsedData.reference}`);
 
       // 5. [TRANSACTION CREATED]
-      if (supabase) {
+      {
         try {
-          const { error } = await supabase.from('user_payments').upsert({
-            id: smsLog.id,
-            user_id: null,
+          // Deduplicate on the mobile-money reference without depending on a
+          // UNIQUE constraint existing on user_payments.reference.
+          const { data: existing } = await supabase
+            .from('user_payments')
+            .select('id')
+            .eq('reference', parsedData.reference)
+            .limit(1);
+
+          const paymentRow = {
             user_name: parsedData.sender_name || 'Mobile Money User',
             user_phone: smsLog.sender,
             amount: parsedData.amount,
             sender: parsedData.sender_name || 'Mobile Money User',
             receiver: smsLog.device_name || 'BIGsta Gateway',
             reference: parsedData.reference,
-            status: 'PENDING',
             payment_date: parsedData.transaction_time || new Date().toISOString(),
-            tokens_granted: 0,
-          });
+          };
+
+          const { error } = existing && existing.length > 0
+            ? await supabase.from('user_payments').update(paymentRow).eq('id', existing[0].id)
+            : await supabase.from('user_payments').insert({
+                id: crypto.randomUUID(),
+                user_id: null,
+                status: 'PENDING',
+                tokens_granted: 0,
+                ...paymentRow,
+              });
 
           if (error) {
             console.error('[DATABASE SYNC] Supabase insert failed:', error.message);
             addTrace(SmsProcessingStatus.FAILED, `DB Sync Failed: ${error.message}`);
             smsLog.error_message = error.message;
             failedSmsCount++;
-            return res.status(200).json({ success: false, received: true, status: 'FAILED', error: error.message });
+            return res.status(502).json({ success: false, received: true, stored: true, status: 'FAILED', error: error.message });
           } else {
             console.log(`[DATABASE SYNC] Reference ${parsedData.reference} synced successfully to Supabase!`);
             addTrace(SmsProcessingStatus.TRANSACTION_CREATED, `Ref: ${parsedData.reference} synced to Supabase`);
@@ -261,7 +314,7 @@ async function startServer() {
           addTrace(SmsProcessingStatus.FAILED, `DB Exception: ${dbErr.message || dbErr}`);
           smsLog.error_message = dbErr.message || String(dbErr);
           failedSmsCount++;
-          return res.status(200).json({ success: false, received: true, status: 'FAILED', error: smsLog.error_message });
+          return res.status(502).json({ success: false, received: true, stored: true, status: 'FAILED', error: smsLog.error_message });
         }
       }
       console.log(`[TRANSACTION CREATED]`);
@@ -296,7 +349,7 @@ async function startServer() {
       smsLog.error_message = errorMsg;
       failedSmsCount++;
       console.error(`[PROCESSING FAILED] Critical: ${errorMsg}`);
-      res.status(200).json({ success: false, received: true, status: 'FAILED', error: errorMsg });
+      res.status(500).json({ success: false, received: true, status: 'FAILED', error: errorMsg });
     }
   });
 
@@ -348,10 +401,12 @@ async function startServer() {
   });
 
   app.get("/api/admin/webhook-secret", (req, res) => {
+    if (!requireAdmin(req, res)) return;
     res.json({ secret: webhookSecret });
   });
 
   app.post("/api/admin/webhook-secret/regenerate", (req, res) => {
+    if (!requireAdmin(req, res)) return;
     webhookSecret = "BIGsta_SEC_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     res.json({ success: true, secret: webhookSecret });
   });
