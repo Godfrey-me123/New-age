@@ -36,11 +36,15 @@ import { paymentService } from '../../services/paymentService';
 import { PaymentRecord, PaymentStatus, VerificationLog } from '../../types';
 import { useTemplateStore } from '../../store/useTemplateStore';
 import { UniversalBackButton } from '../common/UniversalBackButton';
+import { SmsTransactionsPanel } from './SmsTransactionsPanel';
+import { SmsDiagnosticsPanel } from './SmsDiagnosticsPanel';
+import { useUnreviewedSmsCount } from '../../hooks/useUnreviewedSmsCount';
 
 export const PaymentDashboard: React.FC = () => {
   const { setActiveScreen } = useTemplateStore();
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'verified' | 'rejected' | 'used' | 'manual' | 'settings' | 'debug' | 'monitor' | 'sms_logs'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'verified' | 'rejected' | 'used' | 'manual' | 'settings' | 'debug' | 'monitor' | 'sms_logs' | 'sms_diagnostics'>('all');
+  const unreviewedSms = useUnreviewedSmsCount();
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
@@ -896,57 +900,8 @@ export const PaymentDashboard: React.FC = () => {
     </div>
   );
 
-  const SmsLogsTab = () => {
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSmsLogs = async () => {
-      try {
-        const { supabase } = await import('../../services/supabase');
-        const { data, error } = await supabase.from('sms_logs').select('*').order('received_at', { ascending: false });
-        if (data) setLogs(data);
-      } catch (e) {
-        console.error('Error fetching SMS logs:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSmsLogs();
-  }, []);
-
-  return (
-    <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm overflow-x-auto">
-      <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6">SMS Transaction Logs</h3>
-      <table className="w-full text-left">
-        <thead>
-          <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-            <th className="px-4 py-3">Time</th>
-            <th className="px-4 py-3">Sender</th>
-            <th className="px-4 py-3">Amount</th>
-            <th className="px-4 py-3">Reference</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3">Raw SMS</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {logs.map(log => (
-            <tr key={log.id} className="text-xs font-medium text-gray-700">
-              <td className="px-4 py-3">{new Date(log.received_at).toLocaleString()}</td>
-              <td className="px-4 py-3">{log.sender}</td>
-              <td className="px-4 py-3 font-mono">{log.parsed_amount?.toLocaleString() || '-'}</td>
-              <td className="px-4 py-3 font-mono">{log.parsed_reference || '-'}</td>
-              <td className="px-4 py-3">{log.status}</td>
-              <td className="px-4 py-3 max-w-xs truncate text-gray-500">{log.raw_sms}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-const renderSmsLogs = () => <SmsLogsTab />;
+const renderSmsLogs = () => <SmsTransactionsPanel />;
+const renderSmsDiagnostics = () => <SmsDiagnosticsPanel />;
 
 const renderSettings = () => {
     // Connection Status Calculation
@@ -1426,7 +1381,8 @@ const renderSettings = () => {
                   { id: 'used', label: 'Used', icon: Tag },
                   { id: 'manual', label: 'Manual', icon: AlertTriangle },
                   { id: 'monitor', label: 'Monitor', icon: Activity },
-                  { id: 'sms_logs', label: 'SMS Transaction Logs', icon: Smartphone },
+                  { id: 'sms_logs', label: unreviewedSms > 0 ? `SMS Transactions (${unreviewedSms})` : 'SMS Transactions', icon: Smartphone },
+                  { id: 'sms_diagnostics', label: 'Diagnostics', icon: Activity },
                   { id: 'settings', label: 'Settings', icon: Settings },
                   { id: 'debug', label: 'Debug', icon: Bug },
                 ].map((tab) => (
@@ -1452,6 +1408,7 @@ const renderSettings = () => {
             activeTab === 'debug' ? renderWebhookDebug() :
             activeTab === 'monitor' ? renderMonitor() :
             activeTab === 'sms_logs' ? renderSmsLogs() :
+            activeTab === 'sms_diagnostics' ? renderSmsDiagnostics() :
             renderPaymentList()
           )}
         </div>

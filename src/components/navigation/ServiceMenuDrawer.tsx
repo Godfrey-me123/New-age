@@ -26,6 +26,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { useTemplateStore } from '../../store/useTemplateStore';
+import { useUnreviewedSmsCount } from '../../hooks/useUnreviewedSmsCount';
 
 export interface ServiceMenuDrawerProps {
   isOpen: boolean;
@@ -77,6 +78,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
     };
   }, [isOpen]);
 
+  const unreviewedSms = useUnreviewedSmsCount(authRole === 'admin');
   const [readyCount, setReadyCount] = React.useState<number>(0);
   const [isServicesExpanded, setIsServicesExpanded] = React.useState<boolean>(true);
   React.useEffect(() => {
@@ -167,7 +169,7 @@ export const ServiceMenuDrawer: React.FC<ServiceMenuDrawerProps> = ({
           },
           {
             id: 'sms_payments',
-            name: 'Payments & Transactions',
+            name: unreviewedSms > 0 ? `Payments (${unreviewedSms})` : 'Payments & Transactions',
             authority: 'SMS Forwarder & Auto-Verification',
             category: 'core' as const,
             icon: Receipt,
