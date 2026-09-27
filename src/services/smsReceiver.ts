@@ -477,6 +477,8 @@ CREATE TABLE IF NOT EXISTS public.sms_logs (
 CREATE INDEX IF NOT EXISTS sms_logs_received_at_idx ON public.sms_logs (received_at DESC);
 CREATE INDEX IF NOT EXISTS sms_logs_status_idx ON public.sms_logs (status);
 CREATE INDEX IF NOT EXISTS sms_logs_sms_hash_idx ON public.sms_logs (sms_hash);
+CREATE INDEX IF NOT EXISTS sms_logs_reference_idx ON public.sms_logs (upper(reference));
+CREATE INDEX IF NOT EXISTS sms_logs_transaction_id_idx ON public.sms_logs (upper(transaction_id));
 ALTER TABLE public.sms_logs ENABLE ROW LEVEL SECURITY;
 GRANT SELECT, INSERT, UPDATE ON public.sms_logs TO anon, authenticated;
 DROP POLICY IF EXISTS "Allow public access sms_logs" ON public.sms_logs;
