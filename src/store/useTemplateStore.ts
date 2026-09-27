@@ -2786,7 +2786,9 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
               role: (p.role || 'user') as 'user',
               tokens: typeof p.tokens === 'number' ? p.tokens : 0,
               status: (p.status || 'ACTIVE') as 'ACTIVE' | 'DISABLED' | 'PENDING',
-              registeredDate: p.created_at ? new Date(p.created_at).toISOString().replace('T', ' ').substring(0, 16) : new Date().toISOString().replace('T', ' ').substring(0, 16),
+              registeredDate: p.created_at && !isNaN(new Date(p.created_at).getTime()) 
+                ? new Date(p.created_at).toISOString().replace('T', ' ').substring(0, 16) 
+                : new Date().toISOString().replace('T', ' ').substring(0, 16),
               createdAtTimestamp: p.created_at ? new Date(p.created_at).getTime() : Date.now(),
               lastActive: p.last_active || 'Recent activity',
               lastActiveTimestamp: p.last_active_timestamp || Date.now(),

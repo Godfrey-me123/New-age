@@ -1019,22 +1019,20 @@ export function formatDrivingLicenceCategoriesBack(
   const lines: string[] = [];
   ALL_CLASS_CODES.forEach((code) => {
     const item = classMap.get(code);
-    const isEnabled = !!(item && (item.enabled || item.selected || item.checked));
-    let issueStr = '';
-    let expiryStr = '';
+    const isEnabled = !!(item && (item.enabled === true || item.enabled === 1 || item.selected === true || item.checked === true));
 
     if (isEnabled) {
-      // Ensure we have a date if it's enabled (Secret Approval Logic)
       const rawIssue = item?.issueDate || defaultIssueDate || new Date().toISOString().split('T')[0];
-      // Default expiry to 5 years from issue if missing
       const rawExpiry = item?.expiryDate || defaultExpiryDate || new Date(new Date(rawIssue).getTime() + 157680000000).toISOString().split('T')[0];
       
-      issueStr = rawIssue ? formatToDdMmYyyy(rawIssue) : '';
-      expiryStr = rawExpiry ? formatToDdMmYyyy(rawExpiry) : '';
-    }
+      const issueStr = (rawIssue && rawIssue.trim() !== '') ? formatToDdMmYyyy(rawIssue) : '';
+      const expiryStr = (rawExpiry && rawExpiry.trim() !== '') ? formatToDdMmYyyy(rawExpiry) : '';
 
-    const paddedIssue = issueStr ? issueStr.padEnd(16, ' ') : '                ';
-    lines.push(`${paddedIssue}${expiryStr}`.trimEnd());
+      if (issueStr !== '' && expiryStr !== '') {
+        const paddedIssue = issueStr.padEnd(16, ' ');
+        lines.push(`${paddedIssue}${expiryStr}`.trimEnd());
+      }
+    }
   });
 
   return lines.join('\n');

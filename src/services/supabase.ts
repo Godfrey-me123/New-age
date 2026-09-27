@@ -1019,8 +1019,10 @@ export async function fetchPasskeysSupabase(): Promise<any[]> {
               key: p.key,
               role: p.role || 'user',
               active: p.active !== false && p.payment_status !== 'DISABLED',
-              createdDate: p.created_date || new Date(p.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
-              createdAtTimestamp: p.created_at_timestamp || Date.now(),
+              createdDate: p.created_date || (isNaN(new Date(p.created_at || Date.now()).getTime()) 
+                ? new Date().toISOString().replace('T', ' ').substring(0, 16)
+                : new Date(p.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16)),
+              createdAtTimestamp: p.created_at_timestamp || (isNaN(new Date(p.created_at || Date.now()).getTime()) ? Date.now() : new Date(p.created_at || Date.now()).getTime()),
               createdBy: p.created_by || 'Supabase',
               description: p.description || 'Supabase Passkey',
               lastUsed: p.last_used,
@@ -1049,8 +1051,12 @@ export async function fetchPasskeysSupabase(): Promise<any[]> {
               key: p.passkey,
               role: p.role || 'user',
               active: p.status !== 'DISABLED',
-              createdDate: p.created_at ? new Date(p.created_at).toISOString().replace('T', ' ').substring(0, 16) : new Date().toISOString().replace('T', ' ').substring(0, 16),
-              createdAtTimestamp: p.created_at ? new Date(p.created_at).getTime() : Date.now(),
+              createdDate: p.created_at && !isNaN(new Date(p.created_at).getTime()) 
+                ? new Date(p.created_at).toISOString().replace('T', ' ').substring(0, 16) 
+                : new Date().toISOString().replace('T', ' ').substring(0, 16),
+              createdAtTimestamp: p.created_at && !isNaN(new Date(p.created_at).getTime()) 
+                ? new Date(p.created_at).getTime() 
+                : Date.now(),
               createdBy: 'User Self-Registration',
               description: `${p.name || 'Registered User'} (${p.phone || 'No Phone'})`,
               totalUsages: typeof p.tokens === 'number' ? p.tokens : 1,
@@ -1095,8 +1101,10 @@ export async function fetchPasskeyByKeySupabase(inputKey: string): Promise<any |
         key: p.key,
         role: p.role || 'user',
         active: p.active !== false,
-        createdDate: p.created_date || new Date(p.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
-        createdAtTimestamp: p.created_at_timestamp || Date.now(),
+        createdDate: p.created_date || (isNaN(new Date(p.created_at || Date.now()).getTime()) 
+          ? new Date().toISOString().replace('T', ' ').substring(0, 16)
+          : new Date(p.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16)),
+        createdAtTimestamp: p.created_at_timestamp || (isNaN(new Date(p.created_at || Date.now()).getTime()) ? Date.now() : new Date(p.created_at || Date.now()).getTime()),
         createdBy: p.created_by || 'Supabase',
         description: p.description || 'Supabase Passkey',
         lastUsed: p.last_used,
@@ -1126,8 +1134,10 @@ export async function fetchPasskeyByKeySupabase(inputKey: string): Promise<any |
         key: prof.passkey,
         role: prof.role || 'user',
         active: true,
-        createdDate: new Date(prof.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
-        createdAtTimestamp: new Date(prof.created_at || Date.now()).getTime(),
+        createdDate: isNaN(new Date(prof.created_at || Date.now()).getTime()) 
+          ? new Date().toISOString().replace('T', ' ').substring(0, 16)
+          : new Date(prof.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
+        createdAtTimestamp: isNaN(new Date(prof.created_at || Date.now()).getTime()) ? Date.now() : new Date(prof.created_at || Date.now()).getTime(),
         createdBy: prof.name || 'User',
         description: `Profile Passkey: ${prof.name} (${prof.phone})`,
         totalUsages: tokensCount,
@@ -1156,8 +1166,10 @@ export async function fetchPasskeyByKeySupabase(inputKey: string): Promise<any |
         key: uProf.passkey,
         role: uProf.role || 'user',
         active: true,
-        createdDate: new Date(uProf.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
-        createdAtTimestamp: new Date(uProf.created_at || Date.now()).getTime(),
+        createdDate: isNaN(new Date(uProf.created_at || Date.now()).getTime()) 
+          ? new Date().toISOString().replace('T', ' ').substring(0, 16)
+          : new Date(uProf.created_at || Date.now()).toISOString().replace('T', ' ').substring(0, 16),
+        createdAtTimestamp: isNaN(new Date(uProf.created_at || Date.now()).getTime()) ? Date.now() : new Date(uProf.created_at || Date.now()).getTime(),
         createdBy: uProf.name || uProf.full_name || 'User',
         description: `Profile Passkey: ${uProf.name || uProf.full_name} (${uProf.phone})`,
         totalUsages: tokensCount,
@@ -1251,7 +1263,7 @@ export function subscribeTokenPackagesRealtime(callback: (pkgs: any[]) => void):
 
   try {
     const channel = supabase
-      .channel('realtime_token_packages')
+      .channel(`realtime_token_packages_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'token_packages' },
@@ -1318,7 +1330,7 @@ export function subscribeWeeklyOffersRealtime(callback: (offers: any[]) => void)
 
   try {
     const channel = supabase
-      .channel('realtime_weekly_offers')
+      .channel(`realtime_weekly_offers_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'weekly_offers' },

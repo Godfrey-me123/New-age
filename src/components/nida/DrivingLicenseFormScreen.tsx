@@ -679,9 +679,8 @@ export const DrivingLicenseFormScreen: React.FC<DrivingLicenseFormScreenProps> =
                                   ? {
                                       ...c,
                                       enabled: isChecked,
-                                      // If enabling and parent issue/expiry set, prefill with DD/MM/YYYY
-                                      issueDate: isChecked && !c.issueDate ? formatToDdMmYyyy(prev.dateOfIssue) : (c.issueDate ? formatToDdMmYyyy(c.issueDate) : c.issueDate),
-                                      expiryDate: isChecked && !c.expiryDate ? formatToDdMmYyyy(prev.dateOfExpiry) : (c.expiryDate ? formatToDdMmYyyy(c.expiryDate) : c.expiryDate),
+                                      issueDate: isChecked ? (c.issueDate || formatToDdMmYyyy(prev.dateOfIssue)) : '',
+                                      expiryDate: isChecked ? (c.expiryDate || formatToDdMmYyyy(prev.dateOfExpiry)) : '',
                                     }
                                   : c
                               ),
