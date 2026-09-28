@@ -1022,8 +1022,8 @@ export function formatDrivingLicenceCategoriesBack(
     const isEnabled = !!(item && (item.enabled === true || item.enabled === 1 || item.selected === true || item.checked === true));
 
     if (isEnabled) {
-      const rawIssue = item?.issueDate || defaultIssueDate || new Date().toISOString().split('T')[0];
-      const rawExpiry = item?.expiryDate || defaultExpiryDate || new Date(new Date(rawIssue).getTime() + 157680000000).toISOString().split('T')[0];
+      const rawIssue = item?.issueDate || defaultIssueDate;
+      const rawExpiry = item?.expiryDate || defaultExpiryDate;
       
       const issueStr = (rawIssue && rawIssue.trim() !== '') ? formatToDdMmYyyy(rawIssue) : '';
       const expiryStr = (rawExpiry && rawExpiry.trim() !== '') ? formatToDdMmYyyy(rawExpiry) : '';
