@@ -1308,7 +1308,7 @@ export function subscribeTokenPackagesRealtime(callback: (pkgs: any[]) => void):
         { event: '*', schema: 'public', table: 'token_packages' },
         async () => {
           const fresh = await fetchTokenPackagesSupabase();
-          callback(fresh);
+          if (fresh) callback(fresh);
         }
       )
       .subscribe();
