@@ -1493,3 +1493,72 @@ export async function recoverPasskeyByPhoneSupabase(phoneInput: string, newPassk
 }
 
 
+
+// ---------------------------------------------------------------------------
+// Token history (persisted in public.token_transactions)
+// user_id holds a deterministic UUID of the passkey id; user_email holds the raw
+// passkey id so history can be filtered per owner without a schema change.
+// ---------------------------------------------------------------------------
+export interface TokenHistoryRecord {
+  id: string;
+  ownerId: string;
+  amount: number;
+  reason: string;
+  timestamp: string;
+}
+
+export async function insertTokenHistorySupabase(record: TokenHistoryRecord): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await withTimeout(
+      supabase.from('token_transactions').upsert(
+        {
+          id: record.id,
+          user_id: getUUID(record.ownerId),
+          user_email: record.ownerId,
+          amount: Math.trunc(record.amount),
+          reason: record.reason.slice(0, 500),
+          created_at: record.timestamp,
+        },
+        { onConflict: 'id', ignoreDuplicates: true }
+      ) as unknown as Promise<{ error: any }>
+    );
+    if (error) {
+      console.warn('Token history insert failed:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.warn('Token history insert error:', e);
+    return false;
+  }
+}
+
+export async function fetchTokenHistorySupabase(ownerIds?: string[], limit = 200): Promise<TokenHistoryRecord[] | null> {
+  if (!supabase) return null;
+  try {
+    let query = supabase
+      .from('token_transactions')
+      .select('id, user_email, amount, reason, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (ownerIds && ownerIds.length > 0) {
+      query = query.in('user_email', ownerIds);
+    }
+    const { data, error } = await withTimeout(query as unknown as Promise<{ data: any[] | null; error: any }>);
+    if (error || !data) {
+      if (error) console.warn('Token history fetch failed:', error.message);
+      return null;
+    }
+    return data.map((row) => ({
+      id: row.id,
+      ownerId: row.user_email || '',
+      amount: row.amount,
+      reason: row.reason,
+      timestamp: row.created_at,
+    }));
+  } catch (e) {
+    console.warn('Token history fetch error:', e);
+    return null;
+  }
+}

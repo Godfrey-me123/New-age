@@ -432,7 +432,8 @@ interface TemplateState {
   submitUserPayment: (data: { amount: number; sender: string; receiver: string; reference: string; date: string }) => { success: boolean; message: string; submission?: UserPaymentSubmission };
   approveUserPayment: (submissionId: string, tokensToGrant?: number) => { success: boolean; message: string };
   rejectUserPayment: (submissionId: string, reason?: string) => { success: boolean; message: string };
-  addTokenHistoryItem: (amount: number, reason: string) => void;
+  addTokenHistoryItem: (amount: number, reason: string, ownerId?: string) => void;
+  loadTokenHistory: () => Promise<void>;
 
   // Multi-Service Studio Context
   activeServiceId: string;
@@ -553,7 +554,7 @@ interface TemplateState {
   // Usage Manager Actions
   consumeUsage: (serviceName?: string, details?: string, tokenCost?: number) => { success: boolean; remainingUsages: number; message?: string };
   confirmPaymentAndActivatePasskey: (id: string) => void;
-  addUsagesToPasskey: (id: string, additionalUsages: number, newPackageName?: string) => void;
+  addUsagesToPasskey: (id: string, additionalUsages: number, newPackageName?: string, historyReason?: string) => void;
 
   // Central Authorization & Validation Gate
   checkAuthorization: () => boolean;
@@ -1235,10 +1236,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
 
       // Grant usages to user
       const targetPasskey = sub.passkeyId || get().currentAuthKey || 'pk_user_1';
-      get().addUsagesToPasskey(targetPasskey, granted, `Approved Payment: Ref ${sub.reference}`);
-
-      // Log token history
-      get().addTokenHistoryItem(granted, `Top-Up Approved (Ref: ${sub.reference})`);
+      get().addUsagesToPasskey(
+        targetPasskey,
+        granted,
+        `Approved Payment: Ref ${sub.reference}`,
+        `Top-Up Approved (Ref: ${sub.reference})`
+      );
 
       get().showSuccessActivation(`Your top-up of ${granted} tokens has been activated successfully.`);
 
@@ -1255,17 +1258,64 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       return { success: true, message: 'Payment submission rejected.' };
     },
 
-    addTokenHistoryItem: (amount, reason) => {
+    addTokenHistoryItem: (amount, reason, ownerId) => {
+      if (!Number.isFinite(amount) || amount === 0) return;
       const newItem: TokenTransaction = {
-        id: `th_${Date.now()}`,
-        userId: get().currentAuthKey || 'user_default',
+        id: `th_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+        userId: ownerId || get().currentAuthKey || 'user_default',
         amount,
         reason,
         timestamp: new Date().toISOString()
       };
-      const updated = [newItem, ...get().tokenHistory];
+      const updated = [newItem, ...get().tokenHistory].slice(0, 500);
       safeLocalStorageSetItem('bigsta_token_history', JSON.stringify(updated));
       set({ tokenHistory: updated });
+
+      import('../services/supabase')
+        .then(({ insertTokenHistorySupabase }) =>
+          insertTokenHistorySupabase({
+            id: newItem.id,
+            ownerId: newItem.userId,
+            amount: newItem.amount,
+            reason: newItem.reason,
+            timestamp: newItem.timestamp,
+          })
+        )
+        .catch((e) => console.warn('Token history sync skipped:', e));
+    },
+
+    loadTokenHistory: async () => {
+      try {
+        const { fetchTokenHistorySupabase } = await import('../services/supabase');
+        const { authRole, currentAuthKey, activePasskeys } = get();
+        let ownerIds: string[] | undefined;
+        if (authRole !== 'admin') {
+          const own = activePasskeys.find(
+            (p) => p.key.toLowerCase() === (currentAuthKey || '').toLowerCase()
+          );
+          if (!own) return;
+          ownerIds = [own.id];
+        }
+        const remote = await fetchTokenHistorySupabase(ownerIds);
+        if (!remote) return;
+
+        const merged = new Map<string, TokenTransaction>();
+        for (const r of remote) {
+          merged.set(r.id, { id: r.id, userId: r.ownerId, amount: r.amount, reason: r.reason, timestamp: r.timestamp });
+        }
+        for (const local of get().tokenHistory) {
+          const isRealLocalEntry = /^th_\d{10,}/.test(local.id);
+          if (isRealLocalEntry && !merged.has(local.id)) merged.set(local.id, local);
+        }
+        const updated = Array.from(merged.values())
+          .filter((t) => !ownerIds || ownerIds.includes(t.userId))
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 500);
+        safeLocalStorageSetItem('bigsta_token_history', JSON.stringify(updated));
+        set({ tokenHistory: updated });
+      } catch (e) {
+        console.warn('Token history load skipped:', e);
+      }
     },
 
     activeServiceId: typeof window !== 'undefined' ? (localStorage.getItem('bigsta_active_service') || 'nida') : 'nida',
@@ -2168,6 +2218,10 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         console.warn('Supabase immediate registration sync warning:', e);
       }
 
+      if (grantedTokens > 0) {
+        get().addTokenHistoryItem(grantedTokens, `Welcome Token Granted (${fullName})`, newPasskeyItem.id);
+      }
+
       set({ 
         activePasskeys: updatedPasskeys, 
         registeredUsers: updatedUsers,
@@ -3021,6 +3075,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         packagePrice: price,
         usageHistory: [],
       };
+      get().addTokenHistoryItem(usages, `Passkey Issued: ${packageName} (${generatedKey})`, newItem.id);
       const updated = [newItem, ...get().activePasskeys];
       try {
         localStorage.removeItem('bigsta_passkeys');
@@ -3162,6 +3217,8 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         });
       } catch (e) {}
 
+      get().addTokenHistoryItem(-cost, details ? `${serviceName} (${details})` : serviceName, match.id);
+
       return { success: true, remainingUsages: newRemaining };
     },
 
@@ -3192,11 +3249,12 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       }
     },
 
-    addUsagesToPasskey: (id: string, additionalUsages: number, newPackageName?: string) => {
+    addUsagesToPasskey: (id: string, additionalUsages: number, newPackageName?: string, historyReason?: string) => {
       const list = get().activePasskeys;
+      const resolvedId = list.find((p) => p.id === id)?.id ?? list.find((p) => p.key === id)?.id;
       let targetPk: PasskeyItem | null = null;
       const updated = list.map((p) => {
-        if (p.id === id) {
+        if (p.id === resolvedId) {
           const newTotal = (p.totalUsages ?? 0) + additionalUsages;
           const newRemaining = Math.max(0, newTotal - (p.usedUsages ?? 0));
           const newPaymentStatus: PaymentStatus = newRemaining > 0 ? 'ACTIVE' : 'EXHAUSTED';
@@ -3218,9 +3276,15 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
       set({ activePasskeys: updated });
 
       if (targetPk) {
+        const pk: PasskeyItem = targetPk;
         import('../services/supabase').then(({ syncPasskeySupabase }) => {
-          syncPasskeySupabase(targetPk!);
+          syncPasskeySupabase(pk);
         });
+
+        const fallbackReason = additionalUsages > 0
+          ? `Tokens Added to Passkey (${pk.key})`
+          : `Tokens Removed from Passkey (${pk.key})`;
+        get().addTokenHistoryItem(additionalUsages, historyReason || newPackageName || fallbackReason, pk.id);
       }
     },
 
