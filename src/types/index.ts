@@ -1,3 +1,5 @@
+export type ActiveScreen = 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'nida_request' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings';
+
 export type Unit = 'px' | 'mm' | 'cm' | 'in';
 
 export type CardType = 'National ID' | 'Employee ID' | 'Student ID' | 'Membership Card' | 'NHIF Membership Card' | 'Access Badge' | 'Driving License' | 'Other';

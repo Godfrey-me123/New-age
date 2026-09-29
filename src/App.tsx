@@ -16,6 +16,7 @@ import { MergeCardModal } from './components/MergeCardModal';
 import { MobileNavBar } from './components/MobileNavBar';
 import { MobileBottomSheet } from './components/MobileBottomSheet';
 import { NidaFormScreen } from './components/nida';
+import { NidaRequestFormScreen } from './components/nida/NidaRequestFormScreen';
 import { DrivingLicenseFormScreen } from './components/nida/DrivingLicenseFormScreen';
 import { NhifFormScreen } from './components/nida/NhifFormScreen';
 import { NidaSuccessToast } from './components/nida/NidaSuccessToast';
@@ -309,6 +310,22 @@ export default function App() {
       <>
         <UsageExhaustedBanner />
         <TemplatesScreen />
+        <PasskeyManagerModal />
+        <RechargeModal />
+        <ExportModal />
+        <SaveTemplateModal />
+        <MergeCardModal />
+        <TemplateLibraryModal />
+        <CardGeneratorModal />
+      </>
+    );
+  }
+
+  if (activeScreen === 'nida_request') {
+    return (
+      <>
+        <UsageExhaustedBanner />
+        <NidaRequestFormScreen />
         <PasskeyManagerModal />
         <RechargeModal />
         <ExportModal />

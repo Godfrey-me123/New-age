@@ -197,6 +197,23 @@ export const HomeScreen: React.FC = () => {
         isPinned: true,
       },
       {
+        id: 'nida_request',
+        name: 'Request NIDA Info',
+        authority: 'National Identification Authority',
+        description:
+          'Request NIDA picture or signature upload for manual processing.',
+        category: 'identity',
+        icon: ScrollText,
+        iconBg: colorMap.nida.iconBg,
+        iconColor: colorMap.nida.iconColor,
+        status: 'active',
+        badgeText: 'New',
+        action: () => setActiveScreen('nida_request'),
+        primaryActionLabel: 'Request Info',
+        features: ['Picture Upload', 'Signature Upload'],
+        isPinned: true,
+      },
+      {
         id: 'driving_license',
         name: 'Driving License Services',
         authority: 'Traffic & Vehicle Inspection',

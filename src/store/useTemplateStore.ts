@@ -395,7 +395,7 @@ export const DEFAULT_REGISTERED_USERS: RegisteredUser[] = [];
 export const DEFAULT_PAYMENT_REQUESTS: PaymentRequest[] = [];
 
 interface TemplateState {
-  activeScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings';
+  activeScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'nida_request' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings';
   currentTemplate: CardTemplate;
   frontPopulatedTemplate: CardTemplate | null;
   backPopulatedTemplate: CardTemplate | null;
@@ -447,7 +447,7 @@ interface TemplateState {
   // Studio Working Mode & Universal Navigation
   studioMode: boolean;
   navigationHistory: Array<{
-    screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings';
+    screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'nida_request' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings';
     serviceId?: string;
     templateId?: string;
   }>;
@@ -468,7 +468,7 @@ interface TemplateState {
   importTemplateJSON: (json: string, asNew?: boolean) => Promise<{ success: boolean; message: string }>;
 
   navigateSafely: (
-    targetScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings',
+    targetScreen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'nida_request' | 'preview' | 'downloads' | 'driving_license' | 'nhif' | 'admin-payments' | 'billing' | 'settings',
     serviceId?: string,
     bypassDraftRestore?: boolean
   ) => void;
@@ -612,7 +612,7 @@ interface TemplateState {
   historyIndex: number;
 
   // Actions
-  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments' | 'billing' | 'settings') => void;
+  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'nida_request' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments' | 'billing' | 'settings') => void;
   setPopulatedCardPair: (front: CardTemplate | null, back: CardTemplate | null, formData?: any) => void;
   createNewTemplate: (background: BackgroundConfig, name?: string) => void;
   loadTemplate: (template: CardTemplate) => void;
@@ -3625,7 +3625,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
   history: [DEFAULT_TEMPLATE],
   historyIndex: 0,
 
-  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments') => {
+  setActiveScreen: (screen: 'home' | 'upload' | 'editor' | 'templates' | 'nida' | 'nida_request' | 'preview' | 'downloads' | 'driving_license' | 'admin-payments') => {
     get().navigateSafely(screen);
   },
 

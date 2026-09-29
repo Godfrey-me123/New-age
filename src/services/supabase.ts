@@ -426,6 +426,24 @@ CREATE TABLE IF NOT EXISTS public.sms_logs (
 CREATE INDEX IF NOT EXISTS sms_logs_received_at_idx ON public.sms_logs (received_at DESC);
 CREATE INDEX IF NOT EXISTS sms_logs_status_idx ON public.sms_logs (status);
 CREATE INDEX IF NOT EXISTS sms_logs_sms_hash_idx ON public.sms_logs (sms_hash);
+CREATE TABLE IF NOT EXISTS public.nida_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id),
+  mother_name TEXT,
+  ward_of_residence TEXT,
+  district_of_birth TEXT,
+  nida_registration_place TEXT,
+  request_type TEXT CHECK (request_type IN ('picture', 'signature', 'both')),
+  status TEXT DEFAULT 'pending',
+  picture_url TEXT,
+  signature_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.nida_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users to insert own requests" ON public.nida_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow users to view own requests" ON public.nida_requests FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Allow admins to view/update all" ON public.nida_requests FOR ALL USING (true);
 ALTER TABLE public.sms_logs ENABLE ROW LEVEL SECURITY;
 GRANT SELECT, INSERT, UPDATE ON public.sms_logs TO anon, authenticated;
 DROP POLICY IF EXISTS "Allow public access sms_logs" ON public.sms_logs;
