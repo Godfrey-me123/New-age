@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Wallet,
   Coins,
@@ -46,7 +46,7 @@ export const TokenBillingScreen: React.FC = () => {
     rejectUserPayment,
     tokenHistory,
     addUsagesToPasskey,
-    addTokenHistoryItem,
+    loadTokenHistory,
     adminSettings,
     updateAdminSettings,
     tokenPackages,
@@ -113,6 +113,10 @@ export const TokenBillingScreen: React.FC = () => {
     services: ['nida', 'driving_licence', 'nhif'],
     active: true
   });
+
+  useEffect(() => {
+    loadTokenHistory();
+  }, [loadTokenHistory]);
 
   // Admin Token Adjust State
   const [targetPasskeyKey, setTargetPasskeyKey] = useState<string>(activePasskeys[0]?.key || '');
@@ -198,8 +202,12 @@ export const TokenBillingScreen: React.FC = () => {
     e.preventDefault();
     if (!targetPasskeyKey) return;
 
-    addUsagesToPasskey(targetPasskeyKey, adjustAmount, adjustReason);
-    addTokenHistoryItem(adjustAmount, `Admin Manual Adjustment (${targetPasskeyKey}): ${adjustReason}`);
+    addUsagesToPasskey(
+      targetPasskeyKey,
+      adjustAmount,
+      adjustReason,
+      `Admin Manual Adjustment (${targetPasskeyKey}): ${adjustReason}`
+    );
 
     setAdjustFeedback(`Successfully granted ${adjustAmount} tokens to passkey ${targetPasskeyKey}`);
     setTimeout(() => setAdjustFeedback(null), 3000);
